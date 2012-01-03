@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>lfmRed.jpg</file>
+        <file>media-play.png</file>
+        <file>add.png</file>
+        <file>minus.png</file>
+        <file>config.png</file>
+        <file>arrow-left.png</file>
+        <file>heart.png</file>
+        <file>rdio.png</file>
+        <file>media-next.png</file>
+    </qresource>
+    <qresource prefix="/js">
+        <file>jquery.rdio.js</file>
+        <file>rdio.html</file>
+    </qresource>
+</RCC>
