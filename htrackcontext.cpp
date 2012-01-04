@@ -24,7 +24,7 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     ui(new Ui::HTrackContext)
 {
     ui->setupUi(this);
-    ui->label_description->setText(s_rep.getSummary().size()?s_rep.getSummary():"Sorry, no article is available for this album. :(");
+    ui->label_description->setText(s_rep.getSummary().size()?s_rep.getSummary():"No article is available for this track.");
     ui->label_playcount->setText("<B>"+QString::number(s_rep.getPlayCount())+"</B> plays by <B>"+QString::number(s_rep.getListenerCount())+"</B> users");
     ui->label_userplaycount->setText("<B>"+QString::number(s_rep.getUserPlayCount())+"</B> plays in your library");
     ui->label_track->setText(s_rep.getTrackName());

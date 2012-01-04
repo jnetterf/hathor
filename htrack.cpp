@@ -212,6 +212,7 @@ void HTrack::InfoData::getData(QString artist,QString track) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
@@ -288,6 +289,7 @@ void HTrack::ExtraTagData::getData(QString artist,QString track) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
@@ -340,6 +342,7 @@ void HTrack::ShoutData::getData(QString artist,QString track) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
@@ -400,6 +403,7 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }

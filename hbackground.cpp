@@ -15,18 +15,19 @@
 #include <QGraphicsView>
 #include <QScrollBar>
 #include "hartistcontext.h"
+#include "hrdiointerface.h"
 
 int _l=0;
 bool ArtistAvatar::_ready = 0;
 
-static QPixmap download(const QUrl &url) {
+static QPixmap download(QUrl url, bool tryAgain=1) {
+    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_large.png";
     QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
     if(!QFile::exists(t)) {
         QDir r=QDir::root();
         r.mkpath(t);
     }
     QString x=url.toString();
-    ++_l;
     if(x.contains("png")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".png";
     else t+="/"+QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".jpg";
     if(!QFile::exists(t)) {
@@ -46,6 +47,7 @@ static QPixmap download(const QUrl &url) {
     }
     QPixmap apix;
     apix.load(t);
+    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
     return apix;
 }
 
@@ -86,7 +88,16 @@ HBackground::HBackground(QGraphicsScene *sc) {
     int l=0;
     int t=200;
     QSettings sett("hathorMP","global");
+    QList<HTrack*> topTracks=HUser::get(lastfm::ws::Username).getTopTracks();
     for(int i=0;i<list.size();i++){
+        if((i%10==0)&&!sett.value("precached",0).toBool()) {
+            //play top song, just to prove we're awesome!
+            if(i/10<topTracks.size()) {
+                if(i/10) HRdioInterface::singleton()->queue(*topTracks[i/10]);
+                else HRdioInterface::singleton()->play(*topTracks[i/10]);
+            }
+        }
+
         int COLUMN=0;
         _sc->setBackgroundBrush(QBrush(QColor(255.0-255.0*(double)i/(list.size()),255.0-255.0*(double)i/(list.size()),255.0-
                                               255.0*(double)i/(list.size()))));

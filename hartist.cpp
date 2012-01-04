@@ -171,8 +171,8 @@ QList<double> HArtist::getSimilarScores() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-
-static QPixmap download(const QUrl &url) {
+static QPixmap download(QUrl url, bool tryAgain=1) {
+    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_large.png";
     QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
     if(!QFile::exists(t)) {
         QDir r=QDir::root();
@@ -198,6 +198,7 @@ static QPixmap download(const QUrl &url) {
     }
     QPixmap apix;
     apix.load(t);
+    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
     return apix;
 }
 
@@ -251,6 +252,7 @@ void HArtist::InfoData::getData(QString artist) {
     loop.exec();
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
@@ -327,6 +329,7 @@ void HArtist::AlbumData::getData(QString artist) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
@@ -373,6 +376,7 @@ void HArtist::ExtraTagData::getData(QString artist) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
@@ -428,6 +432,7 @@ void HArtist::TrackData::getData(QString artist) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
@@ -480,6 +485,7 @@ void HArtist::SimilarData::getData(QString artist) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
@@ -528,6 +534,7 @@ void HArtist::ShoutData::getData(QString artist) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }

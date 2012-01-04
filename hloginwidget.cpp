@@ -65,7 +65,7 @@ HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui
     anim->setDuration(1000);
     ///
     tx = new QGraphicsTextItem;
-    tx->setFont(QFont("Arial",60));
+    tx->setFont(QFont("Candara",60));
     tx->setPlainText("Press tab.");
     tx->setOpacity(0);
     sc->addItem(tx);
@@ -144,7 +144,7 @@ HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui
     affil->hide();
     affil->setPalette(QPalette(Qt::white));
     affil->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    affil->setFont(QFont("Arial",30));
+    affil->setFont(QFont("Candara",30));
     affil->adjustSize();
     connect(affil,SIGNAL(linkActivated(QString)),this,SLOT(openLink(QString)));
 
@@ -192,8 +192,8 @@ void HLoginWidget::showTabHint_rdio() {
     disconnect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
     stage1=0;
     tx->setPos(0,0);
-    tx->setFont(QFont("arial",60));
-    tx->setPlainText("Press tab");
+    tx->setFont(QFont("Candara",60));
+    tx->setPlainText("Press tab.");
 
 
     QPropertyAnimation* pa_=new QPropertyAnimation(affil->graphicsProxyWidget(),"opacity");
@@ -236,7 +236,7 @@ void HLoginWidget::doPassword() {
         tx = new QGraphicsTextItem;
         sc->addItem(tx);
     }
-    tx->setFont(QFont("Arial",50));
+    tx->setFont(QFont("Candara",50));
     tx->setPlainText("Press enter.");
     tx->setOpacity(0);
     tx->setPos(800,120);
@@ -279,7 +279,7 @@ void HLoginWidget::doPassword_rdio() {
         ranim3->setDuration(500);
         ranim3->start();
     }
-    tx->setFont(QFont("Arial",30));
+    tx->setFont(QFont("Candara",30));
     tx->setPlainText("Press enter.");
     tx->setPos(800,120);
     tx->setOpacity(0);

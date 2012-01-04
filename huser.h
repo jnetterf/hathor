@@ -3,6 +3,7 @@
 
 #include <QStringList>
 #include <QPixmap>
+#include "htrack.h"
 
 class HArtist;
 
@@ -27,6 +28,7 @@ public:
     bool getMale();
     int getPlayCount();
     int getPlaylists();
+    QList<HTrack*> getTopTracks();
 
 private:
     static QMap<QString, HUser*> _map;
@@ -52,6 +54,13 @@ private:
         PictureData() { for(int i=0;i<4;i++) got[i]=0; }
         void getData(QString url,PictureSize size);
     } s_pictureData;
+
+    struct TopTrackData {
+        QList<HTrack*> topTracks;
+        bool got;
+        TopTrackData() : got(0) {}
+        void getData(QString user);
+    } s_topTrackData;
 
 private:
     //Degenerate copy and assignment

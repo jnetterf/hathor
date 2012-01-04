@@ -166,6 +166,7 @@ void HRdioInterface::queue(HTrack& track) {
     if(s_state==Stopped) {
         QEventLoop loop;
         loop.connect( this, SIGNAL(playingTrackChanged(HTrack&)), SLOT(quit()) );
+        loop.connect( this, SIGNAL(positionChanged(double)), SLOT(quit()) );
         loop.exec();
     }
 }
@@ -206,7 +207,7 @@ void HRdioInterface::clearQueue() {
 }
 
 void HRdioInterface::jsCallback(QString cb) {
-    qDebug()<<"Rdio callback:"<<cb;
+//    qDebug()<<"Rdio callback:"<<cb;
     if(cb=="ready()") {
         s_ready=1;
         qDebug()<<"Ready to go!";

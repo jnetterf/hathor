@@ -87,4 +87,5 @@ RESOURCES += \
     icons.qrc
 
 OTHER_FILES += \
-    rdio.html
+    rdio.html \
+    styleSheet.txt

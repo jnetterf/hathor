@@ -144,7 +144,8 @@ QList<HShout*> HAlbum::getShouts() {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static QPixmap download(const QUrl &url) {
+static QPixmap download(QUrl url, bool tryAgain=1) {
+    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
     QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
     if(!QFile::exists(t)) {
         QDir r=QDir::root();
@@ -170,6 +171,7 @@ static QPixmap download(const QUrl &url) {
     }
     QPixmap apix;
     apix.load(t);
+    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
     return apix;
 }
 
@@ -223,6 +225,7 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }
@@ -304,6 +307,7 @@ void HAlbum::ExtraTagData::getData(QString artist,QString album) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }
@@ -355,6 +359,7 @@ void HAlbum::ShoutData::getData(QString artist,QString album) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }

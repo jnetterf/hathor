@@ -100,6 +100,7 @@ void HTag::InfoData::getData(QString tag) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(tag);
         return;
     }

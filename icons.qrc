@@ -9,6 +9,7 @@
         <file>heart.png</file>
         <file>rdio.png</file>
         <file>media-next.png</file>
+        <file>styleSheet.txt</file>
     </qresource>
     <qresource prefix="/js">
         <file>jquery.rdio.js</file>

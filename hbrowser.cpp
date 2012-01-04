@@ -15,6 +15,7 @@ HBrowser.cpp
 #include <QtOAuth>
 #include <QApplication>
 #include <QDebug>
+#include <QTimer>
 
 HBrowser::HBrowser(QWidget *parent)
     : QWidget(parent), s_webView(new QWebView(this))

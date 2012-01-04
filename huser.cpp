@@ -9,6 +9,7 @@
 #include <QHttp>
 #include <QEventLoop>
 #include <QSettings>
+#include <QTimer>
 #include <QDomDocument>
 #include <lastfm/ws.h>
 #include "lastfmext.h"
@@ -79,10 +80,19 @@ int HUser::getPlaylists() {
     return getPlaylists();
 }
 
+QList<HTrack*> HUser::getTopTracks() {
+    if(s_topTrackData.got) {
+        return s_topTrackData.topTracks;
+    }
+    s_topTrackData.getData(s_username);
+    return getTopTracks();
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static QPixmap download(const QUrl &url) {
+static QPixmap download(QUrl url, bool tryAgain=1) {
+    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
     QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
     if(!QFile::exists(t)) {
         QDir r=QDir::root();
@@ -90,7 +100,6 @@ static QPixmap download(const QUrl &url) {
     }
     QString x=url.toString();
     if(x.contains("png")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".png";
-    else if(x.contains("gif")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".gif";
     else t+="/"+QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".jpg";
     if(!QFile::exists(t)) {
         QHttp http;
@@ -109,8 +118,10 @@ static QPixmap download(const QUrl &url) {
     }
     QPixmap apix;
     apix.load(t);
+    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
     return apix;
 }
+
 
 void HUser::PictureData::getData(QString url,HUser::PictureSize size) {
     if(got[size]) {
@@ -160,6 +171,7 @@ void HUser::InfoData::getData(QString username) {
 
     if(reply->error()!=QNetworkReply::NoError) {
         got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
         getData(username);
         return;
     }
@@ -219,3 +231,71 @@ void HUser::InfoData::getData(QString username) {
     sett.setValue("playcount for "+username,playCount);
     sett.setValue("playlists for "+username,playlists);
 }
+
+void HUser::TopTrackData::getData(QString username) {
+    if(got) {
+        return;
+    }
+    got=1;
+
+    QSettings sett("hathorMP","topTrackData");
+
+    if(sett.value("cache for "+username,0).toInt()==2) {
+        QStringList names, artists;
+        names=sett.value("topTrackNames for "+username).toStringList();
+        artists=sett.value("topTrackArtists for "+username).toStringList();
+        for(int i=0;i<names.size()&&i<artists.size();i++) {
+            topTracks.push_back(&HTrack::get(artists[i],names[i]));
+        }
+        return;
+    }
+
+    QMap<QString, QString> params;
+    params["method"] = "user.getTopTracks";
+    params["user"] = username;
+    params["period"] = "3month";
+    QNetworkReply* reply = lastfmext_post( params );
+
+    QEventLoop loop;
+    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+    loop.exec();
+
+    QStringList names,artists;
+
+    if(reply->error()!=QNetworkReply::NoError) {
+        got=0;
+        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        getData(username);
+        return;
+    }
+    try {
+        QDomDocument doc;
+        doc.setContent( reply->readAll() );
+
+        QDomElement element = doc.documentElement();
+
+        for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
+            for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
+                for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
+                    for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
+                        if ( l.nodeName() == "name" ) names.push_back(k.toText().data());
+                        for (QDomNode j = k.firstChild(); !j.isNull(); j = j.nextSibling()) {
+                            if ( k.nodeName() == "name" ) {
+                                artists.push_back(j.toText().data());
+                                topTracks.push_back(&HTrack::get(artists.back(),names.back()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    } catch (std::runtime_error& e) {
+        qWarning() << e.what();
+    }
+    sett.setValue("cache for "+username,2);
+
+    sett.setValue("topTrackNames for "+username,names);
+    sett.setValue("topTrackArtists for "+username,artists);
+}
+

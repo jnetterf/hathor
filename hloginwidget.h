@@ -94,7 +94,7 @@ public slots:
         _shown=1;
         QGraphicsTextItem* tx=new QGraphicsTextItem;
         tx->setHtml("<font color=\"white\">"+s_rep.getName()+"</font>");
-        tx->setFont(QFont("Arial",24,QFont::Bold));
+        tx->setFont(QFont("Candara",24,QFont::Bold));
         tx->setPos(x()+PX,y()+PY);
         _gi_.push_back(tx);
         QGraphicsRectItem* ri=_sc->addRect(x(),y(),boundingRect().width(),boundingRect().height(),QPen(QColor("grey")));
@@ -136,7 +136,7 @@ public slots:
         if(s_rep.getTagNames().size()>2) {
             QGraphicsTextItem* tx=new QGraphicsTextItem;
             tx->setHtml("<font color=\"white\">Tags: "+s_rep.getTagNames()[0]+", "+s_rep.getTagNames()[1]+", "+s_rep.getTagNames()[2]+"</font>");
-            tx->setFont(QFont("Arial",10,QFont::Bold));
+            tx->setFont(QFont("Candara",10,QFont::Bold));
             tx->setPos(x()+PX,y()+PY+40);
             _gi_.push_back(tx);
 
@@ -153,7 +153,7 @@ public slots:
         {
             QGraphicsTextItem* tx=new QGraphicsTextItem;
             tx->setHtml("<font color=\"white\">"+s_rep.getBioShort()+"</font>");
-            tx->setFont(QFont("Arial",10,QFont::Bold));
+            tx->setFont(QFont("Candara",10,QFont::Bold));
             tx->setPos(x()+PX,y()+PY+70);
             tx->setTextWidth(300);
             _gi_.push_back(tx);
@@ -391,7 +391,18 @@ public:
 
 class MagicLineEdit : public QLineEdit {
     Q_OBJECT public:
-    MagicLineEdit(QWidget* parent=0) : QLineEdit(parent) {}
+    MagicLineEdit(QWidget* parent=0) : QLineEdit(parent) {
+        setStyleSheet("QLineEdit {"
+                      "border: 1px solid #141414;"
+                      "border-radius: 4px;"
+                      "color: #1e1e1e;"
+                      "font-family: Arial;"
+                      "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                                                       "stop: 0 #ffffff, stop: 1 #aaaaaa);"
+                      "selection-background-color: #e8e8e8;"
+                      "selection-color: #262627"
+                      "}");
+    }
     MagicLineEdit(const QString &a, QWidget *parent) : QLineEdit(a,parent) {}
     void focusInEvent(QFocusEvent *) { emit gotFocus(); }
 signals:

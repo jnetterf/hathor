@@ -61,9 +61,9 @@ void HToolbar::setMessageSimple(QString msg) {
     ui->toolButton_backButton->hide();
     ui->toolButton_config->hide();
     ui->toolButton_play->hide();
-    ui->line->hide();
-    ui->line_2->hide();
-    ui->line_3->hide();
+//    ui->line->hide();
+//    ui->line_2->hide();
+//    ui->line_3->hide();
     ui->lineEdit_search->hide();
     ui->toolButton_next->hide();
     ui->label_status->show();
@@ -86,9 +86,9 @@ void HToolbar::clearMessage2() {
     ui->toolButton_backButton->show();
     ui->toolButton_config->show();
     ui->toolButton_play->show();
-    ui->line->show();
-    ui->line_2->show();
-    ui->line_3->show();
+//    ui->line->show();
+//    ui->line_2->show();
+//    ui->line_3->show();
     ui->lineEdit_search->show();
     ui->toolButton_next->show();
     ui->label_status->show();
@@ -105,7 +105,7 @@ void HToolbar::clearMessage2() {
 }
 
 void HToolbar::setPlaybackStatus(QString s) {
-    if(ui->label_status->text()!=s_message) {
+    if(!ui->toolButton_play->isHidden()&&ui->label_status->text()!=s_message) {
         ui->label_status->setText(s);
     }
     s_playback=s;
