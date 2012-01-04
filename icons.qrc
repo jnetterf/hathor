@@ -12,7 +12,6 @@
         <file>styleSheet.txt</file>
     </qresource>
     <qresource prefix="/js">
-        <file>jquery.rdio.js</file>
         <file>rdio.html</file>
     </qresource>
 </RCC>
