@@ -44,7 +44,7 @@ HLoginWidget* HLoginWidget::singleton=0;
 
 HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui(new Ui::HLoginWidget) {
     if(qApp->desktop()->width()<1224) {
-        setWindowFlags(Qt::WindowFullScreen);
+        setWindowState(Qt::WindowFullScreen);
     }
     singleton=this;
     tx=0;

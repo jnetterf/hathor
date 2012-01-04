@@ -23,7 +23,6 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 {
     ui->setupUi(this);
     ui->label_album->setText(s_rep.getAlbumName());
-    ui->label_artist->setText("by "+s_rep.getArtistName());
     ui->label_albumPic->setPixmap(s_rep.getPic(HAlbum::Large));
     ui->label_description->setText(s_rep.getSummary().size()?s_rep.getSummary():"No article is available for this album.");
     ui->label_playcount->setText("<B>"+QString::number(s_rep.getPlayCount())+"</B> plays by <B>"+QString::number(s_rep.getListenerCount())+"</B> users");
