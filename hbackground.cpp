@@ -52,6 +52,7 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
 }
 
 HBackground::HBackground(QGraphicsScene *sc) {
+    qDebug()<<"_sc A";
     _sc=sc;
 
     for(int i=_sc->items().size()-1;i>=0;i--)_sc->removeItem(_sc->items()[i]);
@@ -59,6 +60,7 @@ HBackground::HBackground(QGraphicsScene *sc) {
     QMap<QString, QString> p1;;
     p1["method"] = "user.getTopArtists";
     p1["user"] = lastfm::AuthenticatedUser().name();
+    p1["period"]="3month";
 
     p1["limit"]="200";
     QNetworkReply* reply = lastfm::ws::get( p1 );

@@ -207,12 +207,13 @@ void HTrack::InfoData::getData(QString artist,QString track) {
     QNetworkReply* reply = lastfmext_post( params );
 
     QEventLoop loop;
+    QTimer::singleShot(1250,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
 
-    if(reply->error()!=QNetworkReply::NoError) {
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
         got=0;
-        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        QEventLoop loop; QTimer::singleShot(1250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
@@ -287,16 +288,17 @@ void HTrack::ExtraTagData::getData(QString artist,QString track) {
     params["track"] = track;
     QNetworkReply* reply = lastfmext_post( params );
 
-    if(reply->error()!=QNetworkReply::NoError) {
+    QEventLoop loop;
+    QTimer::singleShot(1250,&loop,SLOT(quit()));
+    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+    loop.exec();
+
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
         got=0;
-        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        QEventLoop loop; QTimer::singleShot(1250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
-
-    QEventLoop loop;
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
 
     try {
         QDomDocument doc;
@@ -337,12 +339,13 @@ void HTrack::ShoutData::getData(QString artist,QString track) {
     QNetworkReply* reply = lastfmext_post( params );
 
     QEventLoop loop;
+    QTimer::singleShot(1250,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
 
-    if(reply->error()!=QNetworkReply::NoError) {
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
         got=0;
-        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        QEventLoop loop; QTimer::singleShot(1250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }
@@ -398,12 +401,13 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
     QNetworkReply* reply = lastfmext_post( params );
 
     QEventLoop loop;
+    QTimer::singleShot(1250,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
 
-    if(reply->error()!=QNetworkReply::NoError) {
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
         got=0;
-        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        QEventLoop loop; QTimer::singleShot(1250,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
         return;
     }

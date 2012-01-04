@@ -1,6 +1,7 @@
 #include "hloginwidget.h"
 #include "ui_hloginwidget.h"
 #include <QTimer>
+#include <QDesktopWidget>
 #include <QCompleter>
 #include "hartistcontext.h"
 #include "halbumcontext.h"
@@ -42,6 +43,9 @@ bool ArtistAvatarList::iterateHide(int it) {
 HLoginWidget* HLoginWidget::singleton=0;
 
 HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui(new Ui::HLoginWidget) {
+    if(qApp->desktop()->width()<1224) {
+        setWindowFlags(Qt::WindowFullScreen);
+    }
     singleton=this;
     tx=0;
     ui->setupUi(this);
@@ -279,7 +283,7 @@ void HLoginWidget::doPassword_rdio() {
         ranim3->setDuration(500);
         ranim3->start();
     }
-    tx->setFont(QFont("Candara",30));
+    tx->setFont(QFont("Candara",50));
     tx->setPlainText("Press enter.");
     tx->setPos(800,120);
     tx->setOpacity(0);

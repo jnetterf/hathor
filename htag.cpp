@@ -95,12 +95,13 @@ void HTag::InfoData::getData(QString tag) {
     QNetworkReply* reply = lastfmext_post( params );
 
     QEventLoop loop;
+    QTimer::singleShot(1250,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
 
-    if(reply->error()!=QNetworkReply::NoError) {
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
         got=0;
-        QEventLoop loop; QTimer::singleShot(250,&loop,SLOT(quit())); loop.exec();
+        QEventLoop loop; QTimer::singleShot(1250,&loop,SLOT(quit())); loop.exec();
         getData(tag);
         return;
     }
