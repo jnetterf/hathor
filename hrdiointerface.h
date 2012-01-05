@@ -36,8 +36,11 @@ public slots: // Playback and queue:
 private:
     struct CurrentTrackInfo {
         int duration;
-        QString arist,album,name;
-        bool clean, expl;
+        QString arist;
+        QString name;
+        QString album;
+        bool clean;
+        bool expl;
         bool valid;
         CurrentTrackInfo() : valid(0) {}
     } s_currentInfo;

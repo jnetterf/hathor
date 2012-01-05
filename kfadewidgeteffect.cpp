@@ -27,7 +27,7 @@
 #include <QtGui/QPainter>
 #include <QDebug>
 
-#ifndef __WIN32
+#ifndef _WIN32
 #  include <X11/Xlib.h>
 #  include <X11/extensions/Xrender.h>
 #  include <QX11Info>
@@ -56,7 +56,29 @@ QPixmap KFadeWidgetEffectPrivate::transition(const QPixmap &from, const QPixmap 
 
     QColor color;
     color.setAlphaF(amount);
+    // If the native paint engine supports Porter/Duff compositing and CompositionMode_Plus
+    if (from.paintEngine()->hasFeature(QPaintEngine::PorterDuff) &&
+            from.paintEngine()->hasFeature(QPaintEngine::BlendModes))
+    {
+        QPixmap under = from;
+        QPixmap over  = to;
 
+        QPainter p;
+        p.begin(&over);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        p.fillRect(over.rect(), color);
+        p.end();
+
+        p.begin(&under);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+        p.fillRect(under.rect(), color);
+        p.setCompositionMode(QPainter::CompositionMode_Plus);
+        p.drawPixmap(0, 0, over);
+        p.end();
+
+        return under;
+    }
+    else
     {
         // Fall back to using QRasterPaintEngine to do the transition.
         QImage under = from.toImage();
@@ -81,7 +103,7 @@ QPixmap KFadeWidgetEffectPrivate::transition(const QPixmap &from, const QPixmap 
 
 KFadeWidgetEffect::KFadeWidgetEffect(QWidget *destWidget)
     : QWidget(destWidget ? destWidget->parentWidget() : 0),
-    d_ptr(new KFadeWidgetEffectPrivate(destWidget))
+      d_ptr(new KFadeWidgetEffectPrivate(destWidget))
 {
     Q_D(KFadeWidgetEffect);
     d->q_ptr = this;

@@ -5,6 +5,8 @@
 #include <QDomDocument>
 #include <QTimer>
 #include <QSettings>
+#include <QMutexLocker>
+#include <QMutex>
 #include <stdexcept>
 #include <qjson/parser.h>
 
@@ -12,6 +14,8 @@
 #include "halbum.h"
 #include "hartist.h"
 #include "htoolbar.h"
+
+QMutex rdioInterface;
 
 QString noAccents(QString r) {
     r.replace('à','a');
@@ -28,6 +32,7 @@ QString noAccents(QString r) {
     r.replace('û','u');
     r.replace('ü','u');
     r.replace('ÿ','y');
+    r.replace('í','i');
     return r;
 }
 
@@ -167,45 +172,55 @@ void HRdioInterface::setShuffle(bool a) {
 }
 
 void HRdioInterface::queue(HArtist& artist) {
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(artist.getName(),"Artists","",artist.getName())+"')");
+    QString tokenR=search(artist.getName(),"Artists","",artist.getName());
+    if(!tokenR.size()) return;
+    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
     setupPlayback();
 }
 
 void HRdioInterface::queue(HAlbum& album) {
     QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
+    if(!aCode.size()) return;
     s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+aCode+"')");
     setupPlayback();
 }
 
 void HRdioInterface::queue(HTrack& track) {
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName())+"')");
+    QString tokenR=search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName());
+    if(!tokenR.size()) return;
+    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
     setupPlayback();
 
-    if(s_state==Stopped) {
-        QEventLoop loop;
-        loop.connect( this, SIGNAL(playingTrackChanged(HTrack&)), SLOT(quit()) );
-        loop.connect( this, SIGNAL(positionChanged(double)), SLOT(quit()) );
-        loop.exec();
-    }
+//    if(s_state==Stopped) {
+//        QEventLoop loop;
+//        loop.connect( this, SIGNAL(playingTrackChanged(HTrack&)), SLOT(quit()) );
+//        loop.connect( this, SIGNAL(positionChanged(double)), SLOT(quit()) );
+//        loop.exec();
+//    }
 }
 
 void HRdioInterface::play(HArtist& artist) {
-    s_browser.doJS("$('#api').rdio().play('"+search(artist.getName(),"Artists","",artist.getName())+"')");
+    QString tokenR=search(artist.getName(),"Artists","",artist.getName());
+    if(!tokenR.size()) return;
+    s_browser.doJS("$('#api').rdio().play('"+tokenR+"')");
 }
 
 void HRdioInterface::play(HAlbum& album) {
     QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
+    if(!aCode.size()) return;
     s_browser.doJS("$('#api').rdio().play('"+aCode+"')");
 }
 
 void HRdioInterface::play(HTrack& track) {
-    s_browser.doJS("$('#api').rdio().play('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName())+"')");
+    QString tokenR=search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName());
+    if(!tokenR.size()) return;
+    s_browser.doJS("$('#api').rdio().play('"+tokenR+"')");
 
-    if(s_state==Stopped) {
-        QEventLoop loop;
-        loop.connect( this, SIGNAL(playingTrackChanged(HTrack&)), SLOT(quit()) );
-        loop.exec();
-    }
+//    if(s_state==Stopped) {
+//        QEventLoop loop;
+//        loop.connect( this, SIGNAL(playingTrackChanged(HTrack&)), SLOT(quit()) );
+//        loop.exec();
+//    }
 }
 
 void HRdioInterface::setVol(double v) {
@@ -225,7 +240,7 @@ void HRdioInterface::clearQueue() {
 }
 
 void HRdioInterface::jsCallback(QString cb) {
-//    qDebug()<<"Rdio callback:"<<cb;
+    qDebug()<<"Rdio callback:"<<cb;
     if(cb=="ready()") {
         s_ready=1;
         qDebug()<<"Ready to go!";
@@ -234,20 +249,39 @@ void HRdioInterface::jsCallback(QString cb) {
     }
     if(cb.startsWith("rdio.playingTrackChanged(")) {
         cb.remove("rdio.playingTrackChanged(");
-        cb.chop(3);
-        QJson::Parser parser;
-        bool ok;
-        QMap<QString, QVariant> result = parser.parse(cb.toUtf8(),&ok).toMap();
-        if(!ok) {
+        if(cb.size()<3) {
             qDebug()<<"Problem parsing rdio.playingTrackChanged(...)";
             return;
         }
-        s_currentInfo.duration=result["duration"].toInt();
-        s_currentInfo.clean=(result["is_clean"].toString()=="true");
-        s_currentInfo.arist=result["artist"].toString();
-        s_currentInfo.album=result["album"].toString();
-        s_currentInfo.expl=(result["is_explicit"].toString()=="true");
-        s_currentInfo.name=result["name"].toString();
+        cb.chop(3);
+        QStringList v=cb.split(',');
+        QMap<QString,QVariant> result;
+        for(int i=0;i<v.size();i++) {
+            QStringList a=v[i].split(':');
+            if(a.size()<2) continue;
+            a[0].remove(0,1);
+            a[0].chop(1);
+            if(a[1].endsWith("\"")) {
+                a[1].chop(1);
+                a[1].remove(0,1);
+                qDebug()<<"ADDING STRING:"<<a[0]<<"FOR"<<a[1];
+                result.insert(a[0],a[1]);
+            } else if(a[1].endsWith("true")) {
+                result.insert(a[0],"true");
+            } else if(a[1].endsWith("false")) {
+                result.insert(a[0],"false");
+            } else if(a[1].contains('.')){
+                result.insert(a[0],a[1].toDouble());
+            } else {
+                result.insert(a[0],a[1].toInt());
+            }
+        }
+        if(result.contains("duration")) s_currentInfo.duration=result["duration"].toInt();
+        if(result.contains("is_clean")) s_currentInfo.clean=(result["is_clean"].toString()=="true");
+        if(result.contains("artist")) s_currentInfo.arist=result["artist"].toString();
+        if(result.contains("album")) s_currentInfo.album=result["album"].toString();
+        if(result.contains("is_explicit")) s_currentInfo.expl=(result["is_explicit"].toString()=="true");
+        if(result.contains("name")) s_currentInfo.name=result["name"].toString();
         s_currentInfo.valid=true;
         emit playingTrackChanged(HTrack::get(s_currentInfo.arist,s_currentInfo.name));
         HToolbar::singleton()->setPlaybackStatus("<A href=\"more\">"+s_currentInfo.name+" by "+s_currentInfo.arist);

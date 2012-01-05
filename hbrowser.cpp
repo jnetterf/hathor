@@ -10,12 +10,12 @@ HBrowser.cpp
 #include "hbrowser.h"
 #include <QtWebKit/QWebFrame>
 #include <QGridLayout>
-#include <QDebug>
 #include <QtWebKit/QWebElement>
 #include <QtOAuth>
 #include <QApplication>
 #include <QDebug>
 #include <QTimer>
+#include <QMessageBox>
 
 HBrowser::HBrowser(QWidget *parent)
     : QWidget(parent), s_webView(new QWebView(this))
@@ -51,6 +51,7 @@ QVariant HBrowser::doJS(const QString &js)
 
 void HBrowser::loadPage(QString page)
 {
+    page.replace("https","http");   //lawl
     s_webView->page()->mainFrame()->setUrl(QUrl(page));
 }
 
@@ -63,6 +64,7 @@ void HBrowser::loadFinishedLogic(bool s)
 
         if(ret.content.isEmpty())
         {
+            qDebug()<<"unknown error";
             s_webView->setHtml("<center><b>An unknown error occured in loading the webpage.</B></center>");
         }
         else
@@ -86,8 +88,8 @@ void HBrowser::loadFinishedLogic(bool s)
                 elements.push_back(elements[i].firstChild());
             }
         }
+        emit ready();
     }
-    emit ready();
 }
 
 void HBrowser::urlChangedLogic(QUrl)
@@ -111,7 +113,10 @@ void HBrowser::setInput(QString input, QString value)
             return;
         }
     }
-    qWarning()<<"Could not find an input named"<<input<<"and give it a value of"<<value;
+    qWarning()<<"Could not find an input named"<<input<<"and give it a value";
+    if(input=="id_email") {
+        QMessageBox::critical(0,"Rdio","An error occured while trying to access the Rdio website. Please try again later...");
+    }
 }
 
 void HBrowser::clickInput(QString input)

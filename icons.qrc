@@ -11,7 +11,4 @@
         <file>media-next.png</file>
         <file>styleSheet.txt</file>
     </qresource>
-    <qresource prefix="/js">
-        <file>rdio.html</file>
-    </qresource>
 </RCC>

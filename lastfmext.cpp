@@ -55,6 +55,7 @@ void lastfmext_sign( QMap<QString, QString>& params )
 
 QNetworkReply* lastfmext_post( QMap<QString, QString> params )
 {
+    qDebug()<<"Umm...";
     lastfmext_sign( params );
     QByteArray query;
     QMapIterator<QString, QString> i( params );
@@ -67,7 +68,10 @@ QNetworkReply* lastfmext_post( QMap<QString, QString> params )
     }
 
 //    ContentTypeHeader
+    qDebug()<<"Ready...";
     QNetworkRequest nr(lastfmext_url());
     nr.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
+
+    qDebug()<<"And...";
     return lastfm::nam()->post( nr, query );
 }

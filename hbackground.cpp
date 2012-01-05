@@ -185,20 +185,12 @@ HBackground::HBackground(QGraphicsScene *sc) {
             h1A=h1B;
         }
     }
-//    for(int i=0;i<8;i++) {
-//        for(int j=0;j<l_[i].size();j++) {
-//            qDebug()<<"FOR:"<<l_[i][j]->_name;
-//            for(int k=0;k<l_[i][j]->_neighbours_[0]._aa.size();k++) {
-//                qDebug()<<l_[i][j]->_neighbours_[0]._aa[k]->_name;
-//            }
-//            qDebug()<<"######################################";
-//        }
-//    }
     _sc->setBackgroundBrush(QBrush(QColor("black")));
     ArtistAvatar::_ready=1;
 }
 
 void HBackground::onShowContext() {
+
     ArtistAvatar* a=dynamic_cast<ArtistAvatar*>(sender());
     Q_ASSERT(a);
     emit showContext(a->s_rep);

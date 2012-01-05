@@ -9,7 +9,6 @@ eloginaction.cpp
 
 #include "hauthaction.h"
 #include <QSettings>
-#include <QDebug>
 
 HAuthAction::HAuthAction(HBrowser &browser, QString username, QString password) : HAction(browser), s_username(username), s_password(password)
 {
@@ -29,16 +28,14 @@ void HAuthAction::continue1()
     s_browser.setInput("id_email",s_username);
     s_browser.setInput("id_password",s_password);
     s_browser.doJS("document.getElementsByClassName(\"default_button\")[0].click()");
-//    s_browser.loadPage("https://www.ontariots.ca/?q=user/login");
     connect(&s_browser,SIGNAL(ready()),this,SLOT(continue2()));
 }
 
 void HAuthAction::continue2()
 {
-//    disconnect(&s_browser,SIGNAL(ready()),this,SLOT(continue2()));
+    disconnect(&s_browser,SIGNAL(ready()),this,SLOT(continue2()));
     if(s_browser.htmlContains("<ul class=\"errorlist\">")) {
         emit error("Wrong username/password");
-//        qDebug()<<"ERR!";
         return;
     }
     s_browser.doJS("document.getElementsByClassName(\"green_button\")[0].click()");
@@ -48,14 +45,11 @@ void HAuthAction::continue2()
 void HAuthAction::continue3()
 {
     if(!s_browser.htmlContains("<strong>")) {
-//        qDebug()<<"Something went wrong. Try again, or contact drmrshdw@gmail.com!";
         return;
     }
     QString html = s_browser.html();
     html.remove(0,html.indexOf("<strong>")+8);
     html.truncate(html.indexOf("</strong>"));
-//    qDebug()<<html;
-//    oauth_verifier=
     QMultiMap<QByteArray,QByteArray> p1;
     p1.insert("oauth_verifier",html.toUtf8());
     QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/oauth/access_token",p1,s_token,s_tokenSecret);

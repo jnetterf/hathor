@@ -43,6 +43,7 @@ bool ArtistAvatarList::iterateHide(int it) {
 HLoginWidget* HLoginWidget::singleton=0;
 
 HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui(new Ui::HLoginWidget) {
+    qDebug()<<"REady...";
     if(qApp->desktop()->width()<1224) {
         setWindowState(Qt::WindowFullScreen);
     }
@@ -92,14 +93,16 @@ HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui
     sc->setSceneRect(-10,-100,780,300);
     ui->graphicsView->setScene(sc);
 
-
     if(HRdioInterface::restore()) {
         QSettings auth("hathorMP","auth");
 
+        qDebug()<<"Steady...";
         lastfm::ws::Username = auth.value("lfm.username").toString();
         lastfm::ws::SessionKey = auth.value("lfm.key").toString();
 
+        qDebug()<<"Fail.";
         rdio2(325);
+        qDebug()<<"?";
         return;
     }
 
@@ -497,7 +500,9 @@ void HLoginWidget::rdio2(int ax) {
     pa->setEndValue(ui->toolbar->sizeHint().height());
     pa->setDuration(200);
     pa->start(QAbstractAnimation::DeleteWhenStopped);
+    qDebug()<<"AND...";
     background = new HBackground(sc);
+    qDebug()<<"isolate...";
     connect(background,SIGNAL(showContext(HArtist&)),this,SLOT(onShowContext(HArtist&)));
     QSettings settings("hathorMP","super secret login information");
     s_superSecret.insert(a->text(),b->text());
@@ -527,15 +532,11 @@ void HLoginWidget::setContext(QWidget *ac) {
         }
         s_curContext->hide();
     }
-
     ui->gridLayout->addWidget(ac);
     s_stack.push_back(ac);
     ac->adjustSize();
     ui->toolbar->setBackEnabled(1);
     s_curContext=ac;
-    ac->hide();
-
-    ac->show();
     kwe->start(300);
 }
 
