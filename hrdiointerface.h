@@ -73,7 +73,7 @@ public:
     bool ok();
     bool ready() { return s_ready; }
 
-    QString search(QString search,QString types);   // gets best token
+    QString search(QString search,QString types, QString albumF, QString artistF);   // gets best token
 
     QString trackName() { return s_currentInfo.name; }
     QString artistName() { return s_currentInfo.arist; }

@@ -13,6 +13,24 @@
 #include "hartist.h"
 #include "htoolbar.h"
 
+QString noAccents(QString r) {
+    r.replace('à','a');
+    r.replace('â','a');
+    r.replace('ä','a');
+    r.replace('è','e');
+    r.replace('é','e');
+    r.replace('ê','e');
+    r.replace('ë','e');
+    r.replace('î','i');
+    r.replace('ï','i');
+    r.replace('ô','o');
+    r.replace('ù','u');
+    r.replace('û','u');
+    r.replace('ü','u');
+    r.replace('ÿ','y');
+    return r;
+}
+
 HRdioInterface* HRdioInterface::_singleton=0;
 
 HRdioInterface* HRdioInterface::login(QString username, QString password) {
@@ -149,18 +167,18 @@ void HRdioInterface::setShuffle(bool a) {
 }
 
 void HRdioInterface::queue(HArtist& artist) {
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(artist.getName(),"Artists")+"')");
+    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(artist.getName(),"Artists","",artist.getName())+"')");
     setupPlayback();
 }
 
 void HRdioInterface::queue(HAlbum& album) {
-    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums");
+    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
     s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+aCode+"')");
     setupPlayback();
 }
 
 void HRdioInterface::queue(HTrack& track) {
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks")+"')");
+    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName())+"')");
     setupPlayback();
 
     if(s_state==Stopped) {
@@ -172,16 +190,16 @@ void HRdioInterface::queue(HTrack& track) {
 }
 
 void HRdioInterface::play(HArtist& artist) {
-    s_browser.doJS("$('#api').rdio().play('"+search(artist.getName(),"Artists")+"')");
+    s_browser.doJS("$('#api').rdio().play('"+search(artist.getName(),"Artists","",artist.getName())+"')");
 }
 
 void HRdioInterface::play(HAlbum& album) {
-    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums");
+    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
     s_browser.doJS("$('#api').rdio().play('"+aCode+"')");
 }
 
 void HRdioInterface::play(HTrack& track) {
-    s_browser.doJS("$('#api').rdio().play('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks")+"')");
+    s_browser.doJS("$('#api').rdio().play('"+search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName())+"')");
 
     if(s_state==Stopped) {
         QEventLoop loop;
@@ -276,19 +294,23 @@ void HRdioInterface::jsCallback(QString cb) {
 }
 
 void HRdioInterface::keshaTest() {
-    QString f="$('#api').rdio().embed.rdio_queue('"+search("Ke$ha","Artists")+"')";
+    QString f="$('#api').rdio().embed.rdio_queue('"+search("Ke$ha","Artists","","Ke$ha")+"')";
     qDebug()<<"About to run f:"<<f;
     s_browser.doJS(f);
     setupPlayback();
 }
 
-QString HRdioInterface::search(QString search,QString types) {  //no auth!
+QString HRdioInterface::search(QString search,QString types,QString albumF,QString artistF) {  //no auth!
+    search=noAccents(search);
+    albumF=noAccents(albumF);
+    artistF=noAccents(artistF);
+
     QMultiMap<QByteArray,QByteArray> map1;
     map1.insert("method", "search");
     map1.insert("query", QUrl::toPercentEncoding(search));
     map1.insert("types", QUrl::toPercentEncoding(types));
     map1.insert("format", QUrl::toPercentEncoding("xml"));
-    QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/1/",map1);
+    QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/1/",map1,s_oauthToken,s_oauthSecret);
     if(p.values().size()<1) {
         qDebug()<<"ERR! Invalid response from rdio api!";
         return "";
@@ -308,18 +330,35 @@ QString HRdioInterface::search(QString search,QString types) {  //no auth!
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
+                        bool ret=1;
+                        QString toRet="";
                         for (QDomNode j = k.firstChild(); !j.isNull(); j = j.nextSibling()) {
                             if(k.attributes().namedItem("name").nodeValue()=="key"&&(ok||checked>=2)) {
                                 QString strx=j.toText().data();
                                 if(strx.size()&&strx[0]=='r') strx='t'+strx;
-
-                                return strx;
+                                toRet=strx;
                             }
                             if(k.attributes().namedItem("name").nodeValue()=="canStream") {
-                                qDebug()<<"canStream:"<<j.toText().data();
                                 ok=(j.toText().data()=="true");
                                 ++checked;
                             }
+                            if(!albumF.isEmpty()&&k.attributes().namedItem("name").nodeValue()=="album") {
+                                if(!noAccents(j.toText().data()).startsWith(albumF)&&!albumF.startsWith(noAccents(j.toText().data()))) {
+                                    qDebug()<<"Fail on album name";
+                                    ret=0;
+                                    break;
+                                }
+                            }
+                            if(!artistF.isEmpty()&&k.attributes().namedItem("name").nodeValue()=="artist") {
+                                if(noAccents(j.toText().data())!=artistF) {
+                                    qDebug()<<"Fail on artist name"<<artistF<<"VS"<<noAccents(j.toText().data())<<"FOR SEARCH"<<search;
+                                    ret=0;
+                                    break;
+                                }
+                            }
+                        }
+                        if(ret&&toRet.size()) {
+                            return toRet;
                         }
 
                     }

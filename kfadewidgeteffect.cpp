@@ -118,7 +118,6 @@ void KFadeWidgetEffect::start(int duration)
 {
     Q_D(KFadeWidgetEffect);
     if (d->disabled) {
-        qDebug()<<"DIABLED";
         deleteLater();
         return;
     }

@@ -100,9 +100,9 @@ HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui
         lastfm::ws::SessionKey = auth.value("lfm.key").toString();
 
         rdio2(325);
-        qDebug()<<"RESTORE!";
         return;
     }
+
 
     QTimer::singleShot(200,a,SLOT(setFocus()));
 
@@ -484,7 +484,6 @@ void HLoginWidget::rdio1() {
 }
 
 void HLoginWidget::rdio2(int ax) {
-    qDebug()<<"HWG";
     show();
     QRectF arect = sc->sceneRect();
     arect.translate(ax,800);
@@ -579,6 +578,5 @@ void HLoginWidget::showNowPlaying() {
 }
 
 void HLoginWidget::openLink(QString s) {
-    qDebug()<<"??"<<s;
     QDesktopServices::openUrl(QUrl(s));
 }

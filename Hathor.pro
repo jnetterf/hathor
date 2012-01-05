@@ -62,7 +62,7 @@ SOURCES += \
     hsearchcontext.cpp
 
 !win32:LIBS += -loauth -llastfm -lqjson
-win32:LIBS += -lqoauthd1 -llastfm -lqjson0
+win32:LIBS += -llastfm -lqjson0
 
 CONFIG += oauth
 

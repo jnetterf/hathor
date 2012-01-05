@@ -97,7 +97,6 @@ void HSearchContext::getMoreAlbums(QString s) {
     }
 
     if(reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"?";
         getMoreAlbums(s);
         return;
     }
@@ -152,7 +151,6 @@ void HSearchContext::getMoreArtists(QString s) {
     }
 
     if(reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"?";
         getMoreAlbums(s);
         return;
     }
@@ -211,7 +209,6 @@ void HSearchContext::getMoreTags(QString s) {
     }
 
     if(reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"?";
         getMoreTags(s);
         return;
     }
@@ -263,7 +260,6 @@ void HSearchContext::getMoreTracks(QString s) {
     }
 
     if(reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"?";
         getMoreAlbums(s);
         return;
     }

@@ -52,7 +52,6 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
 }
 
 HBackground::HBackground(QGraphicsScene *sc) {
-    qDebug()<<"_sc A";
     _sc=sc;
 
     for(int i=_sc->items().size()-1;i>=0;i--)_sc->removeItem(_sc->items()[i]);
