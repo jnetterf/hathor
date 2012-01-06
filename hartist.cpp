@@ -577,3 +577,55 @@ void HArtist::ShoutData::getData(QString artist) {
         qWarning() << e.what();
     }
 }
+
+void HArtist::ExtraPictureData::getData(QString artist) {
+    if(got) {
+        return;
+    }
+    got=1;
+
+    // no cache?
+
+    QMap<QString, QString> params;
+    params["method"] = "artist.getImages";
+    params["artist"] = artist;
+    QNetworkReply* reply = lastfmext_post( params );
+
+    QEventLoop loop;
+    QTimer::singleShot(2850,&loop,SLOT(quit()));
+    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+    loop.exec();
+
+    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        got=0;
+        QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
+        getData(artist);
+        return;
+    }
+
+    try {
+        QString body,author,date;
+        QDomDocument doc;
+        doc.setContent( reply->readAll() );
+
+        QDomElement element = doc.documentElement();
+
+        for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
+            for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
+                for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
+                    for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
+                        if ( l.nodeName() == "body" ) body = k.toText().data();
+                        else if ( l.nodeName() == "author" ) author = k.toText().data();
+                        else if ( l.nodeName() == "date") {
+                            date = k.toText().data();
+                            shouts.push_back(new HShout(body,HUser::get(author),date));
+                        }
+                    }
+                }
+            }
+        }
+
+    } catch (std::runtime_error& e) {
+        qWarning() << e.what();
+    }
+}
