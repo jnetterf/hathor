@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>962</width>
-    <height>725</height>
+    <width>960</width>
+    <height>723</height>
    </rect>
   </property>
   <property name="palette">
@@ -451,8 +451,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>935</width>
-        <height>713</height>
+        <width>933</width>
+        <height>711</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
@@ -1837,7 +1837,7 @@ p, li { white-space: pre-wrap; }
                        <string>Imogen Heap (born December 9, 1977) is a British singer-songwriter / electronica artist from Romford, Essex, United Kingdom. She grew up playing music from an early age, and by her eleventh birthday she was writing her own songs. From the age of 15, she studied at the BRIT School Of Performing Arts &amp; Technology in Croydon, South London, recording three tracks for the school’s annual CD between 1994 and 1995, “Aliens” being the title track of the latter.</string>
                       </property>
                       <property name="alignment">
-                       <set>Qt::AlignJustify|Qt::AlignTop</set>
+                       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                       </property>
                       <property name="wordWrap">
                        <bool>true</bool>

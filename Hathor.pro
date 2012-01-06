@@ -28,7 +28,9 @@ HEADERS += \
     hplayercontext.h \
     kfadewidgeteffect_p.h \
     kfadewidgeteffect.h \
-    hsearchcontext.h
+    hsearchcontext.h \
+    hobject.h \
+    hslideshow.h
 
 SOURCES += \
     hauthaction.cpp \
@@ -59,7 +61,9 @@ SOURCES += \
     hrdiointerface.cpp \
     hplayercontext.cpp \
     kfadewidgeteffect.cpp \
-    hsearchcontext.cpp
+    hsearchcontext.cpp \
+    hobject.cpp \
+    hslideshow.cpp
 
 !win32:LIBS += -loauth -llastfm -lqjson
 win32:LIBS += -llastfm -lqjson0
@@ -85,7 +89,3 @@ FORMS += \
 
 RESOURCES += \
     icons.qrc
-
-OTHER_FILES += \
-    rdio.html \
-    styleSheet.txt

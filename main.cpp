@@ -6,9 +6,11 @@
 #include <QDebug>
 #include <QLocale>
 #include <QStyle>
+#include <QIcon>
 
 int main(int argc, char** argv) {
     QApplication app(argc,argv);
+    app.setWindowIcon(QIcon(":/icons/hathor-logo.png"));
 
     app.setStyle("plastique");
     QFile stylefile(":/icons/styleSheet.txt");

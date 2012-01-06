@@ -1,10 +1,12 @@
 #ifndef HTAG_H
 #define HTAG_H
 
+#include "hobject.h"
+
 #include <QStringList>
 #include <QPixmap>
 
-class HTag
+class HTag : public HObject
 {
     QString s_tag;
 public:

@@ -4,7 +4,9 @@
 #include <QString>
 #include "hbrowser.h"
 #include "hauthaction.h"
+#include "hobject.h"
 #include <QObject>
+#include <QTime>
 
 class HArtist;
 class HAlbum;
@@ -24,16 +26,18 @@ public slots: // Playback and queue:
     void queue(HAlbum& album);
     void queue(HTrack& track);
 
-    void play(HArtist& artist);
-    void play(HAlbum& album);
-    void play(HTrack& track);
+    void play(HArtist& artist, bool clear=1);
+    void play(HAlbum& album, bool clear=1);
+    void play(HTrack& track,bool clear=1);
 
     void setVol(double);    //0<=vol<=1
     void setMute(bool);
     void goToPosInQueue(int);
     void clearQueue();
+    void requeue();
 
 private:
+    QList<HObject*> s_queue;
     struct CurrentTrackInfo {
         int duration;
         QString arist;
@@ -57,6 +61,7 @@ private:
 
 private:
     Q_OBJECT
+    bool s_shuffle;
     QString s_username, s_password;
     QByteArray s_rdioToken,s_rdioSecret, s_oauthToken,s_oauthSecret;
     QString s_playbackKey;
@@ -64,6 +69,7 @@ private:
     HBrowser s_browser;
     HAuthAction* s_auth;
 
+    QTime s_lastTime_requeue;
     bool s_ready;
     static HRdioInterface* _singleton;
 

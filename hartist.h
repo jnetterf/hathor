@@ -1,6 +1,7 @@
 #ifndef HARTIST_H
 #define HARTIST_H
 
+#include "hobject.h"
 #include <QStringList>
 #include <QPixmap>
 #include <QVariant>
@@ -12,7 +13,7 @@
 
 struct HTag;
 
-class HArtist : public QObject
+class HArtist : public HObject
 {
     Q_OBJECT
 public:

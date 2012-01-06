@@ -1,6 +1,7 @@
 #ifndef HTRACK_H
 #define HTRACK_H
 
+#include "hobject.h"
 #include <QStringList>
 #include <QPixmap>
 #include <QVariant>
@@ -10,7 +11,7 @@ class HAlbum;
 class HTag;
 class HShout;
 
-class HTrack
+class HTrack : public HObject
 {
     QString s_artist;
     QString s_track;

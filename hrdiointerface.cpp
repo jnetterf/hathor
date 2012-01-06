@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QMutexLocker>
 #include <QMutex>
+#include <QTime>
 #include <stdexcept>
 #include <qjson/parser.h>
 
@@ -14,6 +15,7 @@
 #include "halbum.h"
 #include "hartist.h"
 #include "htoolbar.h"
+#include "hobject.h"
 
 QMutex rdioInterface;
 
@@ -70,7 +72,7 @@ HRdioInterface* HRdioInterface::restore() {
 }
 
 HRdioInterface::HRdioInterface(QString username, QString password) :
-    s_username(username), s_password(password), s_browser(), s_auth(new HAuthAction(s_browser,username,password)), s_ready(0)
+    s_shuffle(0), s_state(Stopped), s_username(username), s_password(password), s_browser(), s_auth(new HAuthAction(s_browser,username,password)), s_lastTime_requeue(), s_ready(0)
 {
     connect(s_auth,SIGNAL(gotOauth(QByteArray,QByteArray,QByteArray,QByteArray)),this,SLOT(oauth(QByteArray,QByteArray,QByteArray,QByteArray)));
 
@@ -81,7 +83,8 @@ HRdioInterface::HRdioInterface(QString username, QString password) :
 }
 
 HRdioInterface::HRdioInterface(QString rdioToken, QString rdioSecret, QString oauthToken, QString oauthSecret) :
-    s_rdioToken(rdioToken.toUtf8()), s_rdioSecret(rdioSecret.toUtf8()), s_oauthToken(oauthToken.toUtf8()), s_oauthSecret(oauthSecret.toUtf8()), s_browser(), s_auth(0), s_ready(0)
+    s_shuffle(0), s_state(Stopped), s_rdioToken(rdioToken.toUtf8()), s_rdioSecret(rdioSecret.toUtf8()), s_oauthToken(oauthToken.toUtf8()), s_oauthSecret(oauthSecret.toUtf8()),
+    s_browser(), s_auth(0), s_lastTime_requeue(), s_ready(0)
 {
     oauth(s_rdioToken,s_rdioSecret,s_oauthToken,s_oauthSecret);
 }
@@ -143,6 +146,9 @@ void HRdioInterface::tryPlay() {
 }
 
 void HRdioInterface::play(bool a) {
+    if(s_state==Stopped) {
+        requeue();
+    }
     if(a) tryPlay();
     else pause();
 }
@@ -172,24 +178,36 @@ void HRdioInterface::setShuffle(bool a) {
 }
 
 void HRdioInterface::queue(HArtist& artist) {
-    QString tokenR=search(artist.getName(),"Artists","",artist.getName());
-    if(!tokenR.size()) return;
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
-    setupPlayback();
+    s_queue.push_back(&artist);
+    if(s_state==Stopped) {
+        requeue();
+    }
+//    QString tokenR=search(artist.getName(),"Artists","",artist.getName());
+//    if(!tokenR.size()) return;
+//    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
+//    setupPlayback();
 }
 
 void HRdioInterface::queue(HAlbum& album) {
-    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
-    if(!aCode.size()) return;
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+aCode+"')");
-    setupPlayback();
+    s_queue.push_back(&album);
+    if(s_state==Stopped) {
+        requeue();
+    }
+//    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
+//    if(!aCode.size()) return;
+//    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+aCode+"')");
+//    setupPlayback();
 }
 
 void HRdioInterface::queue(HTrack& track) {
-    QString tokenR=search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName());
-    if(!tokenR.size()) return;
-    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
-    setupPlayback();
+    s_queue.push_back(&track);
+    if(s_state==Stopped) {
+        requeue();
+    }
+//    QString tokenR=search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName());
+//    if(!tokenR.size()) return;
+//    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+tokenR+"')");
+//    setupPlayback();
 
 //    if(s_state==Stopped) {
 //        QEventLoop loop;
@@ -199,19 +217,22 @@ void HRdioInterface::queue(HTrack& track) {
 //    }
 }
 
-void HRdioInterface::play(HArtist& artist) {
+void HRdioInterface::play(HArtist& artist,bool clear) {
+    if(clear) s_queue.clear();
     QString tokenR=search(artist.getName(),"Artists","",artist.getName());
     if(!tokenR.size()) return;
     s_browser.doJS("$('#api').rdio().play('"+tokenR+"')");
 }
 
-void HRdioInterface::play(HAlbum& album) {
+void HRdioInterface::play(HAlbum& album,bool clear) {
+    if(clear) s_queue.clear();
     QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
     if(!aCode.size()) return;
     s_browser.doJS("$('#api').rdio().play('"+aCode+"')");
 }
 
-void HRdioInterface::play(HTrack& track) {
+void HRdioInterface::play(HTrack& track,bool clear) {
+    if(clear) s_queue.clear();
     QString tokenR=search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName());
     if(!tokenR.size()) return;
     s_browser.doJS("$('#api').rdio().play('"+tokenR+"')");
@@ -237,6 +258,29 @@ void HRdioInterface::goToPosInQueue(int t) {
 
 void HRdioInterface::clearQueue() {
     s_browser.doJS("$('#api').rdio().clearQueue()");
+}
+
+void HRdioInterface::requeue() {
+    if(s_state!=Stopped) return;
+    if(s_lastTime_requeue.msecsTo(QTime::currentTime())<5678) {
+        QTimer::singleShot(1234,this,SLOT(requeue()));
+        return;
+    }
+    s_lastTime_requeue=QTime::currentTime();
+    if(s_queue.size()) {
+        if(dynamic_cast<HTrack*>(s_queue.first())) {
+            play(*dynamic_cast<HTrack*>(s_queue.takeFirst()),0);
+            return;
+        }
+        if(dynamic_cast<HAlbum*>(s_queue.first())) {
+            play(*dynamic_cast<HAlbum*>(s_queue.takeFirst()),0);
+            return;
+        }
+        if(dynamic_cast<HArtist*>(s_queue.first())) {
+            play(*dynamic_cast<HArtist*>(s_queue.takeFirst()),0);
+            return;
+        }
+    }
 }
 
 void HRdioInterface::jsCallback(QString cb) {
@@ -298,6 +342,7 @@ void HRdioInterface::jsCallback(QString cb) {
             HToolbar::singleton()->setPlayEnabled(true);
             break;
         case Stopped:
+            requeue();
             HToolbar::singleton()->setPlaybackStatus("Stopped");
             HToolbar::singleton()->setPlayChecked(false);
             HToolbar::singleton()->setPlayEnabled(false);

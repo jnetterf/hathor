@@ -1,6 +1,7 @@
 #ifndef HALBUM_H
 #define HALBUM_H
 
+#include "hobject.h"
 #include <QStringList>
 #include <QMap>
 #include <QPixmap>
@@ -10,7 +11,7 @@
 
 class HArtist;
 
-class HAlbum
+class HAlbum : public HObject
 {
     QString s_artist, s_album;
     HAlbum(QString artist, QString album);

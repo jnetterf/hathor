@@ -1,13 +1,14 @@
 #ifndef HUSER_H
 #define HUSER_H
 
+#include "huser.h"
 #include <QStringList>
 #include <QPixmap>
 #include "htrack.h"
 
 class HArtist;
 
-class HUser
+class HUser : public HObject
 {
     QString s_username;
 public:
