@@ -108,6 +108,15 @@ private:
         void getData(QString artist);
     } s_shoutData;
 
+    struct ExtraPictureData {
+        QList<QPixmap> pics;
+        QStringList pic_urls;
+        bool got_urls;
+        ShoutData() : got_urls(0) {}
+        void getData(QString artist);
+        void fetchAnother();
+    } s_shoutData;
+
 signals:
     void gotInfoData();
 
