@@ -1,6 +1,7 @@
 #include "hloginwidget.h"
 #include "ui_hloginwidget.h"
 #include <QTimer>
+#include "hslideshow.h"
 #include <QDesktopWidget>
 #include <QCompleter>
 #include "hartistcontext.h"
@@ -97,6 +98,9 @@ HLoginWidget::HLoginWidget(QWidget *parent):QWidget(parent), s_curContext(0), ui
 
         lastfm::ws::Username = auth.value("lfm.username").toString();
         lastfm::ws::SessionKey = auth.value("lfm.key").toString();
+
+        HSlideshow* ss=new HSlideshow(HTrack::get("t.a.t.u","30 minutes"));
+        ss->show();
 
         rdio2(325);
         return;

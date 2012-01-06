@@ -42,6 +42,9 @@ public:
     QList<HArtist*> getSimilar();
     QList<HShout*> getShouts();
     QList<double> getSimilarScores();
+    QPixmap getExtraPic(int which); //which<=getExtraPicCachedCount()
+    int getExtraPicCount();
+    int getExtraPicCachedCount();
 
 private:
     static QMap<QString, HArtist*> _map;
@@ -112,10 +115,10 @@ private:
         QList<QPixmap> pics;
         QStringList pic_urls;
         bool got_urls;
-        ShoutData() : got_urls(0) {}
+        ExtraPictureData() : got_urls(0) {}
         void getData(QString artist);
         void fetchAnother();
-    } s_shoutData;
+    } s_extraPictureData;
 
 signals:
     void gotInfoData();

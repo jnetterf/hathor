@@ -169,6 +169,22 @@ QList<double> HArtist::getSimilarScores() {
     return getSimilarScores();
 }
 
+
+int HArtist::getExtraPicCount() {
+    if(s_extraPictureData.got_urls) {
+        return s_extraPictureData.pic_urls.size();
+    }
+    s_extraPictureData.getData(s_name);
+    return getExtraPicCount();
+}
+
+int HArtist::getExtraPicCachedCount() {
+    if(s_extraPictureData.got_urls) {
+        return s_extraPictureData.pics.size();
+    }
+    return 0;   //by definition
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 static QPixmap download(QUrl url, bool tryAgain=1) {
@@ -200,6 +216,21 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
     apix.load(t);
     if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
     return apix;
+}
+
+QPixmap HArtist::getExtraPic(int which) {
+    if(s_extraPictureData.got_urls) {
+        if(which==s_extraPictureData.pics.size()) {
+            s_extraPictureData.fetchAnother();
+        } else if(which>s_extraPictureData.pics.size()) {
+            qDebug()<<which<<s_extraPictureData.pics.size()<<":(";
+            QPixmap fail=download(QUrl("http://www.nioutaik.fr/images/galerie/fail.jpeg"));
+            return fail;    //that's what you get for not reading the api docs...
+        }
+        return s_extraPictureData.pics[which];
+    }
+    s_extraPictureData.getData(s_name);
+    return getExtraPic(which);
 }
 
 HArtist::HArtist(QString name) : s_name(name)
@@ -579,15 +610,20 @@ void HArtist::ShoutData::getData(QString artist) {
 }
 
 void HArtist::ExtraPictureData::getData(QString artist) {
-    if(got) {
+    if(got_urls) {
         return;
     }
-    got=1;
+    got_urls=1;
 
-    // no cache?
+    QSettings sett("hathorMP","artistExtraImages");
+    if(sett.value("cache for "+artist,0).toInt()==2) {
+        pic_urls=sett.value("pic_urls for "+artist).toStringList();
+        return;
+    }
 
     QMap<QString, QString> params;
     params["method"] = "artist.getImages";
+    params["username"] = lastfm::ws::Username;
     params["artist"] = artist;
     QNetworkReply* reply = lastfmext_post( params );
 
@@ -597,14 +633,14 @@ void HArtist::ExtraPictureData::getData(QString artist) {
     loop.exec();
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        got=0;
+        got_urls=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist);
         return;
     }
 
     try {
-        QString body,author,date;
+        qDebug()<<"--";
         QDomDocument doc;
         doc.setContent( reply->readAll() );
 
@@ -614,11 +650,10 @@ void HArtist::ExtraPictureData::getData(QString artist) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
-                        if ( l.nodeName() == "body" ) body = k.toText().data();
-                        else if ( l.nodeName() == "author" ) author = k.toText().data();
-                        else if ( l.nodeName() == "date") {
-                            date = k.toText().data();
-                            shouts.push_back(new HShout(body,HUser::get(author),date));
+                        for (QDomNode j = k.firstChild(); !j.isNull(); j = j.nextSibling()) {
+                            if ( k.nodeName() == "size" && k.attributes().namedItem("name").nodeValue()=="original" ) {
+                                pic_urls.push_back( j.toText().data() );
+                            }
                         }
                     }
                 }
@@ -627,5 +662,18 @@ void HArtist::ExtraPictureData::getData(QString artist) {
 
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
+    }
+    sett.setValue("cache for "+artist,2);
+    sett.setValue("pic_urls for "+artist,pic_urls);
+}
+
+void HArtist::ExtraPictureData::fetchAnother() {
+    if(pic_urls.size()>pics.size()) {
+        pics.push_back(download(pic_urls[pics.size()]));   //caches
+        if(pics.back().isNull()) pics.back()=download(pic_urls[pics.size()]);   //jic
+        if(!pics.back().height()) {
+            pics.back()=QPixmap(126,200);
+            pics.back().fill(Qt::red);
+        }
     }
 }

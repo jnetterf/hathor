@@ -1,6 +1,7 @@
 #include "hbrowser.h"
 #include "hauthaction.h"
 #include "hloginwidget.h"
+#include "hslideshow.h"
 
 #include <QApplication>
 #include <QDebug>
