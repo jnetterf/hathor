@@ -240,7 +240,6 @@ void HRdioInterface::clearQueue() {
 }
 
 void HRdioInterface::jsCallback(QString cb) {
-    qDebug()<<"Rdio callback:"<<cb;
     if(cb=="ready()") {
         s_ready=1;
         qDebug()<<"Ready to go!";
@@ -264,7 +263,6 @@ void HRdioInterface::jsCallback(QString cb) {
             if(a[1].endsWith("\"")) {
                 a[1].chop(1);
                 a[1].remove(0,1);
-                qDebug()<<"ADDING STRING:"<<a[0]<<"FOR"<<a[1];
                 result.insert(a[0],a[1]);
             } else if(a[1].endsWith("true")) {
                 result.insert(a[0],"true");
