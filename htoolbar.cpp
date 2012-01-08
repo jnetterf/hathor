@@ -2,6 +2,7 @@
 #include "hrdiointerface.h"
 #include "hloginwidget.h"
 #include "ui_htoolbar.h"
+#include "hmainwindow.h"
 #include <QGraphicsColorizeEffect>
 #include <QPropertyAnimation>
 #include <QTimer>
@@ -13,14 +14,15 @@ HToolbar::HToolbar(QWidget *parent) :
     ui(new Ui::HToolbar)
 {
     ui->setupUi(this);
-    connect(ui->toolButton_backButton,SIGNAL(pressed()),this,SIGNAL(backPressed()));
     setPlaybackStatus("Stopped");
     _singleton=this;
 
     connect(ui->toolButton_play,SIGNAL(clicked(bool)),this,SLOT(tryPlay(bool)));
     connect(ui->toolButton_next,SIGNAL(clicked()),this,SLOT(tryNext()));
-    connect(ui->lineEdit_search,SIGNAL(textChanged(QString)),HLoginWidget::singleton,SLOT(search(QString)));
-    connect(ui->label_status,SIGNAL(linkActivated(QString)),HLoginWidget::singleton,SLOT(showNowPlaying()));
+    connect(ui->lineEdit_search,SIGNAL(textChanged(QString)),HMainWindow::singleton(),SLOT(search(QString)));
+    connect(ui->label_status,SIGNAL(linkActivated(QString)),HMainWindow::singleton(),SLOT(showNowPlaying()));
+    connect(ui->toolButton_backButton,SIGNAL(pressed()),HMainWindow::singleton(),SLOT(back()));
+    connect(ui->toolButton_shuffle,SIGNAL(toggled(bool)),this,SIGNAL(shuffleToggled(bool)));
 }
 
 HToolbar::~HToolbar()
@@ -45,7 +47,7 @@ void HToolbar::setMessage(QString msg) {
 
 void HToolbar::setMessage2() {
 
-    setMessage(s_message);
+    setMessageSimple(s_message);
 
     QGraphicsColorizeEffect* goe=new QGraphicsColorizeEffect;
     goe->setColor(Qt::white);
@@ -66,6 +68,7 @@ void HToolbar::setMessageSimple(QString msg) {
 //    ui->line_3->hide();
     ui->lineEdit_search->hide();
     ui->toolButton_next->hide();
+    ui->toolButton_shuffle->hide();
     ui->label_status->show();
     ui->label_status->setText(msg);
 }
@@ -91,6 +94,7 @@ void HToolbar::clearMessage2() {
 //    ui->line_3->show();
     ui->lineEdit_search->show();
     ui->toolButton_next->show();
+    ui->toolButton_shuffle->show();
     ui->label_status->show();
     ui->label_status->setText(s_playback);
 

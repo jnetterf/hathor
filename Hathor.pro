@@ -30,7 +30,10 @@ HEADERS += \
     kfadewidgeteffect.h \
     hsearchcontext.h \
     hobject.h \
-    hslideshow.h
+    hslideshow.h \
+    hmainwindow.h \
+    hmaincontext.h \
+    hnotifier.h
 
 SOURCES += \
     hauthaction.cpp \
@@ -63,7 +66,9 @@ SOURCES += \
     kfadewidgeteffect.cpp \
     hsearchcontext.cpp \
     hobject.cpp \
-    hslideshow.cpp
+    hslideshow.cpp \
+    hmainwindow.cpp \
+    hmaincontext.cpp
 
 !win32:LIBS += -loauth -llastfm -lqjson
 win32:LIBS += -llastfm0

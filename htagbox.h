@@ -3,12 +3,13 @@
 
 #include <QWidget>
 #include "htag.h"
+#include "hgrowingwidget.h"
 
 namespace Ui {
 class HTagBox;
 }
 
-class HTagBox : public QWidget
+class HTagBox : public HGrowingWidget
 {
     Q_OBJECT
     HTag& s_rep;

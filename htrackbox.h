@@ -2,6 +2,7 @@
 #define HTRACKBOX_H
 
 #include "htrack.h"
+#include "hgrowingwidget.h"
 
 #include <QWidget>
 
@@ -9,7 +10,7 @@ namespace Ui {
 class HTrackBox;
 }
 
-class HTrackBox : public QWidget
+class HTrackBox : public HGrowingWidget
 {
     Q_OBJECT
     HTrack& s_ref;

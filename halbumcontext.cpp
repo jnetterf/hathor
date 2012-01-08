@@ -44,7 +44,7 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium));
+    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
 
     ui->label_albumPic->adjustSize();
     ui->frame_art->adjustSize();

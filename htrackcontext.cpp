@@ -47,7 +47,7 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium));
+    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
 
     ui->frame_header->adjustSize();
 
@@ -254,4 +254,12 @@ void HTrackContext::playMoreSimilarReplacing() {
     for(int i=0;i<10&&i<s_rep.getSimilar().size();i++) {
         HRdioInterface::singleton()->queue(*s_rep.getSimilar()[i]);
     }
+}
+
+void HTrackContext::setSlideshow(QWidget *w) {
+    ui->content->addWidget(w);
+    ui->content->setAlignment(w,Qt::AlignCenter);
+    ui->scrollArea_3->hide();
+    w->adjustSize();
+    ui->frame_header->adjustSize();
 }

@@ -14,10 +14,11 @@
 #include <QDomDocument>
 #include <lastfm/ws.h>
 #include "lastfmext.h"
+#include "hrdiointerface.h"
 
 QMap<QString, HTrack*> HTrack::_map;
 
-HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track)
+HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track), s_rdioKey_getting(0)
 {
 }
 
@@ -175,14 +176,30 @@ QList<double> HTrack::getSimilarScores() {
     return getSimilarScores();
 }
 
+QString HTrack::getRdioKey() {
+    if(s_rdioKey.size()) return s_rdioKey;
+    if(s_rdioKey_getting) {
+        QEventLoop loop; connect(s_rdioKey_getting,SIGNAL(notify()),&loop,SLOT(quit())); loop.exec();
+        return s_rdioKey;
+    }
+    QSettings sett("hathorMP","rdioKeys");
+    if(sett.value("key for "+getArtistName()+"__"+getTrackName()).isValid()) {
+        return s_rdioKey=sett.value("key for "+getArtistName()+"__"+getTrackName()).toString();
+    }
+    s_rdioKey_getting=new HRunOnceNotifier;
+    s_rdioKey=HRdioInterface::singleton()->search(getArtistName()+" "+getTrackName(),"Tracks","",getArtistName(),getTrackName());
+    if(!s_rdioKey.size()) s_rdioKey="_NO_RESULT_";
+    s_rdioKey_getting->emitNotify();
+    s_rdioKey_getting=0;
+    sett.setValue("key for "+getArtistName()+"__"+getTrackName(),s_rdioKey);
+    return s_rdioKey;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 void HTrack::InfoData::getData(QString artist,QString track) {
-    if(got) {
-        return;
-    }
-    got=1;
+    H_BEGIN_RUN_ONCE
 
     QSettings sett("hathorMP","trackInfo");
     QString dumbName=artist+"__"+track;
@@ -196,6 +213,7 @@ void HTrack::InfoData::getData(QString artist,QString track) {
         loved=sett.value("loved for "+dumbName).toBool();
         albumArtists=sett.value("albumArtists for "+dumbName).toStringList();
         albumAlbums=sett.value("albumAlbums for "+dumbName).toStringList();
+        H_END_RUN_ONCE
         return;
     }
 
@@ -212,6 +230,7 @@ void HTrack::InfoData::getData(QString artist,QString track) {
     loop.exec();
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
@@ -226,7 +245,7 @@ void HTrack::InfoData::getData(QString artist,QString track) {
     loved=0;
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -265,20 +284,18 @@ void HTrack::InfoData::getData(QString artist,QString track) {
     sett.setValue("loved for "+dumbName,loved);
     sett.setValue("albumArtists for "+dumbName,albumArtists);
     sett.setValue("albumAlbums for "+dumbName,albumAlbums);
+    H_END_RUN_ONCE
 }
 
 
 void HTrack::ExtraTagData::getData(QString artist,QString track) {
-    if(got) {
-        return;
-    }
-    got=1;
-
+    H_BEGIN_RUN_ONCE
     QString cacheName=artist+"__"+track;
 
     QSettings sett("hathorMP","extraTagData");
     if(sett.value("cache for "+cacheName,0).toInt()==2) {
         tags=sett.value("tags for "+cacheName).toStringList();
+        H_END_RUN_ONCE
         return;
     }
 
@@ -294,6 +311,7 @@ void HTrack::ExtraTagData::getData(QString artist,QString track) {
     loop.exec();
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
@@ -302,7 +320,7 @@ void HTrack::ExtraTagData::getData(QString artist,QString track) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -321,14 +339,12 @@ void HTrack::ExtraTagData::getData(QString artist,QString track) {
     }
     sett.setValue("cache for "+cacheName,2);
     sett.setValue("tags for "+cacheName,tags);
+    H_END_RUN_ONCE
 }
 
 
 void HTrack::ShoutData::getData(QString artist,QString track) {
-    if(got) {
-        return;
-    }
-    got=1;
+    H_BEGIN_RUN_ONCE
 
     // no cache?
 
@@ -344,6 +360,7 @@ void HTrack::ShoutData::getData(QString artist,QString track) {
     loop.exec();
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
@@ -353,7 +370,7 @@ void HTrack::ShoutData::getData(QString artist,QString track) {
     try {
         QString body,author,date;
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -375,13 +392,11 @@ void HTrack::ShoutData::getData(QString artist,QString track) {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    H_END_RUN_ONCE
 }
 
 void HTrack::SimilarData::getData(QString artist,QString track) {
-    if(got) {
-        return;
-    }
-    got=1;
+    H_BEGIN_RUN_ONCE
 
     QString dumbname=artist+"__"+track;
 
@@ -390,6 +405,7 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
         similar=sett.value("similar for "+dumbname).toStringList();
         artists=sett.value("artists for "+dumbname).toStringList();
         score=sett.value("score for "+dumbname).toList();
+        H_END_RUN_ONCE
         return;
     }
 
@@ -406,6 +422,7 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
     loop.exec();
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,track);
@@ -414,7 +431,7 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -439,4 +456,5 @@ void HTrack::SimilarData::getData(QString artist,QString track) {
     sett.setValue("similar for "+dumbname,similar);
     sett.setValue("score for "+dumbname,score);
     sett.setValue("artists for "+dumbname,artists);
+    H_END_RUN_ONCE
 }

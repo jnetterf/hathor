@@ -92,15 +92,18 @@ QList<HTrack*> HUser::getTopTracks() {
 
 
 static QPixmap download(QUrl url, bool tryAgain=1) {
-    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
+    if(!url.isValid()||url.isEmpty()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
     QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
     if(!QFile::exists(t)) {
         QDir r=QDir::root();
         r.mkpath(t);
     }
+
     QString x=url.toString();
-    if(x.contains("png")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".png";
-    else t+="/"+QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".jpg";
+    QString y=x;
+    y.remove(0,y.lastIndexOf('.'));
+    t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
+
     if(!QFile::exists(t)) {
         QHttp http;
         QEventLoop loop;
@@ -192,7 +195,7 @@ void HUser::InfoData::getData(QString username) {
     age=0;
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -272,7 +275,7 @@ void HUser::TopTrackData::getData(QString username) {
     QStringList names,artists;
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 

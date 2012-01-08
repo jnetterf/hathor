@@ -11,5 +11,6 @@
         <file>media-next.png</file>
         <file>styleSheet.txt</file>
         <file>hathor-logo.png</file>
+        <file>media-shuffle.png</file>
     </qresource>
 </RCC>

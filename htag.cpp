@@ -112,7 +112,7 @@ void HTag::InfoData::getData(QString tag) {
     content="";
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 

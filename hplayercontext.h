@@ -9,6 +9,7 @@ class HPlayerContext;
 
 class HTrack;
 class HTrackContext;
+class HSlideshow;
 
 class HPlayerContext : public QWidget
 {
@@ -16,6 +17,7 @@ class HPlayerContext : public QWidget
     static HPlayerContext* _singleton;
     explicit HPlayerContext(QWidget *parent = 0);
     HTrackContext* s_magic;
+    HSlideshow* s_slideshow;
 public:
     static HPlayerContext* singleton() { return _singleton=(_singleton?_singleton:new HPlayerContext); }
     ~HPlayerContext();

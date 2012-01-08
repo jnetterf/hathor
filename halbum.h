@@ -50,7 +50,8 @@ private:
     struct PictureData {
         bool got[4];
         QPixmap pics[4];
-        PictureData() { for(int i=0;i<4;i++) got[i]=0; }
+        HRunOnceNotifier* getting[4];
+        PictureData() { for(int i=0;i<4;i++) { got[i]=0; getting[i]=0; }}
         void getData(QString url,PictureSize size);
     } s_pictureData;
 
@@ -64,14 +65,16 @@ private:
         QString summary;
         QString content;
         bool got;
-        AlbumInfo() : got(0) {}
+        HRunOnceNotifier* getting;
+        AlbumInfo() : got(0), getting(0) {}
         void getData(QString artist,QString album);
     } s_albumInfo;
 
     struct ExtraTagData {
         QStringList tags;
         bool got;
-        ExtraTagData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ExtraTagData() : got(0), getting(0) {}
 
         void getData(QString artist,QString album);
     } s_extraTagData;
@@ -79,7 +82,8 @@ private:
     struct ShoutData {
         QList<HShout*> shouts;
         bool got;
-        ShoutData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ShoutData() : got(0), getting(0) {}
         void getData(QString artist, QString album);
     } s_shoutData;
 

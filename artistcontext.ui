@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>960</width>
-    <height>723</height>
+    <width>958</width>
+    <height>721</height>
    </rect>
   </property>
   <property name="palette">
@@ -451,8 +451,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>933</width>
-        <height>711</height>
+        <width>931</width>
+        <height>709</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
@@ -1130,7 +1130,7 @@
                </property>
                <layout class="QGridLayout" name="gridLayout_7">
                 <property name="leftMargin">
-                 <number>12</number>
+                 <number>18</number>
                 </property>
                 <property name="rightMargin">
                  <number>12</number>
@@ -1599,13 +1599,16 @@
                    </item>
                    <item row="1" column="3">
                     <widget class="QPushButton" name="pushButton">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="text">
                       <string>Post</string>
                      </property>
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QLabel" name="label_8">
+                    <widget class="QLabel" name="label_wordCount">
                      <property name="text">
                       <string>0/1000 characters used</string>
                      </property>

@@ -34,6 +34,9 @@ public slots:
     void addEvenMore();
     void addMost();
     void addMostReplacing();
+
+    void evalShout();
+    void sendShout();
     
 private:
     Ui::HArtistContext *ui;

@@ -2,7 +2,7 @@
 #include "ui_htagbox.h"
 
 HTagBox::HTagBox(HTag &rep, QWidget *parent) :
-    QWidget(parent),
+    HGrowingWidget(parent),
     s_rep(rep),
     ui(new Ui::HTagBox)
 {

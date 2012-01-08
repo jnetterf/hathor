@@ -2,6 +2,7 @@
 #define HTRACK_H
 
 #include "hobject.h"
+#include "hnotifier.h"
 #include <QStringList>
 #include <QPixmap>
 #include <QVariant>
@@ -13,6 +14,7 @@ class HShout;
 
 class HTrack : public HObject
 {
+    Q_OBJECT
     QString s_artist;
     QString s_track;
 public:
@@ -50,11 +52,14 @@ public:
     QList<HTrack*> getSimilar();
     QList<double> getSimilarScores();
 
+    QString getRdioKey();
+
 private:
     static QMap<QString, HTrack*> _map;
     HTrack(QString artist, QString track);  // use HTrack::get(name)
 
     struct InfoData {
+    public:
         QStringList tags;
         QString summary;
         QString content;
@@ -65,15 +70,18 @@ private:
         int userPlayCount;
         bool loved;
         bool got;
-        InfoData() : got(0) {}
+        HRunOnceNotifier* getting;
+        InfoData() : got(0),getting(0) {}
 
         void getData(QString artist,QString track);
-    } s_infoData;
+    };
+    InfoData s_infoData;
 
     struct ExtraTagData {
         QStringList tags;
         bool got;
-        ExtraTagData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ExtraTagData() : got(0),getting(0) {}
 
         void getData(QString artist,QString track);
     } s_extraTagData;
@@ -83,16 +91,21 @@ private:
         QStringList artists;
         QList<QVariant> score;  //double
         bool got;
-        SimilarData() : got(0) {}
+        HRunOnceNotifier* getting;
+        SimilarData() : got(0), getting(0) {}
         void getData(QString artist, QString track);
     } s_similarData;
 
     struct ShoutData {
         QList<HShout*> shouts;
         bool got;
-        ShoutData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ShoutData() : got(0), getting(0) {}
         void getData(QString artist, QString track);
     } s_shoutData;
+
+    QString s_rdioKey;
+    HRunOnceNotifier* s_rdioKey_getting;
 
 private:
     //Degenerate copy and assignment

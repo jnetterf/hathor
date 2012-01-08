@@ -26,6 +26,7 @@ public slots:
     void loadTags();
     void loadSimilar();
     void loadShouts();
+    void setSlideshow(QWidget*);
 
     void playTrack();
     void playReplacing();

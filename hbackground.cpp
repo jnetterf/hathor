@@ -7,8 +7,9 @@
 #include <QFile>
 #include <QTemporaryFile>
 #include <QEventLoop>
-#include "hloginwidget.h"
+#include "hmaincontext.h"
 #include <QTimer>
+#include <QFont>
 #include <QDir>
 #include <QDesktopServices>
 #include <QCryptographicHash>
@@ -27,9 +28,12 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
         QDir r=QDir::root();
         r.mkpath(t);
     }
+
     QString x=url.toString();
-    if(x.contains("png")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".png";
-    else t+="/"+QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".jpg";
+    QString y=x;
+    y.remove(0,y.lastIndexOf('.'));
+    t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
+
     if(!QFile::exists(t)) {
         QHttp http;
         QEventLoop loop;
@@ -69,30 +73,27 @@ HBackground::HBackground(QGraphicsScene *sc) {
     loop.exec();
 
     QList<lastfm::Artist> list=lastfm::Artist::list( reply );
+    qDebug()<<":("<<list.size();
     int w=0,x=500;
     QList<int> _nv;
     QList<int> _nX;
-
-    QRectF arect = sc->sceneRect();
-    arect.translate(0,-800);
-    qWarning()<<arect.height()<<arect.y();
-    sc->setSceneRect(arect);
 
     QList<ArtistAvatar*> x_;
     QList<ArtistAvatar*> l_[20];
     ArtistAvatar* first=NULL;
 
-    sc->views().back()->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    sc->views().back()->verticalScrollBar()->setMaximum(5000);
 
     QTime curtime=QTime::currentTime();
     int l=0;
     int t=200;
     QSettings sett("hathorMP","global");
+    QGraphicsTextItem* ti=sc->addText("Top Artists",QFont("Candara",30,75));
+    ti->setDefaultTextColor("grey");
+    ti->setPos(197,-305);
     QList<HTrack*> topTracks=HUser::get(lastfm::ws::Username).getTopTracks();
     for(int i=0;i<list.size();i++){
         if((i%10==0)&&!sett.value("precached",0).toBool()) {
-            //play top song, just to prove we're awesome!
+            //play some top songs
             if(i/10<topTracks.size()) {
                 if(i/10) HRdioInterface::singleton()->queue(*topTracks[i/10]);
                 else HRdioInterface::singleton()->play(*topTracks[i/10]);
@@ -149,23 +150,22 @@ HBackground::HBackground(QGraphicsScene *sc) {
         Q_ASSERT(COLUMN<20);
         l_[COLUMN].push_back(fp);
 
-        if(!sett.value("precached",0).toBool()) if(sc->views().back()->verticalScrollBar()->value()+250<_nv[COLUMN]) foreach(QGraphicsView*v,sc->views()) {
+        if(!sett.value("precached",0).toBool()) if(sc->views().back()->verticalScrollBar()->value()+300<_nv[COLUMN]) foreach(QGraphicsView*v,sc->views()) {
             QPropertyAnimation* anim=new QPropertyAnimation(v->verticalScrollBar(), "value");
-            anim->setStartValue(qMax(_nv[COLUMN]-pix.height()-250,v->verticalScrollBar()->value()));
-            anim->setEndValue(_nv[COLUMN]-250);
+            anim->setStartValue(qMax(_nv[COLUMN]-pix.height()-450,v->verticalScrollBar()->value()));
+            anim->setEndValue(_nv[COLUMN]-450);
             anim->setDuration(1000);
             anim->start(QAbstractAnimation::DeleteWhenStopped);
         }
 
         if(curtime.msecsTo(QTime::currentTime())<t/(x+1)) {
             QEventLoop loop;
-//                loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
             QTimer::singleShot(t/(x+1)-curtime.msecsTo(QTime::currentTime()),&loop,SLOT(quit()));
             loop.exec();
             t*=0.9;
         } else t*=1.1;
         curtime=QTime::currentTime();
-        connect(fp,SIGNAL(showContext()),this,SLOT(onShowContext()));
+        connect(fp,SIGNAL(showContext()),this,SLOT(showContext()));
     }
 
     sett.setValue("precached",1);
@@ -186,10 +186,11 @@ HBackground::HBackground(QGraphicsScene *sc) {
         }
     }
     _sc->setBackgroundBrush(QBrush(QColor("black")));
+
     ArtistAvatar::_ready=1;
 }
 
-void HBackground::onShowContext() {
+void HBackground::showContext() {
 
     ArtistAvatar* a=dynamic_cast<ArtistAvatar*>(sender());
     Q_ASSERT(a);

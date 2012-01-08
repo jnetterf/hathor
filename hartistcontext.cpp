@@ -48,7 +48,10 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium));
+    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+
+    connect(ui->textEdit,SIGNAL(textChanged()),this,SLOT(evalShout()));
+    connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(sendShout()));
 
     ui->frame_header->adjustSize();
     ui->label_artistPic->adjustSize();
@@ -319,4 +322,25 @@ void HArtistContext::addMostReplacing() {
             else HRdioInterface::singleton()->queue(*s_rep.getSimilar()[i]->getTracks()[j]);
         }
     }
+}
+
+void HArtistContext::evalShout() {
+    ui->pushButton->setEnabled(ui->textEdit->toPlainText().size()&&ui->textEdit->toPlainText().size()<1000);
+    ui->label_wordCount->setText(QString::number(ui->textEdit->toPlainText().size())+"/1000 characters used");
+}
+
+void HArtistContext::sendShout() {
+    QMap<QString, QString> params;
+    params["method"] = "artist.shout";
+    params["artist"] = s_rep.getName();
+    params["message"] = ui->textEdit->toPlainText();
+
+    QNetworkReply* reply = lastfmext_post( params );
+    QEventLoop loop;
+    QTimer::singleShot(2850,&loop,SLOT(quit()));
+    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+    loop.exec();
+
+    ui->textEdit->setText("");
+    ui->label_wordCount->setText("Sent!");
 }

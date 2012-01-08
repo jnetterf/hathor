@@ -107,7 +107,7 @@ void HSearchContext::getMoreAlbums(QString s) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -159,7 +159,7 @@ void HSearchContext::getMoreArtists(QString s) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -217,7 +217,7 @@ void HSearchContext::getMoreTags(QString s) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 
@@ -270,7 +270,7 @@ void HSearchContext::getMoreTracks(QString s) {
 
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
 

@@ -16,7 +16,7 @@ class HBackground : public QObject {
 public:
     HBackground(QGraphicsScene*sc);
 public slots:
-    void onShowContext();
+    void showContext();
 private:
     QGraphicsScene* _sc;
 signals:

@@ -14,6 +14,8 @@ class HTrack;
 
 class HRdioInterface : public QObject
 {
+    Q_OBJECT
+    friend class HTrack;
 public slots: // Playback and queue:
     void play(bool a = true);
     void pause();
@@ -34,7 +36,7 @@ public slots: // Playback and queue:
     void setMute(bool);
     void goToPosInQueue(int);
     void clearQueue();
-    void requeue();
+    void requeue(bool force=0);
 
 private:
     QList<HObject*> s_queue;
@@ -60,7 +62,6 @@ private:
     } s_state;
 
 private:
-    Q_OBJECT
     bool s_shuffle;
     QString s_username, s_password;
     QByteArray s_rdioToken,s_rdioSecret, s_oauthToken,s_oauthSecret;
@@ -82,7 +83,7 @@ public:
     bool ok();
     bool ready() { return s_ready; }
 
-    QString search(QString search,QString types, QString albumF, QString artistF);   // gets best token
+    QString search(QString search,QString types, QString albumF, QString artistF,QString trackF, bool noPar=0);   // gets best token
 
     QString trackName() { return s_currentInfo.name; }
     QString artistName() { return s_currentInfo.arist; }

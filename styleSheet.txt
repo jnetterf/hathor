@@ -40,11 +40,13 @@
      border-left-style: solid; /* just a single line */
      border-top-right-radius: 3px; /* same radius as the QComboBox */
      border-bottom-right-radius: 3px;
+     selection-color:black;
+     selection-background-color: lightgray;
  }
 
 QComboBox QAbstractItemView {
     border: 1px solid #141414;
-    selection-background-color: #5b5a5b;
+    selection-background-color: lightgray;
 }
 
  QSpinBox {
@@ -72,7 +74,7 @@ QLineEdit {
     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                      stop: 0 #3c3c3c, stop: 1 #262627);
     selection-background-color: #e8e8e8;
-    selection-color: #262627
+    selection-color: #000000;
 }
 
 QProgressBar {

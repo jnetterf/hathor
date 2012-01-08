@@ -1,6 +1,7 @@
 #include "hartistbox.h"
 #include "ui_hartistbox.h"
 #include "hloginwidget.h"
+#include "hmainwindow.h"
 
 HArtistBox::HArtistBox(HArtist &rep, QWidget *parent) :
     HGrowingWidget(parent),
@@ -10,7 +11,7 @@ HArtistBox::HArtistBox(HArtist &rep, QWidget *parent) :
     ui->setupUi(this);
     ui->label_artistName->setText("<A href=\"more\">"+rep.getName()+"</A>");
     connect(ui->label_artistName,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
-    connect(this,SIGNAL(contextRequested(HArtist&)),HLoginWidget::singleton,SLOT(onShowContext(HArtist&)));
+    connect(this,SIGNAL(contextRequested(HArtist&)),HMainWindow::singleton(),SLOT(showContext(HArtist&)));
     ui->label_pic->setPixmap(rep.getPic(HArtist::Large));
     QStringList tsl=s_rep.getTagNames();
     for(int i=4;i<tsl.size();i++) {

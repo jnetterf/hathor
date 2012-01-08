@@ -55,7 +55,8 @@ private:
     struct PictureData {
         QPixmap pics[4];
         bool got[4];
-        PictureData() {for(int i=0;i<4;i++) got[i]=0;}
+        HRunOnceNotifier* getting[4];
+        PictureData() {for(int i=0;i<4;i++) { got[i]=0; getting[i]=0; }}
 
         void getData(QString url,PictureSize size);
     } s_pictureData;
@@ -69,7 +70,8 @@ private:
         int playCount;
         int userPlayCount;
         bool got;
-        InfoData() : got(0) {}
+        HRunOnceNotifier* getting;
+        InfoData() : got(0),getting(0) {}
 
         void getData(QString artist);
     } s_infoData;
@@ -77,7 +79,8 @@ private:
     struct ExtraTagData {
         QStringList tags;
         bool got;
-        ExtraTagData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ExtraTagData() : got(0),getting(0) {}
 
         void getData(QString artist);
     } s_extraTagData;
@@ -85,14 +88,16 @@ private:
     struct AlbumData {
         QStringList albums;
         bool got;
-        AlbumData() : got(0) {}
+        HRunOnceNotifier* getting;
+        AlbumData() : got(0),getting(0) {}
         void getData(QString artist);
     } s_albumData;
 
     struct TrackData {
         QStringList tracks;
         bool got;
-        TrackData() : got(0) {}
+        HRunOnceNotifier* getting;
+        TrackData() : got(0),getting(0) {}
         void getData(QString artist);
     } s_trackData;
 
@@ -100,14 +105,16 @@ private:
         QStringList similar;
         QList<QVariant> score;  //double
         bool got;
-        SimilarData() : got(0) {}
+        HRunOnceNotifier* getting;
+        SimilarData() : got(0),getting(0) {}
         void getData(QString artist);
     } s_similarData;
 
     struct ShoutData {
         QList<HShout*> shouts;
         bool got;
-        ShoutData() : got(0) {}
+        HRunOnceNotifier* getting;
+        ShoutData() : got(0),getting(0) {}
         void getData(QString artist);
     } s_shoutData;
 
@@ -115,7 +122,8 @@ private:
         QList<QPixmap> pics;
         QStringList pic_urls;
         bool got_urls;
-        ExtraPictureData() : got_urls(0) {}
+        HRunOnceNotifier* getting;
+        ExtraPictureData() : got_urls(0),getting(0) {}
         void getData(QString artist);
         void fetchAnother();
     } s_extraPictureData;

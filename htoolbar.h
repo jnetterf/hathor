@@ -19,10 +19,6 @@ public:
     explicit HToolbar(QWidget *parent = 0);
     ~HToolbar();
 
-
-signals:
-    void backPressed();
-
 public slots:
     void setMessage(QString);
     void setMessageSimple(QString);
@@ -39,6 +35,9 @@ public slots:
 
     void tryPlay(bool play);
     void tryNext();
+
+signals:
+    void shuffleToggled(bool);
     
 private:
     Ui::HToolbar *ui;

@@ -1,6 +1,7 @@
 #include "halbumbox.h"
 #include "ui_halbumbox.h"
 #include "hloginwidget.h"
+#include "hmainwindow.h"
 
 HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
     HGrowingWidget(parent),
@@ -10,9 +11,9 @@ HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
     ui->setupUi(this);
 
     connect(ui->label_title,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
-    connect(this,SIGNAL(contextRequested(HAlbum&)),HLoginWidget::singleton,SLOT(onShowContext(HAlbum&)));
+    connect(this,SIGNAL(contextRequested(HAlbum&)),HMainWindow::singleton(),SLOT(showContext(HAlbum&)));
 
-    ui->label_icon->setPixmap(album.getPic(HAlbum::Large));
+    ui->label_icon->setPixmap(album.getPic(HAlbum::Large).scaledToWidth(174,Qt::SmoothTransformation));
     ui->label_title->setText("<B><A href=\"more\">"+album.getAlbumName()+"</A></B>");
     ui->label_artist->setText("by <B>"+album.getArtistName()+"</B>");
     ui->label_summary->setText("<B>"+QString::number(album.getPlayCount())+"</B> plays by "+QString::number(album.getListenerCount())+" listeners<br><B>"+QString::number(album.getUserPlayCount())+"</B> plays in your library");

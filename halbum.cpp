@@ -24,7 +24,7 @@ HAlbum& HAlbum::get(QString artist, QString album) {
     if(_map.value(artist+"__"+album,0)) {
         return *_map.value(artist+"__"+album);
     }
-
+    
     _map.insert(artist+"__"+album,new HAlbum(artist,album));
     return get(artist,album);
 }
@@ -152,17 +152,18 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
         r.mkpath(t);
     }
     QString x=url.toString();
-    if(x.contains("png")) t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".png";
-    else t+="/"+QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+".jpg";
+    QString y=x;
+    y.remove(0,y.lastIndexOf('.'));
+    t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
     if(!QFile::exists(t)) {
         QHttp http;
         QEventLoop loop;
         QFile file;
         QObject::connect(&http, SIGNAL(done(bool)), &loop, SLOT(quit()));
-
+        
         file.setFileName(t);
         file.open(QIODevice::WriteOnly);
-
+        
         http.setHost(url.host(), url.port(80));
         http.get(url.toEncoded(QUrl::RemoveScheme | QUrl::RemoveAuthority),
                  &file);
@@ -176,23 +177,34 @@ static QPixmap download(QUrl url, bool tryAgain=1) {
 }
 
 void HAlbum::PictureData::getData(QString url,HAlbum::PictureSize size) {
+    if(getting[size]) {
+        QEventLoop ev;
+        connect(getting[size],SIGNAL(notify()),&ev,SLOT(quit()));
+        ev.exec();
+        return;
+    }
+
+
     if(got[size]) {
         return;
     }
-    got[size]=1;
+
+    getting[size]=new HRunOnceNotifier;
     pics[size]=download(url);   //caches
     if(pics[size].isNull()) pics[size]=download(url);   //jic
     if(!pics[size].height()) {
         pics[size]=QPixmap(126,200);
         pics[size].fill(Qt::red);
     }
+
+    getting[size]->emitNotify();
+    getting[size]=0;
+
+    got[size]=1;
 }
 
 void HAlbum::AlbumInfo::getData(QString artist,QString album) {
-    if(got) {
-        return;
-    }
-    got=1;
+    H_BEGIN_RUN_ONCE;
 
     QSettings sett("hathorMP","albumInfo");
     QString dumbName=artist+"__"+album;
@@ -201,7 +213,7 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
         pics[1]=sett.value("mediumPic for "+dumbName).toString();
         pics[2]=sett.value("largePic for "+dumbName).toString();
         pics[3]=sett.value("megaPic for "+dumbName).toString();
-
+        
         tags=sett.value("tags for "+dumbName).toStringList();
         listenerCount=sett.value("listeners for "+dumbName).toInt();
         playCount=sett.value("playcount for "+dumbName).toInt();
@@ -209,28 +221,34 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
         summary=sett.value("summary for "+dumbName).toString();
         content=sett.value("content for "+dumbName).toString();
         tracks=sett.value("tracks for "+dumbName).toStringList();
+        H_END_RUN_ONCE;
         return;
     }
-
+    
     QMap<QString, QString> params;
     params["method"] = "album.getInfo";
     params["username"] = lastfm::ws::Username;
     params["artist"] = artist;
     params["album"] = album;
     QNetworkReply* reply = lastfmext_post( params );
-
+    
     QEventLoop loop;
     QTimer::singleShot(2850,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
-
+    
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE;
+        QByteArray x=reply->readAll();
+        if(x.contains("error")) {
+            return;
+        }
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }
-
+    
     listenerCount=0;
     playCount=0;
     userPlayCount=0;
@@ -238,10 +256,10 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
     content="";
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
-
+        
         for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
@@ -254,7 +272,7 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
                     else if ( m.nodeName() == "listeners") listenerCount = l.toText().data().toInt();
                     else if ( m.nodeName() == "playcount") playCount = l.toText().data().toInt();
                     else if ( m.nodeName() == "userplaycount" ) userPlayCount = l.toText().data().toInt();
-
+                    
                     for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
                         if ( l.nodeName() == "summary" ) summary = k.toText().data();
                         else if ( l.nodeName() == "content" ) content = k.toText().data();
@@ -266,7 +284,7 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
                 }
             }
         }
-
+        
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
@@ -283,46 +301,46 @@ void HAlbum::AlbumInfo::getData(QString artist,QString album) {
     sett.setValue("summary for "+dumbName,summary);
     sett.setValue("content for "+dumbName,content);
     sett.setValue("tracks for "+dumbName,tracks);
+    H_END_RUN_ONCE;
 }
 
 
 void HAlbum::ExtraTagData::getData(QString artist,QString album) {
-    if(got) {
-        return;
-    }
-    got=1;
-
+    H_BEGIN_RUN_ONCE;
+    
     QString dumbname=artist+"__"+album;
-
+    
     QSettings sett("hathorMP","extraTagData");
     if(sett.value("cache for "+dumbname,0).toInt()==2) {
         tags=sett.value("tags for "+dumbname).toStringList();
+        H_END_RUN_ONCE;
         return;
     }
-
+    
     QMap<QString, QString> params;
     params["method"] = "album.getTopTags";
     params["artist"] = artist;
     params["album"] = album;
     QNetworkReply* reply = lastfmext_post( params );
-
+    
     if(reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE;
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }
-
+    
     QEventLoop loop;
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
-
+    
     try {
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
-
+        
         for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
@@ -332,47 +350,46 @@ void HAlbum::ExtraTagData::getData(QString artist,QString album) {
                 }
             }
         }
-
+        
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
     sett.setValue("cache for "+dumbname,2);
     sett.setValue("tags for "+dumbname,tags);
+    H_END_RUN_ONCE;
 }
 
 void HAlbum::ShoutData::getData(QString artist,QString album) {
-    if(got) {
-        return;
-    }
-    got=1;
-
+    H_BEGIN_RUN_ONCE;
+    
     // no cache?
-
+    
     QMap<QString, QString> params;
     params["method"] = "album.getShouts";
     params["artist"] = artist;
     params["album"] = album;
     QNetworkReply* reply = lastfmext_post( params );
-
+    
     QEventLoop loop;
     QTimer::singleShot(2850,&loop,SLOT(quit()));
     loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
     loop.exec();
-
+    
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+        H_END_RUN_ONCE;
         got=0;
         QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
         getData(artist,album);
         return;
     }
-
+    
     try {
         QString body,author,date;
         QDomDocument doc;
-        doc.setContent( reply->readAll() );
+        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
         QDomElement element = doc.documentElement();
-
+        
         for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
@@ -387,8 +404,9 @@ void HAlbum::ShoutData::getData(QString artist,QString album) {
                 }
             }
         }
-
+        
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    H_END_RUN_ONCE;
 }
