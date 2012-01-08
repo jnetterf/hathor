@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>HLoginWidget</class>
- <widget class="QWidget" name="HLoginWidget">
+ <class>HMainWindow</class>
+ <widget class="QWidget" name="HMainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1022</width>
+    <width>1018</width>
     <height>748</height>
    </rect>
   </property>
@@ -432,7 +432,7 @@
    </palette>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Hathor (beta)</string>
   </property>
   <property name="autoFillBackground">
    <bool>true</bool>
@@ -444,29 +444,12 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QWidget" name="widget" native="true">
      <layout class="QVBoxLayout" name="gridLayout">
       <property name="margin">
        <number>0</number>
       </property>
-      <item>
-       <widget class="HToolbar" name="toolbar" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="HGraphicsView" name="graphicsView">
-        <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
-        </property>
-       </widget>
-      </item>
       <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
@@ -486,14 +469,19 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="0">
+    <widget class="HToolbar" name="toolbar" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>HGraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header>hgraphicsview.h</header>
-  </customwidget>
   <customwidget>
    <class>HToolbar</class>
    <extends>QWidget</extends>
