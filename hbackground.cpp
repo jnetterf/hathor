@@ -17,6 +17,7 @@
 #include <QScrollBar>
 #include "hartistcontext.h"
 #include "hrdiointerface.h"
+#include <iostream>
 
 int _l=0;
 bool ArtistAvatar::_ready = 0;
@@ -73,7 +74,6 @@ HBackground::HBackground(QGraphicsScene *sc) {
     loop.exec();
 
     QList<lastfm::Artist> list=lastfm::Artist::list( reply );
-    qDebug()<<":("<<list.size();
     int w=0,x=500;
     QList<int> _nv;
     QList<int> _nX;
@@ -88,9 +88,14 @@ HBackground::HBackground(QGraphicsScene *sc) {
     int t=200;
     QSettings sett("hathorMP","global");
     QGraphicsTextItem* ti=sc->addText("Top Artists",QFont("Candara",30,75));
+    PlayLibraryButton* pb=new PlayLibraryButton(list);
+    pb->setPos(183,-305);
+    sc->addItem(pb);
+    pb->setEchoOpacity(1.0);
     ti->setDefaultTextColor("grey");
-    ti->setPos(197,-305);
+    ti->setPos(226,-305);
     QList<HTrack*> topTracks=HUser::get(lastfm::ws::Username).getTopTracks();
+    int maxY=-305;
     for(int i=0;i<list.size();i++){
         if((i%10==0)&&!sett.value("precached",0).toBool()) {
             //play some top songs
@@ -150,6 +155,7 @@ HBackground::HBackground(QGraphicsScene *sc) {
         Q_ASSERT(COLUMN<20);
         l_[COLUMN].push_back(fp);
 
+        maxY=qMax(maxY,_nv[COLUMN]-250);
         if(!sett.value("precached",0).toBool()) if(sc->views().back()->verticalScrollBar()->value()+300<_nv[COLUMN]) foreach(QGraphicsView*v,sc->views()) {
             QPropertyAnimation* anim=new QPropertyAnimation(v->verticalScrollBar(), "value");
             anim->setStartValue(qMax(_nv[COLUMN]-pix.height()-450,v->verticalScrollBar()->value()));
@@ -160,15 +166,13 @@ HBackground::HBackground(QGraphicsScene *sc) {
 
         if(curtime.msecsTo(QTime::currentTime())<t/(x+1)) {
             QEventLoop loop;
-            QTimer::singleShot(t/(x+1)-curtime.msecsTo(QTime::currentTime()),&loop,SLOT(quit()));
+            QTimer::singleShot(qMax(0,t/(x+1)-curtime.msecsTo(QTime::currentTime())),&loop,SLOT(quit()));
             loop.exec();
             t*=0.9;
         } else t*=1.1;
         curtime=QTime::currentTime();
         connect(fp,SIGNAL(showContext()),this,SLOT(showContext()));
     }
-
-    sett.setValue("precached",1);
 
     for(int i=1;i<8;i++) {
         int h1A=0;
@@ -185,9 +189,140 @@ HBackground::HBackground(QGraphicsScene *sc) {
             h1A=h1B;
         }
     }
+
+
+
+    for(int i=0;i<20;i++) l_[i].clear();
+    x_.clear();
+    _nv.clear();
+    _nX.clear();
+    w=0;
+
+    QList<lastfm::Artist> list2=list;
+    {
+        QMap<QString, QString> p1;;
+        p1["method"] = "user.getRecommendedArtists";
+        p1["limit"]="200";
+        QNetworkReply* reply = lastfm::ws::post( p1 );
+
+        QEventLoop loop;
+        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+        loop.exec();
+//        std::cerr<<QString(reply->readAll()).toStdString();
+        list.clear();
+        list=lastfm::Artist::list( reply );
+        for(int i=0;i<list.size();i++) {
+            for(int j=i+1;j<list.size();j++) {
+                if(list[i]==list[j]) {
+                    list.removeAt(j--);
+                }
+            }
+        }
+        for(int i=0;i<list2.size();i++) {
+            for(int j=0;j<list.size();j++) {
+                if(list2[i]==list[j]) {
+                    list.removeAt(j--);
+                }
+            }
+        }
+    }
+    ti=sc->addText("Your Recommendations",QFont("Candara",30,75));
+    pb=new PlayLibraryButton(list);
+    pb->setPos(183,maxY+30);
+    sc->addItem(pb);
+    pb->setEchoOpacity(1.0);
+    ti->setDefaultTextColor("grey");
+    ti->setPos(226,maxY+30);
+    ArtistAvatar::_ready=1;
+
+    maxY+=90;
+
+    for(int i=0;i<list.size();i++){
+        int COLUMN=0;
+        QPixmap pix=download(list[i].imageUrl(lastfm::Large));
+        if(pix.isNull()) pix=download(list[i].imageUrl(lastfm::Large));   //jic
+        if(!pix.height()) {
+            pix=QPixmap(126,200);
+            pix.fill(Qt::red);
+        }
+        if(!w){_nv.push_back(0);_nX.push_back(l);}
+        ArtistAvatar*fp;
+        if(i<8) { COLUMN=i%x; }
+        else {
+            int minHEIGHT=99999999;
+            int minVAL;
+            for(int Ci=0;Ci<_nv.size();Ci++) {
+                if(_nv[Ci]<minHEIGHT) {
+                    minVAL=Ci;
+                    minHEIGHT=_nv[Ci];
+                }
+            }
+            COLUMN=minVAL;
+        }
+        if(!w) {
+            fp=new ArtistAvatar(_sc,list[i].name(),ArtistAvatarList());
+            x_.push_back(fp);
+        } else {
+            ArtistAvatarList aal;
+            aal._aa.push_back(x_[COLUMN]);
+                fp=new ArtistAvatar(_sc,list[i].name(),aal);
+            x_[COLUMN]=fp;
+        }
+        if(i==6)first=fp;
+
+        fp->setPixmap(pix);
+        fp->setPos(197+_nX[COLUMN],maxY+_nv[COLUMN]);
+        sc->addItem(fp);
+
+        QPropertyAnimation* anim=new QPropertyAnimation(fp, "echoOpacity");
+        anim->setStartValue(0.0);
+        anim->setEndValue(1.0);
+        anim->setDuration(1000);
+        anim->start(QAbstractAnimation::DeleteWhenStopped);
+
+        _nv[COLUMN]+=pix.height();
+        l+=pix.width();
+        if(l>1000){if(w==0){x=i+1;}l=0;w+=100;}
+        Q_ASSERT(COLUMN<20);
+        l_[COLUMN].push_back(fp);
+
+        if(!sett.value("precached",0).toBool()) if(sc->views().back()->verticalScrollBar()->value()+300<_nv[COLUMN]) foreach(QGraphicsView*v,sc->views()) {
+            QPropertyAnimation* anim=new QPropertyAnimation(v->verticalScrollBar(), "value");
+            anim->setStartValue(qMax(_nv[COLUMN]-pix.height()-450,v->verticalScrollBar()->value()));
+            anim->setEndValue(_nv[COLUMN]-450);
+            anim->setDuration(1000);
+            anim->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+
+        if(curtime.msecsTo(QTime::currentTime())<t/(x+1)) {
+            QEventLoop loop;
+            QTimer::singleShot(qMax(0,t/(x+1)-curtime.msecsTo(QTime::currentTime())),&loop,SLOT(quit()));
+            loop.exec();
+            t*=0.9;
+        } else t*=1.1;
+        curtime=QTime::currentTime();
+        connect(fp,SIGNAL(showContext()),this,SLOT(showContext()));
+    }
+
+    for(int i=1;i<8;i++) {
+        int h1A=0;
+        for(int j=0;j<l_[i].size();j++) {
+            int h1B=h1A+l_[i][j]->pixmap().height();
+            int h2A=0;
+            for(int k=0;k<l_[i-1].size();k++) {
+                int h2B=h2A+l_[i-1][k]->pixmap().height();
+                if((h2A<=h1A&&h2B>=h1A)||(h1A>=h2A&&h1A<=h2B)||(h2B>=h1A&&h2B<=h1B)||(h1B>=h2B&&h1A<=h2B)||(h1A>=h2A&&h1A<=h2B)||(h2A>=h1A&&h1B>=h2A&&h2B>=h1B)) {
+                    l_[i][j]->addLeft(l_[i-1][k]);
+                }
+                h2A=h2B;
+            }
+            h1A=h1B;
+        }
+    }
+    sett.setValue("precached",1);
+
     _sc->setBackgroundBrush(QBrush(QColor("black")));
 
-    ArtistAvatar::_ready=1;
 }
 
 void HBackground::showContext() {

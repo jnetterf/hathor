@@ -78,7 +78,6 @@ CONFIG += oauth
 QT += xml network webkit
 
 FORMS += \
-    hloginwidget.ui \
     artistcontext.ui \
     halbumbox.ui \
     htrackbox.ui \
@@ -90,7 +89,11 @@ FORMS += \
     halbumcontext.ui \
     htrackcontext.ui \
     hplayercontext.ui \
-    hsearchcontext.ui
+    hsearchcontext.ui \
+    hmainwindow.ui
 
 RESOURCES += \
     icons.qrc
+
+OTHER_FILES += \
+    styleSheet.txt

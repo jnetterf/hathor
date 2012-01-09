@@ -50,12 +50,17 @@ void HMainWindow::setupMainContext() {
         ui->toolbar->show();
     }
 
-    ui->toolbar->setMessageSimple("<i><center>Loading...</center></i>");
+    QSettings sett("hathorMP","global");
+    if(sett.value("precached",0).toBool()) {
+        ui->toolbar->setMessageSimple("<i><center>Loading...</center></i>");
+    } else {
+        ui->toolbar->setMessageSimple("<i><center>Playing top songs while loading...</center></i>");
+    }
     HMainContext* mc=new HMainContext;
     connect(mc,SIGNAL(showContext(HArtist&)),this,SLOT(showContext(HArtist&)));
     ui->widget->layout()->addWidget(mc);
     mc->setup();
-    ui->toolbar->clearMessage();
+    if(ui->toolbar->message()=="<i><center>Loading...</center></i>"||ui->toolbar->message()=="<i><center>Playing top songs while loading...</center></i>") ui->toolbar->clearMessage();
     s_contextStack.push_back(s_curContext=mc);
 }
 

@@ -19,6 +19,8 @@ public:
     explicit HToolbar(QWidget *parent = 0);
     ~HToolbar();
 
+    QString message();
+
 public slots:
     void setMessage(QString);
     void setMessageSimple(QString);

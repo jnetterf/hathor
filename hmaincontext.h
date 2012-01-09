@@ -20,6 +20,10 @@
 #include <QMutex>
 #include "lastfmext.h"
 #include "hgraphicsview.h"
+#include "hrdiointerface.h"
+#include <lastfm/Artist>
+#include <QThread>
+#include "htoolbar.h"
 
 struct ArtistAvatar;
 
@@ -27,6 +31,47 @@ struct ArtistAvatarList {
     QList<ArtistAvatar*> _aa;
     bool iterateHide(int right,int down,int it,int hTop=-66966,int hBottom=-66966);
     bool iterateHide(int it=0);
+};
+
+class HPlayLibraryThread : public QThread {
+    QList<lastfm::Artist> s_rec;
+public:
+    HPlayLibraryThread(QList<lastfm::Artist> a) : s_rec(a) {}
+    void run() {
+        for(int i=0;i<20;i++) {
+            for(int j=0;j<s_rec.size();j++) {
+                QList<HTrack*> ts=HArtist::get(s_rec[j].name()).getTracks();
+                if(ts.size()>i) HRdioInterface::singleton()->queue(*ts[i]);
+            }
+        }
+        delete this;
+    }
+};
+
+class PlayLibraryButton : public QObject, public QGraphicsPixmapItem {
+    Q_OBJECT
+    Q_PROPERTY(qreal echoOpacity READ echoOpacity WRITE setEchoOpacity)
+    QList<lastfm::Artist> s_rec;
+public:
+    PlayLibraryButton(QList<lastfm::Artist> a) : s_rec(a) {
+        qDebug()<<a.size()<<"###";
+        setPixmap(QPixmap(":/icons/hathor-logo.png").scaledToWidth(60));
+    }
+    void mousePressEvent(QGraphicsSceneMouseEvent *e) {
+        if((e->buttons()&Qt::LeftButton)==0) return;
+        qDebug()<<"Caching...";
+        HToolbar::singleton()->setMessage("<center>Caching data... 0/"+QString::number(s_rec.size())+"</center>");
+        for(int j=0;j<s_rec.size();j++) {
+            HToolbar::singleton()->setMessageSimple("<center>Caching data... "+QString::number(j)+"/"+QString::number(s_rec.size())+"</center>");
+            HArtist::get(s_rec[j].name()).getTracks();
+        }   //CACHE (thread issue)
+        HToolbar::singleton()->clearMessage();
+        qDebug()<<"Playing...";
+        (new HPlayLibraryThread(s_rec))->start();
+    }
+    qreal echoOpacity() { return QGraphicsPixmapItem::opacity(); }
+public slots:
+    void setEchoOpacity(qreal opacity){QGraphicsPixmapItem::setOpacity(opacity);}
 };
 
 class ArtistAvatar : public QObject, public QGraphicsPixmapItem {
@@ -56,27 +101,23 @@ public slots:
             {s_infoMutex.unlock(); return; };
         }
         _okCur=this;
-        PX=PY=0;
-        if(!_neighbours_[2]._aa.size()||!_neighbours_[3]._aa.size()||!iterateHide(300,300,0)){
+
+        PX=-300+boundingRect().width()/2;
+        PY=-300+boundingRect().height();
+        if(!iterateHide(-300,-300,0)) {
             hideInfo(0);
-            //            qDebug()<<"1st Failed, trying -,-";
-            PX=-300+boundingRect().width()/2;
-            PY=-300+boundingRect().height();
-            if(!iterateHide(-300,-300,0)){
-                //                qDebug()<<"2nd Failed, trying -,+";
+            PX=0;
+            if(!iterateHide(300,-300,0)) {
                 hideInfo(0);
                 PY=0;
-                if(!iterateHide(-300,300,0)){
-                    //                    qDebug()<<"1st Failed, trying +,-";
+                if(!iterateHide(300,300,0)) {
                     hideInfo(0);
-                    PX=0;
-                    PY=-300+boundingRect().height();
-                    if(!iterateHide(300,-300,0)){
-                        hideInfo(0);
-                    }
+                    PX=-300+boundingRect().width()/2;
+                    iterateHide(-300,300,0);
                 }
             }
         }
+
         _shown=1;
         QGraphicsTextItem* tx=new QGraphicsTextItem;
         tx->setHtml("<font color=\"white\">"+s_rep.getName()+"</font>");
@@ -233,8 +274,11 @@ public:
         }
 
         if(!ok){
-            //            qDebug()<<"Failing at right positive"<<s_rep.getName();
-            return 0;
+            if(!_neighbours_[2]._aa.size()&&scenePos().x()<1079) ok=1;
+            else {
+//                qDebug()<<"Failing at right positive"<<s_rep.getName();
+                return 0;
+            }
         }
 
         if(right<0) {
@@ -243,7 +287,7 @@ public:
         }
 
         if(!ok) {
-            //            qDebug()<<"Failing at right neg"<<s_rep.getName();
+//                        qDebug()<<"Failing at right neg"<<s_rep.getName();
             return 0;
         }
 
@@ -259,7 +303,7 @@ public:
 
         if(!ok) {
             //            qDebug()<<"Failing at down pos"<<s_rep.getName();
-            return 0;
+            ok=1;   //it's actually ok
         }
 
         if(down<0) {
@@ -271,7 +315,7 @@ public:
         }*/
 
         if(!ok) {
-            //            qDebug()<<"Failing at down neg"<<s_rep.getName();
+//                        qDebug()<<"Failing at down neg"<<s_rep.getName();
             return 0;
         }
 

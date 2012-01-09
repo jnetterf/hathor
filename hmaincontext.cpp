@@ -54,7 +54,7 @@ void HMainContext::setup() {
     setSceneRect(400,-300,600,8000);
     verticalScrollBar()->setValue(-300);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    setMax(5000);
-    background = new HBackground(sc);
+    setMax(10000);
+    background = new HBackground(sc);   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     connect(background,SIGNAL(showContext(HArtist&)),this,SIGNAL(showContext(HArtist&)));
 }

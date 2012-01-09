@@ -30,6 +30,9 @@ HToolbar::~HToolbar()
     delete ui;
 }
 
+QString HToolbar::message() {
+    return ui->label_status->text();
+}
 
 void HToolbar::setMessage(QString msg) {
     s_message=msg;

@@ -470,7 +470,6 @@ void HLoginWidget::rdio2(int ax) {
     QSettings settings("hathorMP","lastfm_ext");
     s_superSecret.insert(a->text(),b->text());
     settings.setValue("keys",s_superSecret);
-    setMax(5000);
 
     hide();
     emit showMainContext();
