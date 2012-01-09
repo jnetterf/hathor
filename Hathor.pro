@@ -96,4 +96,8 @@ RESOURCES += \
     icons.qrc
 
 OTHER_FILES += \
-    styleSheet.txt
+    styleSheet.txt \
+    win_rc.rc \
+    hathor-logo.ico
+
+RC_FILE = ./win_rc.rc
