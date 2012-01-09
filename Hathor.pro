@@ -70,7 +70,7 @@ SOURCES += \
     hmainwindow.cpp \
     hmaincontext.cpp
 
-!win32:LIBS += -loauth -llastfm -lqjson
+!win32:LIBS += -loauth -llastfm
 win32:LIBS += -llastfm0
 
 CONFIG += oauth

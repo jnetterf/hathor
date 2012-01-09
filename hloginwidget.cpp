@@ -1,5 +1,4 @@
 #include "hloginwidget.h"
-#include "ui_hloginwidget.h"
 #include <QTimer>
 #include <QDesktopWidget>
 #include <QCompleter>
