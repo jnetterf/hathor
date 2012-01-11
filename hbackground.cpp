@@ -203,7 +203,7 @@ HBackground::HBackground(QGraphicsScene *sc) {
         QMap<QString, QString> p1;;
         p1["method"] = "user.getRecommendedArtists";
         p1["limit"]="200";
-        QNetworkReply* reply = lastfm::ws::post( p1 );
+        QNetworkReply* reply = lastfmext_post(p1);
 
         QEventLoop loop;
         loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
