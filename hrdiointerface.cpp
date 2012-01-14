@@ -41,7 +41,11 @@ QString noAccents(QString r) {
     r.replace(252,'u');
     r.replace(221,'y');
     r.replace(255,'y');
-    r.replace('\'','’');
+    r.replace('’','\'');
+    r.replace('\' ','\'');
+    while(r.endsWith(' ')) {
+        r.chop(1);
+    }
     return r;
 }
 
@@ -201,15 +205,9 @@ void HRdioInterface::queue(HArtist& artist) {
 }
 
 void HRdioInterface::queue(HAlbum& album) {
-    Q_ASSERT(0);    //depricate me
-    s_queue.push_back(&album);
-    if(s_state==Stopped) {
-        requeue();
+    for(int i=0;i<album.getTracks().size();i++) {
+        queue(*album.getTracks()[i]);
     }
-//    QString aCode=search(album.getArtistName()+" "+album.getAlbumName(),"Albums",album.getAlbumName(),album.getArtistName());
-//    if(!aCode.size()) return;
-//    s_browser.doJS("$('#api').rdio().embed.rdio_queue('"+aCode+"')");
-//    setupPlayback();
 }
 
 void HRdioInterface::queue(HTrack& track) {
@@ -420,6 +418,7 @@ QString HRdioInterface::search(QString search,QString types,QString albumF,QStri
     search=noAccents(search);
     albumF=noAccents(albumF);
     artistF=noAccents(artistF);
+    trackF=noAccents(trackF);
 
     QMultiMap<QByteArray,QByteArray> map1;
     map1.insert("method", "search");
@@ -458,7 +457,7 @@ QString HRdioInterface::search(QString search,QString types,QString albumF,QStri
                             }
                             if(!albumF.isEmpty()&&k.attributes().namedItem("name").nodeValue()=="album") {
                                 QString c=noAccents(j.toText().data()).toLower();
-                                if(noPar) c.truncate(c.indexOf('('));
+                                if(noPar&&c.contains('(')) c.truncate(c.indexOf('('));
                                 if(!c.startsWith(albumF)&&!albumF.startsWith(c)) {
                                     qDebug()<<"Fail on album name";
                                     ret=0;
@@ -466,15 +465,15 @@ QString HRdioInterface::search(QString search,QString types,QString albumF,QStri
                             }
                             if(!artistF.isEmpty()&&(k.attributes().namedItem("name").nodeValue()=="artist"||k.attributes().namedItem("name").nodeValue()=="albumArtist")) {
                                 QString c=noAccents(j.toText().data()).toLower();
-                                if(noPar) c.truncate(c.indexOf('('));
-                                if(c.localeAwareCompare(artistF.toLower())) {
-                                    qDebug()<<"Fail on artist name"<<artistF<<"VS"<<noAccents(j.toText().data())<<"FOR SEARCH"<<search;
+                                if(noPar&&c.contains('(')) c.truncate(c.indexOf('('));
+                                if(c!=artistF.toLower()) {
+                                    qDebug()<<"Fail on artist name"<<c<<"VS"<<artistF.toLower()<<"FOR SEARCH"<<search;
                                     ret=0;
                                 }
                             }
                             if(!trackF.isEmpty()&&(k.attributes().namedItem("name").nodeValue()=="name")) {
                                 QString c=noAccents(j.toText().data()).toLower();
-                                if(noPar) c.truncate(c.indexOf('('));
+                                if(noPar&&c.contains('(')) c.truncate(c.indexOf('('));
                                 if(c.localeAwareCompare(trackF.toLower())) {
                                     qDebug()<<"Fail on track name"<<trackF<<"VS"<<noAccents(j.toText().data())<<"FOR SEARCH"<<search;
                                     ret=0;
@@ -493,8 +492,10 @@ QString HRdioInterface::search(QString search,QString types,QString albumF,QStri
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
-    if(search.contains('(')) {
-        search.truncate(search.indexOf('('));
+    if(search.contains('(')||trackF.contains('(')||artistF.contains('(')) {
+        if(search.contains('(')) search.truncate(search.indexOf('('));
+        if(trackF.contains('(')) trackF.truncate(trackF.indexOf('('));
+        if(artistF.contains('(')) artistF.truncate(artistF.indexOf('('));
         return HRdioInterface::search(search,types,albumF,artistF,trackF,1);
     } else {
         qWarning()<<"Could not find best search!";
