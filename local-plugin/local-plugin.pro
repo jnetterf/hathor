@@ -10,15 +10,10 @@ TARGET = local-plugin-for-hathor
 TEMPLATE = lib
 CONFIG += plugin oauth
 
-DESTDIR = /usr/lib/hathor/plugins
+#DESTDIR = /usr/lib/hathor/plugins
 
 SOURCES += hlocalprovider.cpp
 
 HEADERS += hlocalprovider.h
 
 INCLUDEPATH+="../libhathor"
-
-unix:!symbian {
-    target.path = /usr/share/hathor-20120128/plugins
-    INSTALLS += target
-}
