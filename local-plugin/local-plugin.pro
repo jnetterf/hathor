@@ -19,6 +19,6 @@ HEADERS += hlocalprovider.h
 INCLUDEPATH+="../libhathor"
 
 unix:!symbian {
-    target.path = /usr/lib/hathor/plugins
+    target.path = /usr/share/hathor-20120128/plugins
     INSTALLS += target
 }
