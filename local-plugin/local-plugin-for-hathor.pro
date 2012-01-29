@@ -27,13 +27,13 @@ symbian {
     DEPLOYMENT += pluginDeploy
 }
 
-INCLUDEPATH+="../hathor/libhathor"
+INCLUDEPATH+="../libhathor"
 
 unix:!symbian {
     maemo5 {
         target.path = /opt/usr/lib
     } else {
-        target.path = /usr/lib
+        target.path = /usr/lib/hathor/plugins
     }
     INSTALLS += target
 }
