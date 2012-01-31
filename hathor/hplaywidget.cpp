@@ -26,7 +26,7 @@ HArtistPlayWidget::HArtistPlayWidget(HArtist &artist, QWidget *parent) :
     connect(ui->tb_r2,SIGNAL(clicked()),this,SLOT(play2()));
     connect(ui->tb_l3,SIGNAL(clicked()),this,SLOT(play3()));
     connect(ui->tb_r3,SIGNAL(clicked()),this,SLOT(play3()));
-    connect(ui->tb_l4,SIGNAL(celicked()),this,SLOT(play4()));
+    connect(ui->tb_l4,SIGNAL(clicked()),this,SLOT(play4()));
     connect(ui->tb_r4,SIGNAL(clicked()),this,SLOT(play4()));
     connect(ui->tb_l5,SIGNAL(clicked()),this,SLOT(play5()));
     connect(ui->tb_r5,SIGNAL(clicked()),this,SLOT(play5()));
