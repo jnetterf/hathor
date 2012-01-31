@@ -60,3 +60,6 @@ unix:!symbian {
     }
     INSTALLS += target
 }
+
+debug:win32:DESTDIR = ../hathor/debug
+release:win32:DESTDIR = ../hathor/release

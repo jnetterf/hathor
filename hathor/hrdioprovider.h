@@ -21,7 +21,7 @@ public:
     HRdioLoginAction(HBrowser& broser,QString un,QString psswd) : HAction(broser), s_un(un), s_psswd(psswd) {}
 public slots:
     void init() {
-        s_browser.loadPageHTTPS("https://www.rdio.com/secure/login/?cn=secure_login_result");
+        s_browser.loadPage("http://www.rdio.com/secure/login/?cn=secure_login_result");
         connect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
         QTimer::singleShot(7400,this,SIGNAL(done()));
 //        s_browser.show();

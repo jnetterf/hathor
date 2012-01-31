@@ -20,7 +20,8 @@ class HLocalProvider : public QObject, public HAbstractTrackProvider
     Q_INTERFACES(HAbstractTrackProvider)
     static HLocalProvider* s_singleton;
     QSettings s_settings;
-    QHash<QString,QString> s_theGreatHash;
+    QVariantHash s_theGreatHash;
+    QVariantHash s_theInverseHash;
 
 public:
     HLocalProvider();

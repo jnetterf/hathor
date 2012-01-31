@@ -70,6 +70,9 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         s_settings.setValue("Directories",dirs);
     } else dirs=s_settings.value("Directories").toStringList();
 
+    if(!s_settings.value("The Great Hash").isNull()) s_theGreatHash=s_settings.value("The Great Hash").toHash();
+    if(!s_settings.value("The Inverse Hash").isNull()) s_theInverseHash=s_settings.value("The Inverse Hash").toHash();
+
     // rescan (FIX THIS)
 
     QStringList files;
@@ -86,6 +89,7 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
     Phonon::MediaObject mo;
     for(int i=0;i<files.size();i++) {
         qDebug()<<"Scanning "<<files[i];
+        if(s_theInverseHash.contains(files[i])) continue;
         Phonon::MediaSource ms(files[i]);
         mo.setCurrentSource(ms);
 
@@ -99,13 +103,16 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
         QTimer::singleShot(20,&loop,SLOT(quit()));
         loop.exec();
-        connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-        QTimer::singleShot(20,&loop,SLOT(quit()));
-        loop.exec();
+        if(!mo.metaData("ARTIST").size()||!mo.metaData("TITLE").size()) {
+            connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
+            QTimer::singleShot(20,&loop,SLOT(quit()));
+            loop.exec();
+        }
         qDebug()<<mo.metaData();
 
         if(mo.metaData("ARTIST").size()&&mo.metaData("TITLE").size()) {
             s_theGreatHash.insert(local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()),files[i]);
+            s_theInverseHash.insert(files[i],local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()));
         }
 
         mo.stop();
@@ -113,13 +120,15 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         // End.
         //
     }
+    s_settings.setValue("The Great Hash",QVariant::fromValue(s_theGreatHash));
+    s_settings.setValue("The Inverse Hash",QVariant::fromValue(s_theInverseHash));
 }
 
 QString HLocalProvider::getKey(HTrack& track) {
     QString l=local_standardized(track.getArtistName()+"__"+track.getTrackName());
     if(s_theGreatHash.contains(l)) {
         qDebug()<<"LOCAL!!"<<s_theGreatHash[l];
-        return s_theGreatHash[l];
+        return s_theGreatHash[l].toString();
     } else return "_NO_RESULT_";
 }
 
