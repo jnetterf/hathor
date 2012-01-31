@@ -88,7 +88,7 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
 
     Phonon::MediaObject mo;
     for(int i=0;i<files.size();i++) {
-        qDebug()<<"Scanning "<<files[i];
+        qDebug()<<"Scanning (...)"<<files[i];
         if(s_theInverseHash.contains(files[i])) continue;
         Phonon::MediaSource ms(files[i]);
         mo.setCurrentSource(ms);
@@ -103,7 +103,7 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
         QTimer::singleShot(20,&loop,SLOT(quit()));
         loop.exec();
-        if(!mo.metaData("ARTIST").size()||!mo.metaData("TITLE").size()) {
+        if(!mo.metaData("ARTIST").size()||!mo.metaData("ARTIST").first().size()||!mo.metaData("TITLE").size()||!mo.metaData("TITLE").first().size()) {
             connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
             QTimer::singleShot(20,&loop,SLOT(quit()));
             loop.exec();
@@ -120,6 +120,7 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         // End.
         //
     }
+    qDebug()<<s_theGreatHash;
     s_settings.setValue("The Great Hash",QVariant::fromValue(s_theGreatHash));
     s_settings.setValue("The Inverse Hash",QVariant::fromValue(s_theInverseHash));
 }

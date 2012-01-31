@@ -86,18 +86,22 @@ public slots:
             }
             s_score=score;
             s_bestProviderSoFar=tp;
-            tp->sendTrack(track,this,"regAB");
+            --s_rem;
         } else {
             --s_rem;
-            if(s_readyToSkip) skip();
-            else if(s_readyToPlay) play();
+//            if(s_readyToSkip) skip();
+//            else if(s_readyToPlay) play();
+        }
+        if(!s_rem) {
+            if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
+            else emit finished();
         }
     }
 
     void regAB(HAbstractTrackInterface* ti,HAbstractTrackProvider* tp) {
         if(s_rem==-1) return;
         QMutexLocker locker(&mutex);
-        --s_rem;
+//        --s_rem;
         if(tp!=s_bestProviderSoFar) {
             delete ti;
             return;

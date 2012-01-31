@@ -21,7 +21,7 @@ public:
     HRdioLoginAction(HBrowser& broser,QString un,QString psswd) : HAction(broser), s_un(un), s_psswd(psswd) {}
 public slots:
     void init() {
-        s_browser.loadPage("http://www.rdio.com/secure/login/?cn=secure_login_result");
+        s_browser.loadPage("http://www.rdio.com/secure/login/?cn=secure_login_result&popup=1");
         connect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
         QTimer::singleShot(7400,this,SIGNAL(done()));
 //        s_browser.show();
@@ -31,7 +31,8 @@ public slots:
         s_browser.setInput("id_password",s_psswd);
         s_browser.doJS("document.getElementById(\"signinButton\").click()");
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
-        QTimer::singleShot(200,this,SIGNAL(done()));
+        connect(&s_browser,SIGNAL(ready()),this,SIGNAL(done()));
+        QTimer::singleShot(1000,this,SIGNAL(done()));
     }
 };
 

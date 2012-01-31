@@ -155,17 +155,19 @@ void HPlayer::loadPlugins() {
         pluginsDir.cd("plugins");
 
         foreach (QString fileName, pluginsDir.entryList(QDir::Files)) {
+            if(loaded.contains(fileName)) {
+                qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
+                continue;
+            }
             QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
             QObject *plugin = loader.instance();
-            if (plugin&&!loaded.contains(fileName)) {
+            if (plugin) {
                 qDebug()<<"Loading plugin"<<fileName;
                 loaded.push_back(fileName);
                 HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
                 if(p) {
                     installProvider(p);
                 }
-            } else if(loaded.contains(fileName)) {
-                qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
             }
         }
     }
