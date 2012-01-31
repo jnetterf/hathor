@@ -17,7 +17,6 @@ HArtistPlayWidget::HArtistPlayWidget(HArtist &artist, QWidget *parent) :
     connect(ui->button_topAlbums,SIGNAL(clicked()),this,SLOT(topAlbums()));
     connect(ui->button_topSongs,SIGNAL(clicked()),this,SLOT(topSongs()));
     connect(ui->label_info,SIGNAL(linkActivated(QString)),this,SIGNAL(closed()));
-    connect(ui->label_info,SIGNAL(linkActivated(QString)),this,SLOT(deleteLater()));
     ui->frame_l->hide();
     ui->frame_r->hide();
 

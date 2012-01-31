@@ -83,6 +83,14 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 //    connect(ui->button_more,SIGNAL(clicked()),this,SLOT(add()));
 }
 
+void HArtistContext::resizeEvent(QResizeEvent *e) {
+    if(s_pw) {
+        s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
+        s_pw->adjustSize();
+    }
+    QWidget::resizeEvent(e);
+}
+
 HArtistContext::~HArtistContext()
 {
     delete ui;
@@ -135,9 +143,9 @@ void HArtistContext::play() {
     setEnabled(0);
     if(!s_pw) {
         s_pw = new HArtistPlayWidget(s_rep,this->parentWidget());
-        s_pw->adjustSize();
-        s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
     } else s_pw->reset();
+    s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
+    s_pw->adjustSize();
     s_pw->show();
     connect(s_pw,SIGNAL(closed()),this,SLOT(hidePlay()));
     fwe->start();

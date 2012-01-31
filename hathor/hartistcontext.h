@@ -20,6 +20,8 @@ class HArtistContext : public QWidget
     QGraphicsEffect* s_ge;
     HArtistPlayWidget* s_pw;
     int s_albumsToLoad, s_tracksToLoad, s_similarToLoad;
+
+    void resizeEvent(QResizeEvent *);
 public:
     explicit HArtistContext(HArtist& rep, QWidget *parent = 0);
     ~HArtistContext();
