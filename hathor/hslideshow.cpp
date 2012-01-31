@@ -1,6 +1,18 @@
 #include "hslideshow.h"
 #include <QPropertyAnimation>
 
+
+QHash<QString, HSlideshow*> HSlideshow::s_u;
+
+HSlideshow* HSlideshow::getSlideshow(HTrack &t) {
+    QString dumbName=t.getTrackName()+"__"+t.getArtistName();
+    if(s_u.contains(dumbName)) {
+        return s_u[dumbName];
+    } else {
+        return s_u[dumbName]=new HSlideshow(t);
+    }
+}
+
 HSlideshow::HSlideshow(HTrack &track, QWidget *parent) : QGraphicsView(parent), s_track(track), s_i(0), s_z(0), s_done(0)
 {
     setScene(&sc);
@@ -18,7 +30,6 @@ HSlideshow::HSlideshow(HTrack &track, QWidget *parent) : QGraphicsView(parent), 
 
 void HSlideshow::newPic() {
     if(s_done) {
-        deleteLater();
         return;
     }
     if(s_i==s_track.getArtist().getExtraPicCount()||s_i>10) {

@@ -103,7 +103,7 @@ public slots:
         QMutexLocker locker(&mutex);
 //        --s_rem;
         if(tp!=s_bestProviderSoFar) {
-            delete ti;
+//            delete ti;    TODO
             return;
         }
         p_ti=ti;

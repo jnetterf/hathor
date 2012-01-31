@@ -32,8 +32,8 @@ void HPlayerContext::showTrack(HTrack &t) {
     s_magic=new HTrackContext(t);
     ui->widget_trackContext->layout()->addWidget(s_magic);
 
-    if(s_slideshow) s_slideshow->deleteWhenPossible();
-    s_slideshow=new HSlideshow(t);
+    if(s_slideshow) s_slideshow->pause();
+    s_slideshow=HSlideshow::getSlideshow(t);
     s_magic->setSlideshow(s_slideshow);
     s_slideshow->adjustSize();
 }

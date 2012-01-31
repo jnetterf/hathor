@@ -41,6 +41,7 @@ public:
 class HSlideshow : public QGraphicsView
 {
     Q_OBJECT
+    static QHash<QString, HSlideshow*> s_u;
     HTrack& s_track;
     QGraphicsScene sc;
     int s_i;
@@ -49,11 +50,13 @@ class HSlideshow : public QGraphicsView
     QSize minimumSizeHint() const {
         return sizeHint();
     }
-public:
     explicit HSlideshow(HTrack& track,QWidget* parent=0);
+public:
+    static HSlideshow* getSlideshow(HTrack&);
 public slots:
     void newPic();
-    void deleteWhenPossible() { s_done=1; }
+    void pause() { s_done=1; }
+    void resume() { if(!s_done) { s_done=0; QTimer::singleShot(0,this,SLOT(newPic())); } }
 };
 
 #endif // HSLIDESHOW_H
