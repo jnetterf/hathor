@@ -44,8 +44,6 @@ private:
 public:
     static HLocalProvider* singleton() { Q_ASSERT(s_singleton); return s_singleton; }
     QString search(QString query, QString artistF, QString trackF);
-public slots:
-    void checkBrowser();
 };
 
 #endif // HLOCALINTERFACE_H

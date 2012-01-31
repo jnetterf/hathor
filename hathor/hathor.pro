@@ -52,9 +52,10 @@ SOURCES += \
     hplaywidget.cpp
 
 !win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor
-win32:LIBS += -llastfm0 ./libhathor/libhathor.dll
+debug:win32:LIBS += -llastfm0 ../libhathor/debug/hathor.lib
+release:win32:LIBS += -llastfm0 ../libhathor/release/hathor.lib
 
-QMAKE_LFLAGS += -Wl,-rpath=\'\$\$ORIGIN\'/../libhathor
+!win32:QMAKE_LFLAGS += -Wl,-rpath=\'\$\$ORIGIN\'/../libhathor
 
 CONFIG += oauth
 

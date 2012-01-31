@@ -40,6 +40,7 @@ HEADERS += habstractmusicinterface.h\
     hfuture.h
 
 CONFIG += oauth
+win32:LIBS += -llastfm0
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

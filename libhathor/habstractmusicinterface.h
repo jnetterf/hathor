@@ -50,7 +50,7 @@ class LIBHATHORSHARED_EXPORT HAbstractTrackProvider {
 
 Q_DECLARE_INTERFACE(HAbstractTrackProvider, "com.Nettek.Hathor.AbstractTrackProvider/1.01")
 
-class HPlayer_PotentialTrack : public QObject {
+class LIBHATHORSHARED_EXPORT HPlayer_PotentialTrack : public QObject {
     Q_OBJECT
     friend class HPlayer;
     friend class HStandardQueue;
@@ -138,7 +138,7 @@ public slots:
     }
 };
 
-class HAbstractQueue : public QObject {
+class LIBHATHORSHARED_EXPORT HAbstractQueue : public QObject {
     Q_OBJECT
 public slots:
     virtual void queue(QList<HTrack*> tracks) {
@@ -160,7 +160,7 @@ signals:
     void shuffleToggled(bool);
 };
 
-class HStandardQueue : public HAbstractQueue {
+class LIBHATHORSHARED_EXPORT HStandardQueue : public HAbstractQueue {
     Q_OBJECT
     QList<HAbstractTrackProvider*>& s_providers;
     bool& s_shuffle;

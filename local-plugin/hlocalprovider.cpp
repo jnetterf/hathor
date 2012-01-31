@@ -1,7 +1,11 @@
-// Copyright Chris Johnson 2012. All rights reserved.
+/****************************************************
+hlocalprovider.h
 
-// This is my first program (/plugin), so please be kind.
-// Based on HRdioProvider by Joshua Netterfield
+                    Part of Hathor
+        Copyright (C) Joshua Netterfield 2012
+
+                 All rights reserved.
+*****************************************************/
 
 #include "hlocalprovider.h"
 #include <QDebug>
@@ -11,7 +15,9 @@
 #include <QSettings>
 #include <phonon/MediaObject>
 #include <QtPlugin>
-#include <lastfm.h>
+#include <lastfm/ws.h>
+#include <lastfm/User>
+#include <lastfm/Artist>
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QDirIterator>
@@ -91,11 +97,12 @@ HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor"
         mo.pause();
         QEventLoop loop;
         connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-        QTimer::singleShot(500,&loop,SLOT(quit()));
+        QTimer::singleShot(20,&loop,SLOT(quit()));
         loop.exec();
         connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-        QTimer::singleShot(500,&loop,SLOT(quit()));
+        QTimer::singleShot(20,&loop,SLOT(quit()));
         loop.exec();
+        qDebug()<<mo.metaData();
 
         if(mo.metaData("ARTIST").size()&&mo.metaData("TITLE").size()) {
             s_theGreatHash.insert(local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()),files[i]);
