@@ -238,7 +238,8 @@ void HArtistContext::updateCounts() {
 }
 
 void HArtistContext::setAlbums(HAlbum* album) {
-    s_albumsToLoad=s_albumLoadCount?s_albumLoadCount*2:6;
+    if(s_loadedAlbums.contains(album)) return;
+    s_loadedAlbums.push_back(album);
     {
         HAlbumBox* ab=new HAlbumBox(*album);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
@@ -263,11 +264,13 @@ void HArtistContext::setAlbums(HAlbum* album) {
         QTimer::singleShot(0,this,SLOT(loadSimilar()));
     }
     ++s_albumLoadCount;
+    s_albumsToLoad+=2;
 }
 
 void HArtistContext::setTracks(HTrack* track) {
+    if(s_loadedTracks.contains(track)) return;
+    s_loadedTracks.push_back(track);
 //    int i;
-    s_tracksToLoad=s_trackLoadCount?s_trackLoadCount*2:20;
     {
         HTrackBox* ab=new HTrackBox(*track);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
@@ -291,6 +294,7 @@ void HArtistContext::setTracks(HTrack* track) {
         QTimer::singleShot(0,this,SLOT(loadTags()));
     }
     ++s_trackLoadCount;
+    s_tracksToLoad+=2;
 }
 
 void HArtistContext::setTags(QList<HTag *> tags) {
@@ -323,7 +327,8 @@ void HArtistContext::setTags(QList<HTag *> tags) {
 }
 
 void HArtistContext::setSimilar(HArtist* similar) {
-    s_similarToLoad=s_similarLoadCount?s_similarLoadCount*2:8;
+    if(s_loadedSimilar.contains(similar)) return;
+    s_loadedSimilar.push_back(similar);
     {
         HArtistBox* ab=new HArtistBox(*similar);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
@@ -347,6 +352,7 @@ void HArtistContext::setSimilar(HArtist* similar) {
         QTimer::singleShot(0,this,SLOT(loadTracks()));
     }
     s_similarLoadCount++;
+    s_similarToLoad+=2;
 }
 
 void HArtistContext::setShouts(QList<HShout*> shouts) {

@@ -42,6 +42,19 @@ HMainWindow::HMainWindow() : ui(new Ui::HMainWindow) {
     qApp->setQuitOnLastWindowClosed(true);
 }
 
+void HMainWindow::keyPressEvent(QKeyEvent *e) {
+    if(e->key()==Qt::Key_MediaPlay||e->key()==Qt::Key_MediaTogglePlayPause||e->key()==Qt::Key_MediaPause) {
+        if (HToolbar::singleton()) HToolbar::singleton()->tryPlay(!HToolbar::singleton()->playChecked());
+        e->accept();
+    } else if(e->key()==Qt::Key_MediaStop) {
+        if (HToolbar::singleton()) HToolbar::singleton()->tryPlay(0);
+        e->accept();
+    } else if(e->key()==Qt::Key_MediaNext) {
+        if (HToolbar::singleton()) HToolbar::singleton()->tryNext();
+        e->accept();
+    }
+}
+
 void HMainWindow::setupMainContext() {
     if(ui->toolbar->isHidden()) {
         QPropertyAnimation* pa= new QPropertyAnimation(ui->toolbar,"maximumHeight");

@@ -22,6 +22,10 @@ class HArtistContext : public QWidget
     int s_albumsToLoad, s_tracksToLoad, s_similarToLoad;
 
     void resizeEvent(QResizeEvent *);
+    QList<HAlbum*> s_loadedAlbums;
+    QList<HTrack*> s_loadedTracks;
+    QList<HArtist*> s_loadedSimilar;
+
 public:
     explicit HArtistContext(HArtist& rep, QWidget *parent = 0);
     ~HArtistContext();

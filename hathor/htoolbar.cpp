@@ -132,6 +132,10 @@ void HToolbar::setPlayChecked(bool checked) {
     ui->toolButton_play->setChecked(checked);
 }
 
+bool HToolbar::playChecked() {
+    return ui->toolButton_play->isChecked();
+}
+
 void HToolbar::tryPlay(bool play) {
     if(play) HPlayer::singleton()->resume();
     else HPlayer::singleton()->pause();

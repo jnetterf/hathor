@@ -22,6 +22,7 @@ class HMainWindow : public QWidget
 public:
     HMainWindow();
     static HMainWindow* singleton() { return s_singleton; }
+    void keyPressEvent(QKeyEvent * e);
 
 public slots:
     void setupMainContext();
