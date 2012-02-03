@@ -14,7 +14,7 @@
 #include <lastfm/ws.h>
 #include "lastfmext.h"
 
-QMap<QString, HUser*> HUser::_map;
+QHash<QString, HUser*> HUser::_map;
 
 HUser::HUser(QString username) : s_username(username)
 {

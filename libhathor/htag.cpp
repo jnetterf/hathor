@@ -15,7 +15,7 @@
 #include <lastfm/ws.h>
 #include "lastfmext.h"
 
-QMap<QString, HTag*> HTag::_map;
+QHash<QString, HTag*> HTag::_map;
 
 HTag::HTag(QString tag) : s_tag(tag)
 {

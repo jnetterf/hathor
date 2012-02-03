@@ -17,7 +17,8 @@ public:
         Playing=0,
         Paused=1,
         Stopped=2,
-        Buffering=3
+        Buffering=3,
+        Searching=4
     };
 protected:
     friend class HPlayer;
@@ -46,6 +47,10 @@ class LIBHATHORSHARED_EXPORT HAbstractTrackProvider {
     virtual void sendTrack(HTrack& track,QObject* obj,QString slot)=0;
         //When the HAbstractTrackInterface* is created, send it and this to obj->slot using
         //QMetaObject::invokeMethod(..., QARG(HAbstractTrackInterface*,...) Q_ARG(HAbstractTrackProvider*,...)
+
+    virtual QWidget* initWidget() = 0;
+        // When this provider is initilized, initWidget() is shown until it is destroyed. Use this if you need login info,
+        // or you take a long time to start. If not needed, just return 0.
 };
 
 Q_DECLARE_INTERFACE(HAbstractTrackProvider, "com.Nettek.Hathor.AbstractTrackProvider/1.01")
@@ -69,77 +74,13 @@ signals:
     void finished();
     void stateChanged(HAbstractTrackInterface::State);
 public slots:
-    void regProvider(HAbstractTrackProvider* tp) {
-        if(s_rem==-1) return;
-        ++s_rem;
-        tp->sendScore(track,this,"regScore");
-    }
-
-    void regScore(int score,HAbstractTrackProvider* tp) {
-        if(s_rem==-1) return;
-        QMutexLocker locker(&mutex);
-        qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
-        if(score>s_score&&score) {
-            if(p_ti) {
-                delete p_ti;
-                p_ti=0;
-            }
-            s_score=score;
-            s_bestProviderSoFar=tp;
-            --s_rem;
-        } else {
-            --s_rem;
-//            if(s_readyToSkip) skip();
-//            else if(s_readyToPlay) play();
-        }
-        if(!s_rem) {
-            if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
-            else emit finished();
-        }
-    }
-
-    void regAB(HAbstractTrackInterface* ti,HAbstractTrackProvider* tp) {
-        if(s_rem==-1) return;
-        QMutexLocker locker(&mutex);
-//        --s_rem;
-        if(tp!=s_bestProviderSoFar) {
-//            delete ti;    TODO
-            return;
-        }
-        p_ti=ti;
-        if(s_readyToSkip) skip();
-        else if(s_readyToPlay) play();
-    }
-
-    void play() {
-        if(s_rem>0) { s_readyToPlay=1; return; }
-        if(s_readyToSkip) { skip(); return; }
-        if(!p_ti) {
-            emit finished();
-            return;
-        }
-        s_rem=-1;
-        connect(p_ti,SIGNAL(finished()),this,SIGNAL(finished()));
-        connect(p_ti,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
-        if(!s_readyToPause) p_ti->play();
-        qDebug()<<"PLAYING!!!"<<p_ti->getTrack().getTrackName();
-        emit startedPlaying(p_ti->getTrack());
-    }
-
-    void resume() {
-        if(p_ti&&s_rem==-1) { p_ti->play(); }
-    }
-
-    void skip() {
-        qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
-        if(s_rem>0) { s_readyToSkip=1; }
-        if(p_ti) { p_ti->skip(); }
-    }
-
-    void pause() {
-        if(s_rem>0) { s_readyToPause=1; return; }
-        else if(s_rem==-1&&p_ti) { p_ti->pause(); }
-    }
+    void regProvider(HAbstractTrackProvider* tp);
+    void regScore(int score,HAbstractTrackProvider* tp);
+    void regAB(HAbstractTrackInterface* ti,HAbstractTrackProvider* tp);
+    void play();
+    void resume();
+    void skip();
+    void pause();
 };
 
 class LIBHATHORSHARED_EXPORT HAbstractQueue : public QObject {
@@ -162,6 +103,7 @@ signals:
     void stateChanged(HAbstractTrackInterface::State);
     void trackChanged(HTrack& t);
     void shuffleToggled(bool);
+    void searching();
 };
 
 class LIBHATHORSHARED_EXPORT HStandardQueue : public HAbstractQueue {

@@ -22,23 +22,10 @@ HMainWindow::HMainWindow() : ui(new Ui::HMainWindow) {
 
     ui->setupUi(this);
     ui->toolbar->hide();
-    QSettings sett("hathorMP","rdioKeys");
-    if(sett.value("rdioEnabled").toString()=="FALSE"||HRdioProvider::restore()) {
-        QSettings auth("hathorMP","auth");
-
-        lastfm::ws::Username = auth.value("lfm.username").toString();
-        lastfm::ws::SessionKey = auth.value("lfm.key").toString();
         show();
-        ui->toolbar->show();
-        setupMainContext();
-        return;
-    } else {
-        show();
-        ui->toolbar->hide();
         HLoginWidget* l=new HLoginWidget;
         ui->widget->layout()->addWidget(l);
         connect(l,SIGNAL(showMainContext()),this,SLOT(setupMainContext()));
-    }
     qApp->setQuitOnLastWindowClosed(true);
 }
 
@@ -56,9 +43,17 @@ void HMainWindow::keyPressEvent(QKeyEvent *e) {
 }
 
 void HMainWindow::setupMainContext() {
+    HRdioProvider* hrp=new HRdioProvider;
+    QWidget* l=hrp->initWidget();
+    ui->widget->layout()->addWidget(l);
+    QEventLoop ev;
+    connect(l,SIGNAL(destroyed()),&ev,SLOT(quit()));
+    ev.exec();
+
     if(ui->toolbar->isHidden()) {
         QPropertyAnimation* pa= new QPropertyAnimation(ui->toolbar,"maximumHeight");
         pa->setStartValue(1);
+        ui->toolbar->adjustSize();
         pa->setEndValue(ui->toolbar->height());
         pa->start(QAbstractAnimation::DeleteWhenStopped);
         ui->toolbar->show();
@@ -79,15 +74,15 @@ void HMainWindow::setupMainContext() {
 }
 
 void HMainWindow::showContext(HArtist& a) {
-    setContext(new HArtistContext(a));
+    setContext(HArtistContext::getContext(a));
 }
 
 void HMainWindow::showContext(HAlbum& a) {
-    setContext(new HAlbumContext(a));
+    setContext(HAlbumContext::getContext(a));
 }
 
 void HMainWindow::showContext(HTrack& a) {
-    setContext(new HTrackContext(a));
+    setContext(HTrackContext::getContext(a));
 }
 
 void HMainWindow::setContext(QWidget *ac) {
@@ -104,7 +99,7 @@ void HMainWindow::setContext(QWidget *ac) {
     ui->toolbar->setBackEnabled(1);
     s_curContext=ac;
     s_curContext->show();
-    kwe->start(300);
+    QTimer::singleShot(50,kwe,SLOT(start()));
 }
 
 
@@ -121,7 +116,7 @@ void HMainWindow::back() {
     s_curContext=s_contextStack.back();
 
     ui->toolbar->setBackEnabled(s_contextStack.size()!=1);
-    kwe->start( (s_contextStack.size()==1) ?300:100);
+    QTimer::singleShot(50,kwe,SLOT(start()));
 }
 
 

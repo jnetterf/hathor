@@ -40,6 +40,8 @@ public: //HAbstractTrackProvider
 
     HAbstractTrackInterface* queue(HTrack& track) { qDebug()<<"PLAYING LOCAL"; return new HPhononTrackInterface(track,getKey(track)); }
 
+    QWidget* initWidget() { return 0; }
+
 private:
     QString getKey(HTrack& track);
 public:

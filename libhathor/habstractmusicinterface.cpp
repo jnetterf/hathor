@@ -6,6 +6,77 @@
 
 HPlayer* HPlayer::s_singleton=0;
 
+void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
+    if(s_rem==-1) return;
+    ++s_rem;
+    tp->sendScore(track,this,"regScore");
+}
+
+void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
+    if(s_rem==-1) return;
+    QMutexLocker locker(&mutex);
+    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
+    if(score>s_score&&score) {
+        if(p_ti) {
+            delete p_ti;
+            p_ti=0;
+        }
+        s_score=score;
+        s_bestProviderSoFar=tp;
+        --s_rem;
+    } else {
+        --s_rem;
+    }
+    if(!s_rem) {
+        if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
+        else emit finished();
+    }
+}
+
+void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackProvider *tp) {
+    if(s_rem==-1) return;
+    QMutexLocker locker(&mutex);
+    Q_UNUSED(locker);
+    if(tp!=s_bestProviderSoFar) {
+        delete ti;
+        return;
+    }
+    p_ti=ti;
+    if(s_readyToSkip) skip();
+    else if(s_readyToPlay) play();
+}
+
+void HPlayer_PotentialTrack::play() {
+    if(s_rem>0) { s_readyToPlay=1; return; }
+    if(s_readyToSkip) { skip(); return; }
+    if(!p_ti) {
+        emit finished();
+        return;
+    }
+    qDebug()<<"PLAYING!!!"<<p_ti->getTrack().getTrackName();
+    s_rem=-1;
+    connect(p_ti,SIGNAL(finished()),this,SIGNAL(finished()));
+    connect(p_ti,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
+    if(!s_readyToPause) p_ti->play();
+    emit startedPlaying(p_ti->getTrack());
+}
+
+void HPlayer_PotentialTrack::resume() {
+    if(p_ti&&s_rem==-1) { p_ti->play(); }
+}
+
+void HPlayer_PotentialTrack::skip()  {
+    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
+    if(s_rem>0) { s_readyToSkip=1; }
+    if(p_ti) { p_ti->skip(); }
+}
+
+void HPlayer_PotentialTrack::pause() {
+    if(s_rem>0) { s_readyToPause=1; return; }
+    else if(s_rem==-1&&p_ti) { p_ti->pause(); }
+}
+
+
 HAbstractTrackInterface::State HPhononTrackInterface::getState() const {
     if(s_mo) {
         switch(s_mo->state()) {
@@ -62,6 +133,8 @@ HStandardQueue* HPlayer::getStandardQueue() {
 }
 
 void HStandardQueue::queue(HTrack *track) {
+    if(!s_currentTrack) emit stateChanged(HAbstractTrackInterface::Searching);
+
     HPlayer_PotentialTrack* pt=new HPlayer_PotentialTrack(*track);
     s_queue.push_back(pt);
     for(int i=0;i<s_providers.size();i++) {
@@ -132,6 +205,7 @@ void HStandardQueue::playNext() {
         connect(s_currentTrack,SIGNAL(finished()),this,SLOT(playNext()));
         connect(s_currentTrack,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
         connect(s_currentTrack,SIGNAL(startedPlaying(HTrack&)),this,SIGNAL(trackChanged(HTrack&)));
+        emit stateChanged(HAbstractTrackInterface::Searching);
         qDebug()<<"ABOUT TO PLAY!";
         s_currentTrack->play();
     } else {

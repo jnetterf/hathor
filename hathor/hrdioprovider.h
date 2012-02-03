@@ -1,6 +1,7 @@
 #ifndef HRDIOINTERFACE_H
 #define HRDIOINTERFACE_H
 
+#include "hloginwidget.h"
 #include <QString>
 #include "hbrowser.h"
 #include "hauthaction.h"
@@ -8,31 +9,92 @@
 #include <QObject>
 #include "habstractmusicinterface.h"
 #include <QTime>
+#include <QNetworkCookieJar>
 
 class HArtist;
 class HAlbum;
 class HTrack;
 
+class HRdioProvider;
+
+class HRdioLoginWidget : public HGraphicsView {
+    Q_OBJECT
+    HRdioProvider* s_rep;
+public:
+    explicit HRdioLoginWidget(HRdioProvider* rep, QWidget *parent = 0);
+
+public slots:
+    // LOGIN
+    void rdio1();
+    void showTabHint_rdio();
+    void doPassword_rdio();
+    void doLogin_rdio();
+    void onLoginChanged_rdio(QString login);
+
+    void rdio2(int a=0);
+
+    void openLink(QString);
+    void skipRdio();
+    void finishLoading();
+
+signals:
+    void showMainContext();
+
+private:
+    bool stage1;
+    FadePixmap* rpx;
+    QGraphicsScene* sc;
+    QGraphicsTextItem* tx;
+    QLabel* affil, * nothanks;
+    QPropertyAnimation* ranim,*ranim2,*ranim3;
+    MagicLineEdit*ra,*rb;
+    QMap<QString,QVariant> s_superSecret_rdio;
+};
+
+class HNetworkCookieJar: public QNetworkCookieJar {
+    Q_OBJECT
+public:
+    HNetworkCookieJar(QObject *parent = 0) : QNetworkCookieJar(parent) {}
+    virtual bool setCookiesFromUrl(const QList<QNetworkCookie> &cookieList, const QUrl &url) {
+        emit newCookie();
+        return QNetworkCookieJar::setCookiesFromUrl(cookieList,url);
+    }
+
+signals:
+    void newCookie();
+};
+
 class HRdioLoginAction : public HAction {
 public:
     Q_OBJECT
     QString s_un, s_psswd;
+    bool s_failed;
 public:
-    HRdioLoginAction(HBrowser& broser,QString un,QString psswd) : HAction(broser), s_un(un), s_psswd(psswd) {}
+    HRdioLoginAction(HBrowser& broser,QString un,QString psswd) : HAction(broser), s_un(un), s_psswd(psswd), s_failed(0) {}
+    bool failed() { return s_failed; }
 public slots:
     void init() {
         s_browser.loadPage("http://www.rdio.com/secure/login/?cn=secure_login_result&popup=1");
         connect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
-        QTimer::singleShot(7400,this,SIGNAL(done()));
+        QTimer::singleShot(9000,this,SLOT(fail()));
 //        s_browser.show();
     }
     void next_1() {
+        if(s_failed) return;
         s_browser.setInput("id_email",s_un);
         s_browser.setInput("id_password",s_psswd);
         s_browser.doJS("document.getElementById(\"signinButton\").click()");
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
         connect(&s_browser,SIGNAL(ready()),this,SIGNAL(done()));
-        QTimer::singleShot(1000,this,SIGNAL(done()));
+        QTimer::singleShot(7400,this,SLOT(fail()));
+        HNetworkCookieJar* ncj=dynamic_cast<HNetworkCookieJar*>(s_browser.s_webView->page()->networkAccessManager()->cookieJar());
+        if(!ncj) s_browser.s_webView->page()->networkAccessManager()->setCookieJar(ncj=new HNetworkCookieJar);
+        connect(ncj,SIGNAL(newCookie()),this,SIGNAL(done()));
+        //Invalid username or password, please try again.
+    }
+    void fail() {
+        s_failed=1;
+        emit error("Could not load");
     }
 };
 
@@ -72,6 +134,7 @@ class HRdioProvider : public QObject, public HAbstractTrackProvider {
     Q_INTERFACES(HAbstractTrackProvider)
     friend class HTrack;
     HRdioTrackInterface* ti;
+    HRdioLoginWidget* s_login;
 
 public: //HAbstractTrackProvider
     int globalScore() { return 90; /*Rdio is really good!*/ }
@@ -82,6 +145,7 @@ public: //HAbstractTrackProvider
         HAbstractTrackInterface* ti=new HRdioTrackInterface(track,getKey(track));
         QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HAbstractTrackInterface*,ti),Q_ARG(HAbstractTrackProvider*,this));
     }
+    QWidget* initWidget() { return s_login; }
 
 public slots: // Playback and queue:
     void seek_lowlevel(int sec);
@@ -137,12 +201,13 @@ private:
     bool s_ready;
     static HRdioProvider* _singleton;
 
-    HRdioProvider(QString username, QString password);
-    HRdioProvider(QString rdioToken, QString rdioSecret, QString oauthToken, QString oauthSecret);
+//    HRdioProvider(QString username, QString password);
+//    HRdioProvider(QString rdioToken, QString rdioSecret, QString oauthToken, QString oauthSecret);
     State getState() { return s_state; }
 public:
-    static HRdioProvider* login(QString username, QString password);
-    static HRdioProvider* restore();
+    HRdioProvider();
+    bool login(QString username, QString password);
+    bool restore();
     static HRdioProvider* singleton() { return _singleton; } //can return null
     bool ok();
     bool ready() { return s_ready; }

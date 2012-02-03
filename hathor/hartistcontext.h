@@ -26,16 +26,21 @@ class HArtistContext : public QWidget
     QList<HTrack*> s_loadedTracks;
     QList<HArtist*> s_loadedSimilar;
 
-public:
     explicit HArtistContext(HArtist& rep, QWidget *parent = 0);
+    static QHash<QString,HArtistContext*> s_map;
+
+    void showEvent(QShowEvent *);
+    QTime s_showTime;
+public:
+    static HArtistContext* getContext(HArtist& rep);
     ~HArtistContext();
 
 public slots:
     void showMoreBio();
-    void loadAlbums();
-    void loadTracks();
-    void loadTags();
-    void loadSimilar();
+    void loadAlbums(int s=-1);
+    void loadTracks(int s=-1);
+    void loadTags(int s=-1);
+    void loadSimilar(int s=-1);
     void loadShouts();
 
     void play();

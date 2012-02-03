@@ -168,6 +168,12 @@ void HToolbar::onStateChanged(HAbstractTrackInterface::State s) {
         setPlayChecked(true);
         setPlayEnabled(true);
         break;
+    case HAbstractTrackInterface::Searching:
+        qDebug()<<"SEARCH";
+        setPlaybackStatus("Searching for track...");
+        setPlayChecked(true);
+        setPlayEnabled(true);
+        break;
     }
 }
 

@@ -6,11 +6,19 @@
 #include "hshoutbox.h"
 #include "hartistbox.h"
 #include "halbumbox.h"
+#include "habstractmusicinterface.h"
 #include <QRect>
 #include <QScrollBar>
 #include <QMenu>
 
-#include "hrdioprovider.h"
+QHash<QString, HTrackContext*> HTrackContext::s_map;
+
+HTrackContext* HTrackContext::getContext(HTrack &rep) {
+    QString dumbName=rep.getTrackName()+"__"+rep.getArtistName();
+    if(s_map.contains(dumbName)) return s_map[dumbName];
+    s_map[dumbName] = new HTrackContext(rep);
+    return s_map[dumbName];
+}
 
 HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     QWidget(parent),
@@ -22,6 +30,7 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_similarLoadCount(0),
     s_shoutLoadCount(0),
     s_contentSet(0),
+    s_slideshow(0),
     ui(new Ui::HTrackContext)
 {
     ui->setupUi(this);
@@ -100,7 +109,7 @@ void HTrackContext::loadArtist()
 {
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
-        HArtistBox* ab=new HArtistBox(s_rep.getArtist());
+        HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(ab->sizeHint().height());
@@ -171,7 +180,7 @@ void HTrackContext::setUserPlayCount(int t) {
 void HTrackContext::setAlbums(QList<HAlbum *> t) {
     if(t.size())
     {
-        HAlbumBox* ab=new HAlbumBox(*t[0]);
+        HAlbumBox* ab=HAlbumBox::getBox(*t[0]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(ab->sizeHint().height());
@@ -188,7 +197,7 @@ void HTrackContext::setTags(QList<HTag *> tags) {
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
         tags[i]->getContent();    //CACHE
-        HTagBox* ab=new HTagBox(*tags[i]);
+        HTagBox* ab=HTagBox::getBox(*tags[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(40);
@@ -249,7 +258,7 @@ void HTrackContext::setSimilar(QList<HTrack *> tracks) {
     int i;
     int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
     for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
-        HTrackBox* ab=new HTrackBox(*tracks[i]);
+        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(40);
@@ -272,6 +281,11 @@ void HTrackContext::setSimilar(QList<HTrack *> tracks) {
 }
 
 void HTrackContext::setSlideshow(QWidget *w) {
+    if(!w) {
+        delete s_slideshow;
+        return;
+    }
+    s_slideshow=w;
     ui->content->addWidget(w);
     ui->content->setAlignment(w,Qt::AlignCenter);
     ui->scrollArea_3->hide();

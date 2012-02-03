@@ -14,11 +14,14 @@ class HArtistBox : public HGrowingWidget
     Q_OBJECT
     HArtist& s_rep;
 
-public:
     explicit HArtistBox(HArtist& rep, QWidget *parent = 0);
+    static QHash<QString,HArtistBox*> s_map;
+public:
+    static HArtistBox* getBox(HArtist& rep);
     ~HArtistBox();
     
 public slots:
+//    void continueLoading();
     void requestContext() { emit contextRequested(s_rep); }
     void setPic(QPixmap p);
     void setTagNames(QStringList tsl);

@@ -33,7 +33,7 @@ public:
     QList<HTrack*> getTopTracks();
 
 private:
-    static QMap<QString, HUser*> _map;
+    static QHash<QString, HUser*> _map;
     HUser(QString username);  // use HUser::get(name)
 
     struct InfoData {

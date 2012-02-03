@@ -65,6 +65,8 @@ public:
     QString getTrackName() { return s_track; }
     HArtist& getArtist();
 
+    bool isCached() { return s_infoData.isCached(); }
+
 public slots:
     void sendTagNames(QObject*,QString); /* QStringList */
     void sendMoreTagNames(QObject*,QString); /* QStringList */
@@ -119,7 +121,7 @@ public slots:
     void sendSpeed(QObject*,QString);
 
 private:
-    static QMap<QString, HTrack*> _map;
+    static QHash<QString, HTrack*> _map;
     HTrack(QString artist, QString track);  // use HTrack::get(name)
 
     struct InfoData : HCachedInfo {

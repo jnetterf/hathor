@@ -16,7 +16,7 @@
 #include "lastfmext.h"
 //#include "hrdiointerface.h"
 
-QMap<QString, HTrack*> HTrack::_map;
+QHash<QString, HTrack*> HTrack::_map;
 
 HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track), s_albumAlbumNameCache_GOT(0), s_trackNameCache_GOT(0), s_infoData(artist,track), s_extraTagData(artist,track),
     s_similarData(artist,track), s_audioFeatureData(artist,track)

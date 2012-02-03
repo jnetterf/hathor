@@ -19,8 +19,10 @@ class HTrackBox : public HGrowingWidget
     bool s_lovedCache;
     QString s_tags;
     int s_score;
-public:
+    static QHash<QString,HTrackBox*> s_map;
     explicit HTrackBox(HTrack& ref, QWidget *parent = 0);
+public:
+    static HTrackBox* getBox(HTrack& ref);
     ~HTrackBox();
 
 public slots:

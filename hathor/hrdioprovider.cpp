@@ -17,6 +17,338 @@
 #include "hartist.h"
 #include "hobject.h"
 
+#include <QTimer>
+#include <QDesktopWidget>
+#include <QCompleter>
+#include "hartistcontext.h"
+#include "halbumcontext.h"
+#include "htrackcontext.h"
+#include <lastfm/ws.h>
+#include <lastfm/misc.h>
+#include <lastfm/XmlQuery>
+#include <QGraphicsColorizeEffect>
+#include <QDesktopServices>
+#include <QPalette>
+#include "lastfmext.h"
+#include "hrdioprovider.h"
+#include "hsearchcontext.h"
+#include "hplayercontext.h"
+#include "kfadewidgeteffect.h"
+
+HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HGraphicsView(parent),
+  s_rep(rep)
+{
+    QSettings sett("hathorMP","rdioKeys");
+    if(sett.value("rdioEnabled").toString()=="FALSE") {
+        QTimer::singleShot(0,this,SLOT(deleteLater()));
+        return;
+    }
+
+    setMinimumHeight(768);
+    setMinimumWidth(1000);
+    if(qApp->desktop()->width()<1224) {
+        setWindowState(Qt::WindowFullScreen);
+    }
+    tx=0;
+    setBackgroundRole(QPalette::Base);
+    sc = new QGraphicsScene;
+
+    stage1=1;
+
+    ///
+    sc->setSceneRect(-10,-100,780,300);
+    setScene(sc);
+    tx = new QGraphicsTextItem;
+    tx->setFont(QFont("Candara",60));
+    if(sett.value("username").isValid()) tx->setPlainText("Welcome, "+sett.value("username").toString()+"!");
+    else tx->setPlainText("Loading...");
+    tx->show();
+
+    sc->addItem(tx);
+    tx->setPos(300,30);
+    tx->setFont(QFont("Candara",25));
+    qDebug()<<"About to restore...";
+    rpx = new FadePixmap;
+    rpx->setPixmap(QPixmap(":/icons/rdio.png").scaledToHeight(100,Qt::SmoothTransformation));
+    rpx->setPos(000,0);
+    rpx->show();
+    sc->addItem(rpx);
+    QTimer::singleShot(0,this,SLOT(finishLoading()));
+}
+
+void HRdioLoginWidget::finishLoading() {
+//    tx->setFont(QFont("Candara",60));
+    if(s_rep->restore()) {
+        qDebug()<<"RESTORE!";
+        QTimer::singleShot(0,this,SLOT(deleteLater()));
+        return;
+    }
+    tx->setFont(QFont("Candara",60));
+
+    tx->setPlainText("Press tab.");
+    tx->setOpacity(0);
+    ///
+
+    QSettings settings("hathorMP","lastfm_ext");
+    s_superSecret_rdio=settings.value("keys_rdio").toMap();
+
+    ///
+    ranim=new QPropertyAnimation(rpx, "echoOpacity");
+    ranim->setStartValue(1.0);
+    ranim->setEndValue(0.0);
+    ranim->setDuration(1000);
+    ///
+    ranim2=new QPropertyAnimation(tx, "opacity");
+    ranim2->setStartValue(0.0);
+    ranim2->setEndValue(1.0);
+    ranim2->setDuration(1000);
+    ///
+    ranim3=0;
+    ///
+    ra=new MagicLineEdit;rb=new MagicLineEdit;
+    ra->resize(400, 100);rb->resize(400,100);
+    ra->setFont(QFont("Arial",60));rb->setFont(QFont("Arial",60));
+    ra->setPlaceholderText("email"); rb->setPlaceholderText("password");
+    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
+    connect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
+    rb->setEchoMode(QLineEdit::Password);
+    sc->addWidget(ra)->setPos(380,0); sc->addWidget(rb)->setPos(800,0);
+    ra->show();
+    rb->show();
+    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(onLoginChanged_rdio(QString)));
+
+    affil=new QLabel;
+    affil->setText("<a href=\"http://click.linksynergy.com/fs-bin/click?id=EtH0bqD6seI&offerid=221756.10000004&type=3&subid=0\" >"
+                   "Sign up free!</a>");
+    sc->addWidget(affil)->setPos(380,120);
+    affil->show();
+    affil->setPalette(QPalette(Qt::white));
+    affil->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    affil->setFont(QFont("Candara",30));
+    affil->adjustSize();
+    connect(affil,SIGNAL(linkActivated(QString)),this,SLOT(openLink(QString)));
+
+    nothanks=new QLabel;
+    nothanks->setText("<a href=\"NO_THANKS\" >Skip!</a>");
+    sc->addWidget(nothanks)->setPos(698,120);
+    nothanks->show();
+    nothanks->setPalette(QPalette(Qt::white));
+    nothanks->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    nothanks->setFont(QFont("Candara",30));
+    nothanks->adjustSize();
+    connect(nothanks,SIGNAL(linkActivated(QString)),this,SLOT(skipRdio()));
+    QTimer::singleShot(0,this,SLOT(rdio1()));
+}
+
+void HRdioLoginWidget::onLoginChanged_rdio(QString login) {
+    if(!s_superSecret_rdio.value(login).isNull()) {
+        rb->setText(s_superSecret_rdio.value(login).toString());
+        return;
+    }
+    rb->setText("");
+}
+
+void HRdioLoginWidget::showTabHint_rdio() {
+    if(!ra->text().size()) return;
+    disconnect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
+    connect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
+
+    tx->show();
+    ranim->start();
+    QTimer::singleShot(300, ranim2, SLOT(start()));
+    disconnect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
+    stage1=0;
+    tx->setPos(0,0);
+    tx->setFont(QFont("Candara",60));
+    tx->setPlainText("Press tab.");
+
+
+    QPropertyAnimation* pa_=new QPropertyAnimation(affil->graphicsProxyWidget(),"opacity");
+    pa_->setStartValue(1);
+    pa_->setEndValue(0);
+    pa_->setDuration(500);
+    pa_->start(QPropertyAnimation::DeleteWhenStopped);
+
+
+}
+
+void HRdioLoginWidget::doPassword_rdio() {
+
+    disconnect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
+//    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
+    disconnect(rb,SIGNAL(returnPressed()),this,SLOT(doLogin_rdio()));
+    connect(rb,SIGNAL(returnPressed()),this,SLOT(doLogin_rdio()));
+
+    ranim->setStartValue(0.0);
+    ranim->setEndValue(1.0);
+    ranim->setDuration(500);
+    QTimer::singleShot(300, ranim, SLOT(start()));
+    ranim2->setStartValue(1.0);
+    ranim2->setEndValue(0.0);
+    ranim2->setDuration(500);
+    ranim2->start();
+    disconnect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
+
+    if(!stage1){
+        if(!ranim3)ranim3=new QPropertyAnimation(sc, "sceneRect");
+        ranim3->setStartValue(sc->sceneRect());
+        QRectF arect =sc->sceneRect();
+        arect.translate(325,0);
+        ranim3->setEndValue(arect);
+        ranim3->setDuration(500);
+        ranim3->start();
+    }
+    tx->setFont(QFont("Candara",50));
+    tx->setPlainText("Press enter.");
+    tx->setPos(800,120);
+    tx->setOpacity(0);
+
+    QPropertyAnimation* animA=new QPropertyAnimation(tx, "opacity");
+    animA->setStartValue(0.0);
+    animA->setEndValue(1.0);
+    animA->setDuration(500);
+    animA->start(QAbstractAnimation::DeleteWhenStopped);
+
+    if(rb->text().size()) {
+        QTimer::singleShot(700,this,SLOT(doLogin_rdio()));
+    }
+}
+
+void HRdioLoginWidget::doLogin_rdio() {
+    rb->setEnabled(0);
+    tx->setPlainText("Loading...");
+    if(!s_rep->login(ra->text(),rb->text())) {
+        tx->setFont(QFont("Candara",60));
+        tx->setPlainText("Press tab.");
+        tx->setOpacity(0);
+        tx->setPos(0,0);
+        ranim->setStartValue(1.0);
+        ranim->setEndValue(0.0);
+        ranim->setDuration(500);
+        ranim2->setStartValue(0.0);
+        ranim2->setEndValue(1.0);
+        ranim2->setDuration(500);
+
+        rb->setEnabled(1);
+        if(!ranim3) ranim3=new QPropertyAnimation(sc, "sceneRect");
+        ranim3->setStartValue(sc->sceneRect());
+        QRectF arect = sc->sceneRect();
+        arect.translate(-325,0);
+        ranim3->setEndValue(arect);
+        ranim3->setDuration(400);
+        ranim3->start();
+        rb->setEnabled(1);
+        ra->setText("");
+        ra->setFocus();
+        return;
+    }
+    {
+        QPropertyAnimation* pa=new QPropertyAnimation(ra->graphicsProxyWidget(),"opacity");
+        pa->setStartValue(1.0);
+        pa->setEndValue(0.0);
+        pa->setDuration(200);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+
+    {
+        QPropertyAnimation* pa=new QPropertyAnimation(rb->graphicsProxyWidget(),"opacity");
+        pa->setStartValue(1.0);
+        pa->setEndValue(0.0);
+        pa->setDuration(200);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+
+    {
+        QPropertyAnimation* pa=new QPropertyAnimation(rpx,"echoOpacity");
+        pa->setStartValue(1.0);
+        pa->setEndValue(0.0);
+        pa->setDuration(200);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+
+    {
+        QPropertyAnimation* pa=new QPropertyAnimation(tx,"opacity");
+        pa->setStartValue(1.0);
+        pa->setEndValue(0.0);
+        pa->setDuration(200);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+
+    QTimer::singleShot(215,this,SLOT(rdio2()));
+}
+
+void HRdioLoginWidget::rdio1() {
+    stage1=0;
+    tx->show();
+    setFocus();
+    QTimer::singleShot(400,ra,SLOT(setFocus()));
+//    ra->setFocus();
+    affil->show();
+    nothanks->show();
+}
+
+void HRdioLoginWidget::rdio2(int ax) {
+    show();
+    QRectF arect = sc->sceneRect();
+    arect.translate(ax,800);
+    sc->setSceneRect(arect);
+
+    QSettings auth("hathorMP","auth");
+    auth.setValue("lfm.username",lastfm::ws::Username);
+    auth.setValue("lfm.key",lastfm::ws::SessionKey);
+
+    hide();
+    emit showMainContext();
+    deleteLater();
+}
+
+void HRdioLoginWidget::openLink(QString s) {
+    QDesktopServices::openUrl(QUrl(s));
+}
+
+void HRdioLoginWidget::skipRdio() {
+    QSettings sett("hathorMP","rdioKeys");
+    sett.setValue("rdioEnabled","FALSE");
+    rdio2(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void HRdioTrackInterface::play() {
     if(s_dontPlay) return;
 
@@ -86,66 +418,79 @@ QString rdio_standardized(QString r) {
 
 HRdioProvider* HRdioProvider::_singleton=0;
 
-HRdioProvider* HRdioProvider::login(QString username, QString password) {
-    HRdioProvider* hri=new HRdioProvider(username,password);
-    if(hri->ok()) {
-        HPlayer::singleton()->installProvider(hri);
-        QSettings auth("hathorMP","auth");
-        auth.setValue("rdio.token",hri->s_rdioToken);
-        auth.setValue("rdio.secret",hri->s_rdioSecret);
-        auth.setValue("rdio.oauthToken",hri->s_oauthToken);
-        auth.setValue("rdio.oauthSecret",hri->s_oauthSecret);
-
-        return _singleton=hri;
-    }
-    else {
-        delete hri;
-        return 0;
-    }
-}
-
-HRdioProvider* HRdioProvider::restore() {
-    QSettings auth("hathorMP","auth");
-    HRdioProvider* hri=new HRdioProvider(auth.value("rdio.token").toString(),
-                                           auth.value("rdio.secret").toString(),
-                                           auth.value("rdio.oauthToken").toString(),
-                                           auth.value("rdio.oauthSecret").toString());
-    if(hri->ok()) {        
-        HPlayer::singleton()->installProvider(hri);
-        return _singleton=hri;
-    } else {
-        delete hri;
-        return 0;
-    }
-}
-
-HRdioProvider::HRdioProvider(QString username, QString password) :
-    ti(0), s_state(Stopped),  s_username(username), s_password(password), s_browser(), s_auth(new HAuthAction(s_browser,username,password)), s_ready(0)
-{
+bool HRdioProvider::login(QString username, QString password) {
+    ti=0;
+    s_state=Stopped;
+    s_username=username;
+    s_password=password;
+    s_auth=new HAuthAction(s_browser,username,password);
+    s_ready=0;
     connect(s_auth,SIGNAL(gotOauth(QByteArray,QByteArray,QByteArray,QByteArray)),this,SLOT(oauth(QByteArray,QByteArray,QByteArray,QByteArray)));
 
     QEventLoop loop;
     loop.connect(s_auth, SIGNAL(gotOauth(QByteArray,QByteArray,QByteArray,QByteArray)), SLOT(quit()) );
     loop.connect(s_auth, SIGNAL(error(QString)), SLOT(quit()) );
     loop.exec();
+
+    if(ok()) {
+        HPlayer::singleton()->installProvider(this);
+        QSettings auth("hathorMP","auth");
+        auth.setValue("rdio.token",s_rdioToken);
+        auth.setValue("rdio.secret",s_rdioSecret);
+        auth.setValue("rdio.oauthToken",s_oauthToken);
+        auth.setValue("rdio.oauthSecret",s_oauthSecret);
+
+        return (_singleton=this);
+    }
+    else {
+        qDebug()<<"Should delete maybe?";
+        return 0;
+    }
 }
 
-HRdioProvider::HRdioProvider(QString rdioToken, QString rdioSecret, QString oauthToken, QString oauthSecret) :
-    ti(0), s_state(Stopped), s_rdioToken(rdioToken.toUtf8()), s_rdioSecret(rdioSecret.toUtf8()), s_oauthToken(oauthToken.toUtf8()), s_oauthSecret(oauthSecret.toUtf8()),
-    s_browser(), s_auth(0), s_ready(0)
-{
+bool HRdioProvider::restore() {
+    QSettings auth("hathorMP","auth");
+//    HRdioProvider* hri=new HRdioProvider(auth.value("rdio.token").toString(),
+//                                           auth.value("rdio.secret").toString(),
+//                                           auth.value("rdio.oauthToken").toString(),
+//                                           auth.value("rdio.oauthSecret").toString());
+    ti=0;
+    s_state=Stopped;
+    s_rdioToken=auth.value("rdio.token").toString().toUtf8();
+    s_rdioSecret=auth.value("rdio.secret").toString().toUtf8();
+    s_oauthToken=auth.value("rdio.oauthToken").toString().toUtf8();
+    s_oauthSecret=auth.value("rdio.oauthSecret").toString().toUtf8();
+    s_auth=0;
+    s_ready=0;
     QSettings sett("hathorMP","rdioKeys");
     if(sett.value("password").toString().size()) {
         HRdioLoginAction la(s_browser,sett.value("username").toString(),sett.value("password").toString());
         QEventLoop el;
         connect(&la,SIGNAL(done()),&el,SLOT(quit()));
+        connect(&la,SIGNAL(error(QString)),&el,SLOT(quit()));
         la.init();
         el.exec();
+        if(la.failed()) {
+//            delete this;
+            return 0;
+        }
     }
 
     oauth(s_rdioToken,s_rdioSecret,s_oauthToken,s_oauthSecret);
+    if(ok()) {
+        HPlayer::singleton()->installProvider(this);
+        return _singleton=this;
+    } else {
+//        delete this;
+        return 0;
+    }
 }
 
+HRdioProvider::HRdioProvider() :
+    s_login(0), ti(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0)
+{
+    s_login=new HRdioLoginWidget(this);
+}
 
 bool HRdioProvider::ok() {
     return s_rdioToken.size()&&s_rdioSecret.size()&&s_oauthToken.size()&&s_oauthSecret.size();
@@ -386,16 +731,16 @@ QString HRdioProvider::Key::getKey() {
         QEventLoop loop; connect(s_rdioKey_getting,SIGNAL(notify()),&loop,SLOT(quit())); loop.exec();
         return s_rdioKey;
     }
-    QSettings sett("hathorMP","rdioKeys");
-    if(sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).isValid()) {
-        return s_rdioKey=sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).toString();
-    }
+//    QSettings sett("hathorMP","rdioKeys");
+//    if(sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).isValid()) {
+//        return s_rdioKey=sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).toString();
+//    }
     s_rdioKey_getting=new HRunOnceNotifier;
     s_rdioKey=HRdioProvider::singleton()->search(track.getArtistName()+" "+track.getTrackName(),"Tracks","",track.getArtistName(),track.getTrackName());
     if(!s_rdioKey.size()) s_rdioKey="_NO_RESULT_";
     s_rdioKey_getting->emitNotify();
     s_rdioKey_getting=0;
-    sett.setValue("key for "+track.getArtistName()+"__"+track.getTrackName(),s_rdioKey);
+//    sett.setValue("key for "+track.getArtistName()+"__"+track.getTrackName(),s_rdioKey);
     return s_rdioKey;
 }
 

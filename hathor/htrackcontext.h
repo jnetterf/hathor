@@ -20,8 +20,11 @@ class HTrackContext : public QWidget
     QString s_character;
     QString s_key;
     bool s_contentSet;
-public:
     explicit HTrackContext(HTrack& rep, QWidget *parent = 0);
+    static QHash<QString,HTrackContext*> s_map;
+    QWidget* s_slideshow;
+public:
+    static HTrackContext* getContext(HTrack& rep);
     ~HTrackContext();
 
 public slots:

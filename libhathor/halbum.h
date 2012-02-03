@@ -50,7 +50,7 @@ class LIBHATHORSHARED_EXPORT HAlbum : public HObject
     QMutex queueMutex;
     QString s_artist, s_album;
     HAlbum(QString artist, QString album);
-    static QMap<QString,HAlbum*> _map;
+    static QHash<QString,HAlbum*> _map;
     QList< QPair<QObject*,QString> > s_trackQueue;
     QList< QPair<QObject*,QString> > s_tagQueue;
     QList< QPair<QObject*,QString> > s_moreTagQueue;
@@ -69,6 +69,8 @@ public:
     HArtist& getArtist();
     QString getArtistName() { return s_artist; }
     QString getAlbumName() { return s_album; }
+
+    bool isCached() { return s_albumInfo.isCached(); }
 
 public slots:
     void sendTracks(QObject* obj, const char* member);  /*QList<HTrack*>*/

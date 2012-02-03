@@ -24,12 +24,12 @@ HPlayerContext::~HPlayerContext()
 }
 
 void HPlayerContext::showTrack(HTrack &t) {
-//    delete s_magic;
     if(s_magic) {
-        s_magic->hide();
-//        s_magic->deleteLater();
+        ui->widget_trackContext->layout()->removeWidget(s_magic);
+        s_magic->setSlideshow(0);
+        s_magic=0;
     }
-    s_magic=new HTrackContext(t);
+    s_magic=HTrackContext::getContext(t);
     ui->widget_trackContext->layout()->addWidget(s_magic);
 
     if(s_slideshow) s_slideshow->pause();

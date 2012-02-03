@@ -13,6 +13,14 @@
 #include <QGraphicsBlurEffect>
 #include <QMenu>
 
+QHash<QString, HArtistContext*> HArtistContext::s_map;
+
+HArtistContext* HArtistContext::getContext(HArtist &rep) {
+    if(s_map.contains(rep.getName())) return s_map[rep.getName()];
+    s_map[rep.getName()] = new HArtistContext(rep);
+    return s_map[rep.getName()];
+}
+
 HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     QWidget(parent),
     s_rep(rep),
@@ -45,7 +53,12 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     vb=new QVBoxLayout; vb->setSpacing(0); ui->widget_similarArtists->setLayout(vb);
     vb=new QVBoxLayout; vb->setSpacing(0); ui->widget_comments->setLayout(vb);
 
-    QTimer::singleShot(300,this,SLOT(loadAlbums()));
+    QTimer::singleShot(00,this,SLOT(loadAlbums()));
+    QTimer::singleShot(00,this,SLOT(loadShouts()));
+    QTimer::singleShot(00,this,SLOT(loadSimilar()));
+    QTimer::singleShot(00,this,SLOT(loadTags()));
+    QTimer::singleShot(00,this,SLOT(loadTracks()));
+
     connect(ui->label_moreAlbums,SIGNAL(linkActivated(QString)),this,SLOT(loadAlbums()));
 
     connect(ui->label_moreTracks,SIGNAL(linkActivated(QString)),this,SLOT(loadTracks()));
@@ -83,6 +96,33 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 //    connect(ui->button_more,SIGNAL(clicked()),this,SLOT(add()));
 }
 
+
+void HArtistContext::showEvent(QShowEvent * e) {
+    s_showTime=QTime::currentTime();
+    //our boxes may have been stolen while we weren't looking >_<
+    s_loadedAlbums.clear();
+    s_loadedTracks.clear();
+    s_loadedSimilar.clear();
+
+    while(ui->widget_albums->layout()->count()) {
+        ui->widget_albums->layout()->removeItem(ui->widget_albums->layout()->itemAt(0));
+    }
+    while(ui->widget_similarArtists->layout()->count()) {
+        ui->widget_similarArtists->layout()->removeItem(ui->widget_similarArtists->layout()->itemAt(0));
+    }
+    while(ui->widget_tracks->layout()->count()) {
+        ui->widget_tracks->layout()->removeItem(ui->widget_tracks->layout()->itemAt(0));
+    }
+
+    loadAlbums(s_albumLoadCount);
+    loadTracks(s_trackLoadCount);
+    loadSimilar(s_similarLoadCount);
+
+    // TODO: fix tags
+
+    QWidget::showEvent(e);
+}
+
 void HArtistContext::resizeEvent(QResizeEvent *e) {
     if(s_pw) {
         s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
@@ -104,20 +144,30 @@ void HArtistContext::showMoreBio()
     ui->label_moreDescription->hide();
 }
 
-void HArtistContext::loadAlbums()
+void HArtistContext::loadAlbums(int s)
 {
     ui->label_moreAlbums->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendAlbums(this,"setAlbums",s_albumsToLoad);
+    if(s==-1) s_rep.sendAlbums(this,"setAlbums",s_albumsToLoad);
+    else {
+        s_albumLoadCount=0;
+        s_albumsToLoad=3;
+        s_rep.sendAlbums(this,"setAlbums",s);
+    }
 }
 
-void HArtistContext::loadTracks()
+void HArtistContext::loadTracks(int s)
 {
     ui->label_moreTracks->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendTracks(this,"setTracks",s_tracksToLoad);
+    if(s==-1) s_rep.sendTracks(this,"setTracks",s_tracksToLoad);
+    else {
+        s_trackLoadCount=0;
+        s_tracksToLoad=10;
+        s_rep.sendTracks(this,"setTracks",s);
+    }
 }
 
 
-void HArtistContext::loadTags()
+void HArtistContext::loadTags(int s)
 {
     ui->label_moreTags->setText("<p align=\"right\"><i>Loading...</i></p>");
     if(s_tagLoadCount) s_rep.sendMoreTags(this,"setTags");
@@ -125,10 +175,15 @@ void HArtistContext::loadTags()
 }
 
 
-void HArtistContext::loadSimilar()
+void HArtistContext::loadSimilar(int s)
 {
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendSimilar(this,"setSimilar",s_similarToLoad);
+    if(s==-1) s_rep.sendSimilar(this,"setSimilar",s_similarToLoad);
+    else {
+        s_similarLoadCount=0;
+        s_similarToLoad=4;
+        s_rep.sendSimilar(this,"setSimilar",s);
+    }
 }
 
 void HArtistContext::loadShouts()
@@ -191,11 +246,14 @@ void HArtistContext::setPic(QPixmap p) {
     ui->label_artistPic->setPixmap(p);
     deltaWidth+=ui->label_artistPic->pixmap()->width();
     deltaHeight+=ui->label_artistPic->pixmap()->height();
-    QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
-    pa1->setStartValue(QSize(ui->label_artistPic->pixmap()->width()-deltaWidth,ui->label_artistPic->pixmap()->height()-deltaHeight));
-    pa1->setEndValue(QSize(ui->label_artistPic->pixmap()->width(),ui->label_artistPic->pixmap()->height()));
-    pa1->setDuration(300);
-    pa1->start(QPropertyAnimation::DeleteWhenStopped);
+
+    if(s_showTime.msecsTo(QTime::currentTime())>50) {
+        QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
+        pa1->setStartValue(QSize(ui->label_artistPic->pixmap()->width()-deltaWidth,ui->label_artistPic->pixmap()->height()-deltaHeight));
+        pa1->setEndValue(QSize(ui->label_artistPic->pixmap()->width(),ui->label_artistPic->pixmap()->height()));
+        pa1->setDuration(300);
+        pa1->start(QPropertyAnimation::DeleteWhenStopped);
+    }
     ui->label_artistPic->adjustSize();
     ui->frame_art->adjustSize();
     ui->label_description->adjustSize();
@@ -241,12 +299,14 @@ void HArtistContext::setAlbums(HAlbum* album) {
     if(s_loadedAlbums.contains(album)) return;
     s_loadedAlbums.push_back(album);
     {
-        HAlbumBox* ab=new HAlbumBox(*album);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(ab->heightForWidth(300));
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        HAlbumBox* ab=HAlbumBox::getBox(*album);
+        if(s_showTime.msecsTo(QTime::currentTime())>50||!album->isCached()) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->heightForWidth(300));
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_albums->layout()->addWidget(ab);
         ui->widget_albums->layout()->setAlignment(ab,Qt::AlignTop);
     }
@@ -260,9 +320,7 @@ void HArtistContext::setAlbums(HAlbum* album) {
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
-    if(!s_albumLoadCount) {
-        QTimer::singleShot(0,this,SLOT(loadSimilar()));
-    }
+
     ++s_albumLoadCount;
     s_albumsToLoad+=2;
 }
@@ -272,12 +330,14 @@ void HArtistContext::setTracks(HTrack* track) {
     s_loadedTracks.push_back(track);
 //    int i;
     {
-        HTrackBox* ab=new HTrackBox(*track);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(32);
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        HTrackBox* ab=HTrackBox::getBox(*track);
+        if(s_showTime.msecsTo(QTime::currentTime())>50||!track->isCached()) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(32);
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_tracks->layout()->addWidget(ab);
     }
 //    if(i-s_trackLoadCount!=toLoad) {
@@ -290,9 +350,6 @@ void HArtistContext::setTracks(HTrack* track) {
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
-    if(!s_trackLoadCount) {
-        QTimer::singleShot(0,this,SLOT(loadTags()));
-    }
     ++s_trackLoadCount;
     s_tracksToLoad+=2;
 }
@@ -302,7 +359,7 @@ void HArtistContext::setTags(QList<HTag *> tags) {
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
         tags[i]->getContent();    //CACHE
-        HTagBox* ab=new HTagBox(*tags[i]);
+        HTagBox* ab=HTagBox::getBox(*tags[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(40);
@@ -320,9 +377,6 @@ void HArtistContext::setTags(QList<HTag *> tags) {
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
-    if(!s_tagLoadCount) {
-        QTimer::singleShot(0,this,SLOT(loadShouts()));
-    }
     s_tagLoadCount=i;
 }
 
@@ -330,12 +384,17 @@ void HArtistContext::setSimilar(HArtist* similar) {
     if(s_loadedSimilar.contains(similar)) return;
     s_loadedSimilar.push_back(similar);
     {
-        HArtistBox* ab=new HArtistBox(*similar);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(ab->sizeHint().height());
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        HArtistBox* ab=HArtistBox::getBox(*similar);
+        if(s_showTime.msecsTo(QTime::currentTime())>50||!similar->isCached()) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+        ab->adjustSize();
         ui->widget_similarArtists->layout()->addWidget(ab);
     }
 //    if(i-s_similarLoadCount!=toLoad) {
@@ -347,9 +406,6 @@ void HArtistContext::setSimilar(HArtist* similar) {
             "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
-    }
-    if(!s_similarLoadCount) {
-        QTimer::singleShot(0,this,SLOT(loadTracks()));
     }
     s_similarLoadCount++;
     s_similarToLoad+=2;

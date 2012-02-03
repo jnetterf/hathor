@@ -30,6 +30,19 @@ HLoginWidget::HLoginWidget(QWidget *parent):HGraphicsView(parent) {
 
     stage1=1;
 
+    QTimer::singleShot(0,this,SLOT(continueLoading()));
+}
+
+void HLoginWidget::continueLoading() {
+    QSettings auth("hathorMP","auth");
+    if(auth.value("lfm.username").isValid()&&auth.value("lfm.key").isValid()) {
+        lastfm::ws::Username = auth.value("lfm.username").toString();
+        lastfm::ws::SessionKey = auth.value("lfm.key").toString();
+        hide();
+        emit showMainContext();
+        deleteLater();
+        return;
+    }
     ///
     px = new FadePixmap;
     px->setPixmap(QPixmap(":/icons/lfmRed.jpg").scaledToHeight(100,Qt::SmoothTransformation));
@@ -93,13 +106,10 @@ HLoginWidget::HLoginWidget(QWidget *parent):HGraphicsView(parent) {
     ra->resize(400, 100);rb->resize(400,100);
     ra->setFont(QFont("Arial",60));rb->setFont(QFont("Arial",60));
     ra->setPlaceholderText("email"); rb->setPlaceholderText("password");
-    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
-    connect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
     rb->setEchoMode(QLineEdit::Password);
     sc->addWidget(ra)->setPos(380,0); sc->addWidget(rb)->setPos(800,0);
     ra->hide();
     rb->hide();
-    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(onLoginChanged_rdio(QString)));
 
     affil=new QLabel;
     affil->setText("<a href=\"http://click.linksynergy.com/fs-bin/click?id=EtH0bqD6seI&offerid=221756.10000004&type=3&subid=0\" >"
@@ -120,25 +130,16 @@ HLoginWidget::HLoginWidget(QWidget *parent):HGraphicsView(parent) {
     nothanks->setTextInteractionFlags(Qt::TextBrowserInteraction);
     nothanks->setFont(QFont("Candara",30));
     nothanks->adjustSize();
-    connect(nothanks,SIGNAL(linkActivated(QString)),this,SLOT(skipRdio()));
-
 }
 
 void HLoginWidget::onLoginChanged(QString login) {
-    if(!s_superSecret.value(login).isNull()) {
-        b->setText(s_superSecret.value(login).toString());
-        return;
-    }
-    b->setText("");
+//    if(!s_superSecret.value(login).isNull()) {
+//        b->setText(s_superSecret.value(login).toString());
+//        return;
+//    }
+//    b->setText("");
 }
 
-void HLoginWidget::onLoginChanged_rdio(QString login) {
-    if(!s_superSecret_rdio.value(login).isNull()) {
-        rb->setText(s_superSecret_rdio.value(login).toString());
-        return;
-    }
-    rb->setText("");
-}
 
 void HLoginWidget::showTabHint() {
     if(!a->text().size()) return;
@@ -149,30 +150,6 @@ void HLoginWidget::showTabHint() {
     QTimer::singleShot(300, anim2, SLOT(start()));
     disconnect(a,SIGNAL(textChanged(QString)),this,SLOT(showTabHint()));
     stage1=0;
-}
-
-void HLoginWidget::showTabHint_rdio() {
-    if(!ra->text().size()) return;
-    disconnect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
-    connect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
-
-    tx->show();
-    ranim->start();
-    QTimer::singleShot(300, ranim2, SLOT(start()));
-    disconnect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
-    stage1=0;
-    tx->setPos(0,0);
-    tx->setFont(QFont("Candara",60));
-    tx->setPlainText("Press tab.");
-
-
-    QPropertyAnimation* pa_=new QPropertyAnimation(affil->graphicsProxyWidget(),"opacity");
-    pa_->setStartValue(1);
-    pa_->setEndValue(0);
-    pa_->setDuration(500);
-    pa_->start(QPropertyAnimation::DeleteWhenStopped);
-
-
 }
 
 void HLoginWidget::doPassword() {
@@ -220,49 +197,6 @@ void HLoginWidget::doPassword() {
 
     if(b->text().size()) {
         QTimer::singleShot(700,this,SLOT(doLogin()));
-        b->setEnabled(0);
-    }
-}
-
-void HLoginWidget::doPassword_rdio() {
-
-    disconnect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
-//    connect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
-    disconnect(rb,SIGNAL(returnPressed()),this,SLOT(doLogin_rdio()));
-    connect(rb,SIGNAL(returnPressed()),this,SLOT(doLogin_rdio()));
-
-    ranim->setStartValue(0.0);
-    ranim->setEndValue(1.0);
-    ranim->setDuration(500);
-    QTimer::singleShot(300, ranim, SLOT(start()));
-    ranim2->setStartValue(1.0);
-    ranim2->setEndValue(0.0);
-    ranim2->setDuration(500);
-    ranim2->start();
-    disconnect(rb, SIGNAL(gotFocus()),this,SLOT(doPassword_rdio()));
-
-    if(!stage1){
-        if(!ranim3)ranim3=new QPropertyAnimation(sc, "sceneRect");
-        ranim3->setStartValue(sc->sceneRect());
-        QRectF arect =sc->sceneRect();
-        arect.translate(325,0);
-        ranim3->setEndValue(arect);
-        ranim3->setDuration(500);
-        ranim3->start();
-    }
-    tx->setFont(QFont("Candara",50));
-    tx->setPlainText("Press enter.");
-    tx->setPos(800,120);
-    tx->setOpacity(0);
-
-    QPropertyAnimation* animA=new QPropertyAnimation(tx, "opacity");
-    animA->setStartValue(0.0);
-    animA->setEndValue(1.0);
-    animA->setDuration(500);
-    animA->start(QAbstractAnimation::DeleteWhenStopped);
-
-    if(rb->text().size()) {
-        QTimer::singleShot(700,this,SLOT(doLogin_rdio()));
         b->setEnabled(0);
     }
 }
@@ -326,37 +260,8 @@ void HLoginWidget::doLogin() {
 
         // RDIO
 
-        {
-            QPropertyAnimation* pa=new QPropertyAnimation(ra->graphicsProxyWidget(),"opacity");
-            pa->setStartValue(0.0);
-            pa->setEndValue(1.0);
-            pa->setDuration(200);
-            QTimer::singleShot(300,pa,SLOT(start()));
-            QTimer::singleShot(700,pa,SLOT(deleteLater()));
-            QTimer::singleShot(310,ra,SLOT(show()));
-        }
 
-        {
-            QPropertyAnimation* pa=new QPropertyAnimation(rb->graphicsProxyWidget(),"opacity");
-            pa->setStartValue(0.0);
-            pa->setEndValue(1.0);
-            pa->setDuration(200);
-            QTimer::singleShot(300,pa,SLOT(start()));
-            QTimer::singleShot(700,pa,SLOT(deleteLater()));
-            QTimer::singleShot(310,rb,SLOT(show()));
-        }
-
-        {
-            QPropertyAnimation* pa=new QPropertyAnimation(rpx,"echoOpacity");
-            pa->setStartValue(0.0);
-            pa->setEndValue(1.0);
-            pa->setDuration(200);
-            QTimer::singleShot(300,pa,SLOT(start()));
-            QTimer::singleShot(700,pa,SLOT(deleteLater()));
-            QTimer::singleShot(310,rpx,SLOT(show()));
-        }
-
-        QTimer::singleShot(210,this,SLOT(rdio1()));
+        QTimer::singleShot(210,this,SLOT(finish()));
 
         HUser::get(lastfm::ws::Username).getPic(HUser::Medium); //CACHE
         tx->setOpacity(0);
@@ -392,81 +297,7 @@ void HLoginWidget::doLogin() {
     }
 }
 
-void HLoginWidget::doLogin_rdio() {
-    rb->setEnabled(0);
-    tx->setPlainText("Loading...");
-    if(!HRdioProvider::login(ra->text(),rb->text())) {
-        tx->setFont(QFont("Candara",60));
-        tx->setPlainText("Press tab.");
-        tx->setOpacity(0);
-        tx->setPos(0,0);
-        ranim->setStartValue(1.0);
-        ranim->setEndValue(0.0);
-        ranim->setDuration(500);
-        ranim2->setStartValue(0.0);
-        ranim2->setEndValue(1.0);
-        ranim2->setDuration(500);
-
-        rb->setEnabled(1);
-        if(!ranim3) ranim3=new QPropertyAnimation(sc, "sceneRect");
-        ranim3->setStartValue(sc->sceneRect());
-        QRectF arect = sc->sceneRect();
-        arect.translate(-325,0);
-        ranim3->setEndValue(arect);
-        ranim3->setDuration(400);
-        ranim3->start();
-        rb->setEnabled(1);
-        ra->setText("");
-        ra->setFocus();
-        return;
-    }
-    {
-        QPropertyAnimation* pa=new QPropertyAnimation(ra->graphicsProxyWidget(),"opacity");
-        pa->setStartValue(1.0);
-        pa->setEndValue(0.0);
-        pa->setDuration(200);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
-    }
-
-    {
-        QPropertyAnimation* pa=new QPropertyAnimation(rb->graphicsProxyWidget(),"opacity");
-        pa->setStartValue(1.0);
-        pa->setEndValue(0.0);
-        pa->setDuration(200);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
-    }
-
-    {
-        QPropertyAnimation* pa=new QPropertyAnimation(rpx,"echoOpacity");
-        pa->setStartValue(1.0);
-        pa->setEndValue(0.0);
-        pa->setDuration(200);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
-    }
-
-    {
-        QPropertyAnimation* pa=new QPropertyAnimation(tx,"opacity");
-        pa->setStartValue(1.0);
-        pa->setEndValue(0.0);
-        pa->setDuration(200);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
-    }
-
-    QTimer::singleShot(215,this,SLOT(rdio2()));
-}
-
-void HLoginWidget::rdio1() {
-    stage1=0;
-    tx->show();
-    QRectF arect = sc->sceneRect();
-    arect.translate(-325,0);
-    sc->setSceneRect(arect);
-    QTimer::singleShot(400,ra,SLOT(setFocus()));
-    affil->show();
-    nothanks->show();
-}
-
-void HLoginWidget::rdio2(int ax) {
+void HLoginWidget::finish(int ax) {
     show();
     QRectF arect = sc->sceneRect();
     arect.translate(ax,800);
@@ -489,8 +320,3 @@ void HLoginWidget::openLink(QString s) {
     QDesktopServices::openUrl(QUrl(s));
 }
 
-void HLoginWidget::skipRdio() {
-    QSettings sett("hathorMP","rdioKeys");
-    sett.setValue("rdioEnabled","FALSE");
-    rdio2(0);
-}

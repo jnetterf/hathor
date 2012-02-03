@@ -15,8 +15,10 @@ class HAlbumBox : public HGrowingWidget
     
     HAlbum& s_album;
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
-public:
     explicit HAlbumBox(HAlbum& album, QWidget *parent = 0);
+    static QHash<QString,HAlbumBox*> s_map;
+public:
+    static HAlbumBox* getBox(HAlbum& album);
     ~HAlbumBox();
 
 public slots:

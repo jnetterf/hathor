@@ -62,7 +62,6 @@ HBackground::HBackground(QGraphicsScene *sc) {
 }
 
 void HBackground::showStuff() {
-
     _sc->setBackgroundBrush(QBrush(QColor("black")));
     ArtistAvatar::_ready=1;
     for(int i=_sc->items().size()-1;i>=0;i--)_sc->removeItem(_sc->items()[i]);

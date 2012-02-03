@@ -136,7 +136,7 @@ void HSearchContext::getMoreAlbums_2() {
                                 q++;
                                 if(q==8) return;
                                 if(s_term!=s) return;
-                                ui->widget_albums->layout()->addWidget(new HAlbumBox(HAlbum::get(j.toText().data(),album)));
+                                ui->widget_albums->layout()->addWidget(HAlbumBox::getBox(HAlbum::get(j.toText().data(),album)));
                                 if(s_term!=s) return;
                             }
                         }
@@ -196,7 +196,7 @@ void HSearchContext::getMoreArtists_2() {
                                 q++;
                                 if(q==8) return;
                                 if(s_term!=s) return;
-                                HArtistBox* ab=new HArtistBox(HArtist::get(j.toText().data()));
+                                HArtistBox* ab=HArtistBox::getBox(HArtist::get(j.toText().data()));
                                 QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
                                 pa->setStartValue(0);
                                 pa->setEndValue(ab->sizeHint().height());
@@ -263,7 +263,7 @@ void HSearchContext::getMoreTags_2() {
                                 q++;
                                 if(q==8) return;
                                 if(s_term!=s) return;
-                                ui->widget_tags->layout()->addWidget(new HTagBox(HTag::get(j.toText().data())));
+                                ui->widget_tags->layout()->addWidget(HTagBox::getBox(HTag::get(j.toText().data())));
                                 if(s_term!=s) return;
                             }
                         }
@@ -322,7 +322,7 @@ void HSearchContext::getMoreTracks_2() {
                                 if(q==8) return;
                                 if(s_term!=s) return;
 
-                                HTrackBox* ab=new HTrackBox(HTrack::get(j.toText().data(),track));
+                                HTrackBox* ab=HTrackBox::getBox(HTrack::get(j.toText().data(),track));
 
                                 QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
                                 pa->setStartValue(0);

@@ -63,21 +63,15 @@ public:
 
 public slots:
     // LOGIN
+    void continueLoading();
     void showTabHint();
     void doPassword();
     void doLogin();
     void onLoginChanged(QString login);
 
-    void rdio1();
-    void showTabHint_rdio();
-    void doPassword_rdio();
-    void doLogin_rdio();
-    void onLoginChanged_rdio(QString login);
-
-    void rdio2(int a=0);
+    void finish(int a=0);
 
     void openLink(QString);
-    void skipRdio();
 
 signals:
     void showMainContext();

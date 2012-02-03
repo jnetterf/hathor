@@ -4,6 +4,15 @@
 #include "hmainwindow.h"
 #include "kfadewidgeteffect.h"
 
+QHash<QString, HArtistBox*> HArtistBox::s_map;
+
+HArtistBox* HArtistBox::getBox(HArtist &rep) {
+    QString dumbName=rep.getName();
+    if(s_map.contains(dumbName)) return s_map[dumbName];
+    s_map[dumbName] = new HArtistBox(rep);
+    return s_map[dumbName];
+}
+
 HArtistBox::HArtistBox(HArtist &rep, QWidget *parent) :
     HGrowingWidget(parent),
     s_rep(rep),

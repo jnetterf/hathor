@@ -21,7 +21,7 @@ public:
     QString getContent();
 
 private:
-    static QMap<QString, HTag*> _map;
+    static QHash<QString, HTag*> _map;
     HTag(QString tag);  // use HTag::get(name)
 
     struct InfoData {

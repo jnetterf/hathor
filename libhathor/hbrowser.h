@@ -40,6 +40,7 @@ signals:
 class LIBHATHORSHARED_EXPORT HBrowser : public QWidget
 {
     friend class HRdioProvider;
+    friend class HRdioLoginAction;
     Q_OBJECT
 
     static HRunOnceNotifier* s_notifier;

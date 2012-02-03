@@ -5,6 +5,15 @@
 
 #include <QTimer>
 
+QHash<QString, HTrackBox*> HTrackBox::s_map;
+
+HTrackBox* HTrackBox::getBox(HTrack &rep) {
+    QString dumbName=rep.getTrackName()+"__"+rep.getArtistName();
+    if(s_map.contains(dumbName)) return s_map[dumbName];
+    s_map[dumbName] = new HTrackBox(rep);
+    return s_map[dumbName];
+}
+
 HTrackBox::HTrackBox(HTrack &ref, QWidget *parent) :
     HGrowingWidget(parent),
     s_ref(ref),

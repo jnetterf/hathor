@@ -16,8 +16,10 @@ class HAlbumContext : public QWidget
     int s_albumLoadCount, s_trackLoadCount, s_tagLoadCount, s_artistLoadCount,s_shoutLoadCount;
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
     int deltaWidth;
-public:
     explicit HAlbumContext(HAlbum& rep, QWidget *parent = 0);
+    static QHash<QString,HAlbumContext*> s_map;
+public:
+    static HAlbumContext* getContext(HAlbum& rep);
     ~HAlbumContext();
 
 public slots:

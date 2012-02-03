@@ -14,7 +14,7 @@
 #include <lastfm/ws.h>
 #include "lastfmext.h"
 
-QMap<QString, HAlbum*> HAlbum::_map;
+QHash<QString, HAlbum*> HAlbum::_map;
 
 HAlbum::HAlbum(QString artist, QString album) : s_artist(artist), s_album(album), s_albumInfo(artist,album), s_extraTagData(artist,album)
 {

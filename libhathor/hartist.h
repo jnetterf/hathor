@@ -88,6 +88,8 @@ public:
         Mega=3
     };
 
+    bool isCached() { return s_infoData.isCached(); }
+
 public slots:
     QString getName() { return s_name; }
     void sendPic(PictureSize p,QObject* o,QString m); /* QPixmap */
@@ -119,7 +121,7 @@ public slots:
     int getExtraPicCachedCount(); /* int */
 
 private:
-    static QMap<QString, HArtist*> _map;
+    static QHash<QString, HArtist*> _map;
     HArtist(QString name);  // use HArtist::get(name)
 
     QString s_name;

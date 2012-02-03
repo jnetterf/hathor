@@ -11,6 +11,15 @@
 #include <QScrollBar>
 #include <QMenu>
 
+QHash<QString, HAlbumContext*> HAlbumContext::s_map;
+
+HAlbumContext* HAlbumContext::getContext(HAlbum &rep) {
+    QString dumbName=rep.getAlbumName()+"__"+rep.getArtistName();
+    if(s_map.contains(dumbName)) return s_map[dumbName];
+    s_map[dumbName] = new HAlbumContext(rep);
+    return s_map[dumbName];
+}
+
 HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     QWidget(parent),
     s_rep(rep),
@@ -90,7 +99,7 @@ void HAlbumContext::loadArtist()
 {
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
-        HArtistBox* ab=new HArtistBox(s_rep.getArtist());
+        HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(ab->sizeHint().height());
@@ -113,7 +122,7 @@ void HAlbumContext::loadTracks_2(QList<HTrack *>tracks)
     int i;
     int toLoad=s_trackLoadCount?s_trackLoadCount*2:10;
     for(i=s_trackLoadCount;i<tracks.size()&&i-s_trackLoadCount<toLoad;i++) {
-        HTrackBox* ab=new HTrackBox(*tracks[i]);
+        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(32);
@@ -229,7 +238,7 @@ void HAlbumContext::addTags(QList<HTag*> tags) {
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
         tags[i]->getContent();    //CACHE
-        HTagBox* ab=new HTagBox(*tags[i]);
+        HTagBox* ab=HTagBox::getBox(*tags[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
         pa->setEndValue(40);

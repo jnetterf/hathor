@@ -13,8 +13,10 @@ class HTagBox : public HGrowingWidget
 {
     Q_OBJECT
     HTag& s_rep;
-public:
     explicit HTagBox(HTag& rep, QWidget *parent = 0);
+    static QHash<QString,HTagBox*> s_map;
+public:
+    static HTagBox* getBox(HTag& rep);
     ~HTagBox();
     
 private:

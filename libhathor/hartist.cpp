@@ -15,7 +15,7 @@
 #include <QDomDocument>
 #include "lastfmext.h"
 
-QMap<QString, HArtist*> HArtist::_map;
+QHash<QString, HArtist*> HArtist::_map;
 
 HArtist& HArtist::get(QString name) {
     if(_map.value(name,0)) {

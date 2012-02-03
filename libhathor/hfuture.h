@@ -85,6 +85,8 @@ public:
 
     virtual bool process(const QString& data)=0;
 
+    bool isCached() { return got&&!getting; }
+
 public slots:
     void sendData();
     void activate();
