@@ -110,7 +110,7 @@ class HRdioTrackInterface : public HAbstractTrackInterface {
 // void finished(); void stateChanged(State s);
 public:
     HRdioTrackInterface(HTrack& track, QString key) : HAbstractTrackInterface(track), s_key(key), s_playedYet(0), s_dontPlay(0) {}
-    void emitStateChanged() { qDebug()<<"EMITSTATECHANGED"; emit stateChanged(getState()); if(getState()==Playing) s_playedYet=1; if(getState()==Stopped&&s_playedYet) emit finished(); }
+    void emitStateChanged() { emit stateChanged(getState()); if(getState()==Playing) s_playedYet=1; if(getState()==Stopped&&s_playedYet) emit finished(); }
 };
 
 struct HSendScoreTriplet_Rdio {
@@ -146,6 +146,8 @@ public: //HAbstractTrackProvider
         QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HAbstractTrackInterface*,ti),Q_ARG(HAbstractTrackProvider*,this));
     }
     QWidget* initWidget() { return s_login; }
+
+    QString name() { return "Rdio"; }
 
 public slots: // Playback and queue:
     void seek_lowlevel(int sec);

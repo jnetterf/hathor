@@ -55,23 +55,34 @@ void HAlbumBox::setUserPlayCount(int count) {
 }
 
 void HAlbumBox::updateCounts() {
+    if(!s_tagString.size()||(s_cachedPlayCount==-1)||(s_cachedListenerCount==-1)||(s_cachedUserPlayCount==-1)) return;
+    KFadeWidgetEffect* kwe=0;
+    if(s_showTime.msecsTo(QTime::currentTime())>110) {
+        kwe=new KFadeWidgetEffect(this);
+    }
     ui->label_summary->setText("<B>"+QString::number(s_cachedPlayCount)+"</B> plays by "+QString::number(s_cachedListenerCount)+" listeners<br><B>"+QString::number(s_cachedUserPlayCount)+"</B> plays in your library");
+    ui->label_summary->adjustSize();
+    ui->label_tags->setText(s_tagString);
+    ui->label_tags->adjustSize();
+    if(kwe) QTimer::singleShot(10,kwe,SLOT(start()));
 }
 
 
 void HAlbumBox::setPixmap(QPixmap p) {
-    KFadeWidgetEffect* kwe=new KFadeWidgetEffect(this);
+    KFadeWidgetEffect* kwe=0;
+    if(s_showTime.msecsTo(QTime::currentTime())>110) {
+        kwe=new KFadeWidgetEffect(ui->label_icon);
+    }
     ui->label_icon->setPixmap(p.scaledToWidth(174,Qt::SmoothTransformation));
     ui->label_icon->adjustSize();
     adjustSize();
-    kwe->start();
+    if(kwe) kwe->start();
 }
 
 void HAlbumBox::setTagNames(QStringList tsl) {
     for(int i=4;i<tsl.size();i++) {
         tsl.removeAt(i);
     }
-    QString tags=tsl.join(", ");
-    ui->label_tags->setText(tags);
-    ui->label_tags->adjustSize();
+    s_tagString=tsl.join(", ");
+    updateCounts();
 }

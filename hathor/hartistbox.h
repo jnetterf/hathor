@@ -2,6 +2,7 @@
 #define HARTISTBOX_H
 
 #include <QWidget>
+#include <QTime>
 #include "hartist.h"
 #include "hgrowingwidget.h"
 
@@ -16,6 +17,9 @@ class HArtistBox : public HGrowingWidget
 
     explicit HArtistBox(HArtist& rep, QWidget *parent = 0);
     static QHash<QString,HArtistBox*> s_map;
+    QTime s_showTime;
+
+    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); QWidget::showEvent(e); }
 public:
     static HArtistBox* getBox(HArtist& rep);
     ~HArtistBox();

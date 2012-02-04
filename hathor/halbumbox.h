@@ -2,6 +2,7 @@
 #define HALBUMBOX_H
 
 #include <QWidget>
+#include <QTime>
 #include "halbum.h"
 #include "hgrowingwidget.h"
 
@@ -17,9 +18,14 @@ class HAlbumBox : public HGrowingWidget
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
     explicit HAlbumBox(HAlbum& album, QWidget *parent = 0);
     static QHash<QString,HAlbumBox*> s_map;
+    QTime s_showTime;
+    QString s_tagString;
+
 public:
     static HAlbumBox* getBox(HAlbum& album);
     ~HAlbumBox();
+
+    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); QWidget::showEvent(e); }
 
 public slots:
     void requestContext() { emit contextRequested(s_album); }

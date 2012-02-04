@@ -61,7 +61,7 @@ HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HGraphi
     tx = new QGraphicsTextItem;
     tx->setFont(QFont("Candara",60));
     if(sett.value("username").isValid()) tx->setPlainText("Welcome, "+sett.value("username").toString()+"!");
-    else tx->setPlainText("Loading...");
+    else tx->setPlainText("");
     tx->show();
 
     sc->addItem(tx);

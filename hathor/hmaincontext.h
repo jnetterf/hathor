@@ -418,8 +418,11 @@ public:
             ArtistAvatar* aa=dynamic_cast<ArtistAvatar*>(items(event->scenePos())[i]);
             if(aa){
                 aa->showInfo();
+                QGraphicsScene::mouseMoveEvent(event);
+                return;
             }
         }
+        for(int i=0;i<ArtistAvatar::_u_.size();i++) ArtistAvatar::_u_[i]->hideInfo();
         QGraphicsScene::mouseMoveEvent(event);
     }
 

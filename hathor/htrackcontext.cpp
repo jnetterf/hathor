@@ -25,7 +25,6 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_rep(rep),
     s_albumLoadCount(0),
     s_artistLoadCount(0),
-    s_trackLoadCount(0),
     s_tagLoadCount(0),
     s_similarLoadCount(0),
     s_shoutLoadCount(0),
@@ -33,6 +32,8 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_slideshow(0),
     ui(new Ui::HTrackContext)
 {
+    s_showTime=QTime::currentTime();
+
     ui->setupUi(this);
     s_rep.sendSummary(this,"setContent");
     s_rep.sendPlayCount(this,"setPlayCount");
@@ -99,6 +100,36 @@ HTrackContext::~HTrackContext()
     delete ui;
 }
 
+void HTrackContext::showEvent(QShowEvent *e) {
+    s_showTime=QTime::currentTime();
+    //our boxes may have been stolen while we weren't looking >_<
+
+    while(ui->widget_artist->layout()->count()) {
+        ui->widget_artist->layout()->removeItem(ui->widget_artist->layout()->itemAt(0));
+    }
+    while(ui->widget_tags->layout()->count()) {
+        ui->widget_tags->layout()->removeItem(ui->widget_tags->layout()->itemAt(0));
+    }
+    while(ui->widget_albums->layout()->count()) {
+        ui->widget_albums->layout()->removeItem(ui->widget_albums->layout()->itemAt(0));
+    }
+    while(ui->widget_similar->layout()->count()) {
+        ui->widget_similar->layout()->removeItem(ui->widget_similar->layout()->itemAt(0));
+    }
+
+    s_artistLoadCount=0;
+    s_tagLoadCount=0;
+    s_albumLoadCount=0;
+    s_similarLoadCount=0;
+
+    loadArtist();
+    loadTags();
+    loadAlbum();
+    loadSimilar();
+
+    QWidget::showEvent(e);
+}
+
 void HTrackContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
@@ -110,11 +141,13 @@ void HTrackContext::loadArtist()
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
         HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(ab->sizeHint().height());
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_artist->layout()->addWidget(ab);
     }
     s_artistLoadCount=1;
@@ -181,11 +214,13 @@ void HTrackContext::setAlbums(QList<HAlbum *> t) {
     if(t.size())
     {
         HAlbumBox* ab=HAlbumBox::getBox(*t[0]);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(ab->sizeHint().height());
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_albums->layout()->addWidget(ab);
     }
     s_albumLoadCount=1;
@@ -198,11 +233,13 @@ void HTrackContext::setTags(QList<HTag *> tags) {
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
         tags[i]->getContent();    //CACHE
         HTagBox* ab=HTagBox::getBox(*tags[i]);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(40);
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(40);
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_tags->layout()->addWidget(ab);
     }
     if(i-s_tagLoadCount!=toLoad) {
@@ -224,20 +261,6 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
     for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
         shouts[i]->getShouter().getPic(HUser::Medium);    //CACHE
         HShoutBox* ab=new HShoutBox(*shouts[i],this);
-        {
-            QPropertyAnimation* pa=new QPropertyAnimation(ab,"minimumHeight");
-            pa->setStartValue(0);
-            pa->setEndValue(ab->heightForWidth(ui->widget_comments->width()-20));
-            pa->setDuration(500);
-            pa->start(QAbstractAnimation::DeleteWhenStopped);
-        }
-        {
-            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-            pa->setStartValue(0);
-            pa->setEndValue(ab->heightForWidth(ui->widget_comments->width()-20));
-            pa->setDuration(500);
-            pa->start(QAbstractAnimation::DeleteWhenStopped);
-        }
         ui->widget_comments->layout()->addWidget(ab);
 
     }
@@ -259,11 +282,13 @@ void HTrackContext::setSimilar(QList<HTrack *> tracks) {
     int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
     for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
         HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
-        QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-        pa->setStartValue(0);
-        pa->setEndValue(40);
-        pa->setDuration(500);
-        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(40);
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
         ui->widget_similar->layout()->addWidget(ab);
     }
     if(i-s_similarLoadCount!=toLoad) {

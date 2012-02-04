@@ -15,7 +15,7 @@ void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
 void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
     if(s_rem==-1) return;
     QMutexLocker locker(&mutex);
-    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
+//    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
     if(score>s_score&&score) {
         if(p_ti) {
             delete p_ti;
@@ -31,6 +31,10 @@ void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
         if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
         else emit finished();
     }
+}
+
+HAbstractTrackProvider* HPlayer_PotentialTrack::getProvider() {
+    return s_bestProviderSoFar;
 }
 
 void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackProvider *tp) {

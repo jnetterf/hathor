@@ -38,9 +38,11 @@ public: //HAbstractTrackProvider
         QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HAbstractTrackInterface*,ti),Q_ARG(HAbstractTrackProvider*,this));
     }
 
-    HAbstractTrackInterface* queue(HTrack& track) { qDebug()<<"PLAYING LOCAL"; return new HPhononTrackInterface(track,getKey(track)); }
+    HAbstractTrackInterface* queue(HTrack& track) { return new HPhononTrackInterface(track,getKey(track)); }
 
     QWidget* initWidget() { return 0; }
+
+    QString name() { return "local"; }
 
 private:
     QString getKey(HTrack& track);

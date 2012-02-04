@@ -95,7 +95,7 @@ void HSearchContext::getMoreAlbums(QString s) {
     reply->setProperty("s",s);
 
     connect(reply,SIGNAL(finished()),this,SLOT(getMoreAlbums_2()));
-//    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
+    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
 void HSearchContext::getMoreAlbums_2() {
@@ -158,7 +158,7 @@ void HSearchContext::getMoreArtists(QString s) {
     reply->setProperty("s",s);
 
     connect(reply,SIGNAL(finished()),this,SLOT(getMoreArtists_2()));
-//    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
+    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
 void HSearchContext::getMoreArtists_2() {
@@ -225,7 +225,7 @@ void HSearchContext::getMoreTags(QString s) {
     reply->setProperty("s",s);
 
     connect(reply,SIGNAL(finished()),this,SLOT(getMoreTags_2()));
-//    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
+    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
 void HSearchContext::getMoreTags_2() {
@@ -285,7 +285,7 @@ void HSearchContext::getMoreTracks(QString s) {
     reply->setProperty("s",s);
 
     connect( reply, SIGNAL(finished()), this, SLOT(getMoreTracks_2()));
-//    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
+    connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
 void HSearchContext::getMoreTracks_2() {

@@ -184,8 +184,8 @@ void HCachedInfo::sendData_process() {
     getting=0;
 
     --ss_connections;
-    if(ss_connections<3&&ss_futureConnetions.size()) {
-        QPair<QObject*, QString> t=ss_futureConnetions.takeFirst();
+    if(ss_connections<4&&ss_futureConnetions.size()) {
+        QPair<QObject*, QString> t=ss_futureConnetions.takeLast();
         ++ss_connections;
         QMetaObject::invokeMethod(t.first,t.second.toUtf8().data(),Qt::QueuedConnection);
     }

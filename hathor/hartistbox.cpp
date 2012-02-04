@@ -34,23 +34,29 @@ HArtistBox::~HArtistBox()
 }
 
 void HArtistBox::setPic(QPixmap p) {
-    KFadeWidgetEffect* kwe=new KFadeWidgetEffect(this);
+    KFadeWidgetEffect* kwe=0;
+    if(s_showTime.msecsTo(QTime::currentTime())>110) kwe=new KFadeWidgetEffect(ui->label_pic);
     ui->label_pic->setPixmap(p.scaledToWidth(174,Qt::SmoothTransformation));
-    kwe->start();
+    if(kwe) kwe->start();
 }
 
 void HArtistBox::setTagNames(QStringList tsl) {
+    KFadeWidgetEffect* kwe=0;
+    if(s_showTime.msecsTo(QTime::currentTime())>110) kwe=new KFadeWidgetEffect(ui->label_tags);
     for(int i=4;i<tsl.size();i++) {
         tsl.removeAt(i);
     }
     QString tags=tsl.join(", ");
     ui->label_tags->setText(tags);
-
+    if(kwe) kwe->start();
 }
 
 void HArtistBox::setBioShort(QString sh) {
+    KFadeWidgetEffect* kwe=0;
+    if(s_showTime.msecsTo(QTime::currentTime())>110) kwe=new KFadeWidgetEffect(ui->label_desc);
     bool ok=sh.size()>360;
     sh.truncate(360);
     if(ok) sh+="...";
     ui->label_desc->setText(sh);
+    if(kwe) kwe->start();
 }

@@ -99,7 +99,7 @@ void HMainWindow::setContext(QWidget *ac) {
     ui->toolbar->setBackEnabled(1);
     s_curContext=ac;
     s_curContext->show();
-    QTimer::singleShot(50,kwe,SLOT(start()));
+    QTimer::singleShot(140,kwe,SLOT(start()));
 }
 
 
@@ -116,7 +116,7 @@ void HMainWindow::back() {
     s_curContext=s_contextStack.back();
 
     ui->toolbar->setBackEnabled(s_contextStack.size()!=1);
-    QTimer::singleShot(50,kwe,SLOT(start()));
+    QTimer::singleShot(140,kwe,SLOT(start()));
 }
 
 

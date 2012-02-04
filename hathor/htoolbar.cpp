@@ -163,7 +163,8 @@ void HToolbar::onStateChanged(HAbstractTrackInterface::State s) {
         setPlayEnabled(true);
         break;
     case HAbstractTrackInterface::Playing:
-        if(HPlayer::singleton()->currentTrack()) setPlaybackStatus("<A href=\"more\">"+HPlayer::singleton()->currentTrack()->getTrackName()+" by "+HPlayer::singleton()->currentTrack()->getArtistName());
+        if(HPlayer::singleton()->currentTrack()) setPlaybackStatus("<A href=\"more\">"+HPlayer::singleton()->currentTrack()->getTrackName()+" by "+HPlayer::singleton()->currentTrack()->getArtistName()+"</A> ("+
+                                                                   HPlayer::singleton()->getProviderName()+")");
         else setPlaybackStatus("Unknown state");
         setPlayChecked(true);
         setPlayEnabled(true);

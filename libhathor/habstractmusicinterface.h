@@ -51,6 +51,8 @@ class LIBHATHORSHARED_EXPORT HAbstractTrackProvider {
     virtual QWidget* initWidget() = 0;
         // When this provider is initilized, initWidget() is shown until it is destroyed. Use this if you need login info,
         // or you take a long time to start. If not needed, just return 0.
+
+    virtual QString name() = 0;
 };
 
 Q_DECLARE_INTERFACE(HAbstractTrackProvider, "com.Nettek.Hathor.AbstractTrackProvider/1.01")
@@ -69,6 +71,7 @@ class LIBHATHORSHARED_EXPORT HPlayer_PotentialTrack : public QObject {
 public:
     HAbstractTrackInterface* p_ti;
     HPlayer_PotentialTrack(HTrack& t) : s_score(0), s_interface(0),s_bestProviderSoFar(0), track(t), s_rem(0), s_readyToPlay(0), s_readyToSkip(0), s_readyToPause(0), p_ti(0) {}
+    HAbstractTrackProvider* getProvider();
 signals:
     void startedPlaying(HTrack& t);
     void finished();
@@ -96,8 +99,8 @@ public slots:
     virtual void pause()=0;
     virtual void resume()=0;
     virtual void playNext()=0;
-    virtual HAbstractTrackInterface* currentTrackInterface() { return 0; }
 public:
+    virtual HAbstractTrackInterface* currentTrackInterface() { return 0; }
     virtual HTrack* currentTrack()=0;
 signals:
     void stateChanged(HAbstractTrackInterface::State);
@@ -117,6 +120,7 @@ public:
     HStandardQueue(QList<HAbstractTrackProvider*>& providers, bool& shuffle) : s_providers(providers), s_shuffle(shuffle), s_currentTrack(0), s_attached(1) {}
     HTrack* currentTrack() { if(s_currentTrack) return &s_currentTrack->track; else return 0;}
     HAbstractTrackInterface* currentTrackInterface() { return s_currentTrack?s_currentTrack->p_ti:0; }
+    HPlayer_PotentialTrack* currentPotentialTrack() { return s_currentTrack; }
 public slots:
     void queue(HTrack* track);
     void queue(HAlbum* album);
@@ -143,6 +147,11 @@ public:
     HTrack* currentTrack() { return Q?Q->currentTrack():0; }
     HAbstractTrackInterface* currentTrackInterface() { return Q?Q->currentTrackInterface():0; }
     HStandardQueue* getStandardQueue();
+    QString getProviderName() {
+        HStandardQueue* sq= dynamic_cast<HStandardQueue*>(Q);
+        if(!sq) return "unknown source";
+        else if(sq->currentPotentialTrack()&&sq->currentPotentialTrack()->getProvider()) return sq->currentPotentialTrack()->getProvider()->name();
+    }
 
 public slots:
     void installProvider(HAbstractTrackProvider*);

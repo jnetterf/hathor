@@ -21,10 +21,8 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     s_rep(rep),
     ui(new Ui::HShoutBox)
 {
-    Q_ASSERT(parent);
     ui->setupUi(this);
     ui->label_pic->setPixmap(rep.getShouter().getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
-    parent->setUpdatesEnabled(0);
     ui->label_user->setText(rep.getShouter().getUsername()+" writes...");
     QString sh=rep.getShout();
     int li=0;
@@ -38,7 +36,10 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     ui->label_comments->setText(sh);
     ui->label_dateLikes->setText(rep.getDate()+(li?(", <B>"+QString::number(li)+sufix(li)+"</B> to like"):""));
     ui->label_comments->updateGeometry();
-    parent->setUpdatesEnabled(1);
+    ui->label_comments->adjustSize();
+    adjustSize();
+    setFixedHeight(minimumSizeHint().height());
+    adjustSize();
 }
 
 HShoutBox::~HShoutBox()

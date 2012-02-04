@@ -13,7 +13,7 @@ class HTrackContext : public QWidget
 {
     Q_OBJECT
     HTrack& s_rep;
-    int s_albumLoadCount, s_artistLoadCount, s_trackLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount;
+    int s_albumLoadCount, s_artistLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount;
 
     int s_listenerCountCache, s_playCountCache;
     int s_bpm;
@@ -23,6 +23,8 @@ class HTrackContext : public QWidget
     explicit HTrackContext(HTrack& rep, QWidget *parent = 0);
     static QHash<QString,HTrackContext*> s_map;
     QWidget* s_slideshow;
+    QTime s_showTime;
+    void showEvent(QShowEvent *e);
 public:
     static HTrackContext* getContext(HTrack& rep);
     ~HTrackContext();

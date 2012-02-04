@@ -17,6 +17,7 @@ class HArtistContext : public QWidget
     HArtist& s_rep;
     int s_albumLoadCount, s_trackLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount;
     int s_playCountCache, s_listenerCountCache, s_userPlayCountCache, deltaWidth;
+    int s_tagsToLoad;
     QGraphicsEffect* s_ge;
     HArtistPlayWidget* s_pw;
     int s_albumsToLoad, s_tracksToLoad, s_similarToLoad;
@@ -36,6 +37,7 @@ public:
     ~HArtistContext();
 
 public slots:
+    void continueLoading();
     void showMoreBio();
     void loadAlbums(int s=-1);
     void loadTracks(int s=-1);
