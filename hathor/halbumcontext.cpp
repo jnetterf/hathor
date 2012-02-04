@@ -6,7 +6,7 @@
 #include "halbumbox.h"
 #include "hshoutbox.h"
 #include "hartistbox.h"
-#include "hrdioprovider.h"
+#include "habstractmusicinterface.h"
 #include <QRect>
 #include <QScrollBar>
 #include <QMenu>

@@ -22,7 +22,7 @@ hlocalprovider.h
 #include <QFileDialog>
 #include <QDirIterator>
 
-QString local_standardized(QString r) {
+QString HLocalProvider::local_standardized(QString r) {
     r=r.toLower();
     r.replace("&amp;","&");
     r.replace("#39;","\'");
@@ -59,70 +59,14 @@ HLocalProvider* HLocalProvider::s_singleton=0;
 
 HLocalProvider::HLocalProvider() : s_settings("Nettek","Local Plugin for Hathor") {
     s_singleton=this;
-    QStringList dirs;
     if(s_settings.value("Directories").isNull()) {
-        while(1) {
-            if(QMessageBox::information(0,"Local Plugin for Hathor","Press ok to select a directory which has music in it, or cancel to stop searching. (This is temporary)",QMessageBox::Ok,QMessageBox::Cancel)
-                    ==QMessageBox::Cancel) break;
-            QString a= QFileDialog::getExistingDirectory(0,"Select directory with music");
-            if(a.size()) dirs.push_back(a);
-        }
-        s_settings.setValue("Directories",dirs);
-    } else dirs=s_settings.value("Directories").toStringList();
-
-    if(!s_settings.value("The Great Hash").isNull()) s_theGreatHash=s_settings.value("The Great Hash").toHash();
-    if(!s_settings.value("The Inverse Hash").isNull()) s_theInverseHash=s_settings.value("The Inverse Hash").toHash();
-
-    // rescan (FIX THIS)
-
-    QStringList files;
-
-    for(int i=0;i<dirs.size();i++) {
-        QDirIterator it(dirs[i], QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
-        while(it.hasNext()) {
-            it.next();
-            if(it.fileInfo().completeSuffix().toLower() == "mp3"||it.fileInfo().completeSuffix().toLower() == "ogg"||it.fileInfo().completeSuffix().toLower() == "wav"||
-                    it.fileInfo().completeSuffix().toLower() == "flac") files.push_back(it.filePath());
-        }
+        s_intro=new HLocalIntro(true,this);
+        connect(s_intro,SIGNAL(destroyed()),this,SLOT(byeByeIntro()));
+    } else {
+        s_intro=new HLocalIntro(false,this);
+        connect(s_intro,SIGNAL(destroyed()),this,SLOT(byeByeIntro()));
+        s_intro->go();
     }
-
-    Phonon::MediaObject mo;
-    for(int i=0;i<files.size();i++) {
-        qDebug()<<"Scanning (...)"<<files[i];
-        if(s_theInverseHash.contains(files[i])) continue;
-        Phonon::MediaSource ms(files[i]);
-        mo.setCurrentSource(ms);
-
-        //
-        // BEHOLD - THE GREATEST HACK MANKIND HAS EVER WITNESSED: (no really, fix this)
-        //
-
-        mo.play();
-        mo.pause();
-        QEventLoop loop;
-        connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-        QTimer::singleShot(20,&loop,SLOT(quit()));
-        loop.exec();
-        if(!mo.metaData("ARTIST").size()||!mo.metaData("ARTIST").first().size()||!mo.metaData("TITLE").size()||!mo.metaData("TITLE").first().size()) {
-            connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-            QTimer::singleShot(20,&loop,SLOT(quit()));
-            loop.exec();
-        }
-        qDebug()<<mo.metaData();
-
-        if(mo.metaData("ARTIST").size()&&mo.metaData("TITLE").size()) {
-            s_theGreatHash.insert(local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()),files[i]);
-            s_theInverseHash.insert(files[i],local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()));
-        }
-
-        mo.stop();
-        //
-        // End.
-        //
-    }
-    qDebug()<<s_theGreatHash;
-    s_settings.setValue("The Great Hash",QVariant::fromValue(s_theGreatHash));
-    s_settings.setValue("The Inverse Hash",QVariant::fromValue(s_theInverseHash));
 }
 
 QString HLocalProvider::getKey(HTrack& track) {

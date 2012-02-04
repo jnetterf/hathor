@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QApplication>
 #include <QPluginLoader>
+#include <QWidget>
 
 HPlayer* HPlayer::s_singleton=0;
 
@@ -137,6 +138,7 @@ HStandardQueue* HPlayer::getStandardQueue() {
 }
 
 void HStandardQueue::queue(HTrack *track) {
+    QMutexLocker l(&s_lock);
     if(!s_currentTrack) emit stateChanged(HAbstractTrackInterface::Searching);
 
     HPlayer_PotentialTrack* pt=new HPlayer_PotentialTrack(*track);
@@ -222,7 +224,7 @@ void HPlayer::playNext() {
     if(Q) Q->playNext();
 }
 
-void HPlayer::loadPlugins() {
+void HPlayer::loadPlugins(QLayout *l) {
     QStringList cl;
     cl.push_back(qApp->applicationDirPath());
     cl.push_back("/usr/share/hathor-20120128");
@@ -240,10 +242,19 @@ void HPlayer::loadPlugins() {
             QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
             QObject *plugin = loader.instance();
             if (plugin) {
-                qDebug()<<"Loading plugin"<<fileName;
+                qDebug()<<"Loading plugin"<<fileName+"...";
                 loaded.push_back(fileName);
                 HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
+
                 if(p) {
+                    QWidget* lw=p->initWidget();
+                    if(lw) {
+                        l->addWidget(lw);
+                        QEventLoop ev;
+                        connect(lw,SIGNAL(destroyed()),&ev,SLOT(quit()));
+                        ev.exec();
+                    }
+
                     installProvider(p);
                 }
             }

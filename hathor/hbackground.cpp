@@ -16,7 +16,6 @@
 #include <QGraphicsView>
 #include <QScrollBar>
 #include "hartistcontext.h"
-#include "hrdioprovider.h"
 #include <iostream>
 
 int _l=0;

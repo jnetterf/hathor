@@ -1,8 +1,8 @@
 #include "hplayercontext.h"
 #include "ui_hplayercontext.h"
 #include "htrackcontext.h"
-#include "hrdioprovider.h"
 #include "hslideshow.h"
+#include "habstractmusicinterface.h"
 
 HPlayerContext* HPlayerContext::_singleton = 0;
 

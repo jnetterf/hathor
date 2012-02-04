@@ -1,5 +1,5 @@
 /****************************************************
-eauthaction.h
+hauthaction.h
 
                     Part of Hathor
         Copyright (C) Joshua Netterfield 2011

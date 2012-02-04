@@ -12,18 +12,22 @@ hlocalprovider.h
 
 #include "hbrowser.h"
 #include "habstractmusicinterface.h"
+#include "hlocalintro.h"
 #include <phonon/MediaObject>
 
 class HLocalProvider : public QObject, public HAbstractTrackProvider
 {
     Q_OBJECT
     Q_INTERFACES(HAbstractTrackProvider)
+    friend class HLocalIntro;
     static HLocalProvider* s_singleton;
     QSettings s_settings;
     QVariantHash s_theGreatHash;
     QVariantHash s_theInverseHash;
+    HLocalIntro* s_intro;
 
 public:
+    static QString local_standardized(QString r);
     HLocalProvider();
 
 public: //HAbstractTrackProvider
@@ -40,9 +44,14 @@ public: //HAbstractTrackProvider
 
     HAbstractTrackInterface* queue(HTrack& track) { return new HPhononTrackInterface(track,getKey(track)); }
 
-    QWidget* initWidget() { return 0; }
+    QWidget* initWidget() { return s_intro; }
 
     QString name() { return "local"; }
+
+public slots:
+    void byeByeIntro() {
+        s_intro=0;
+    }
 
 private:
     QString getKey(HTrack& track);

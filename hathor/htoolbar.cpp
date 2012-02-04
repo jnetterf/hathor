@@ -1,5 +1,4 @@
 #include "htoolbar.h"
-#include "hrdioprovider.h"
 #include "hloginwidget.h"
 #include "ui_htoolbar.h"
 #include "hmainwindow.h"

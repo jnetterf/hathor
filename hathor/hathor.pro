@@ -21,8 +21,6 @@ HEADERS += \
     hslideshow.h \
     hmainwindow.h \
     hmaincontext.h \
-    hrdioprovider.h \
-    hauthaction.h \
     hplaywidget.h
 
 SOURCES += \
@@ -47,8 +45,6 @@ SOURCES += \
     hslideshow.cpp \
     hmainwindow.cpp \
     hmaincontext.cpp \
-    hrdioprovider.cpp \
-    hauthaction.cpp \
     hplaywidget.cpp
 
 !win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor

@@ -2,7 +2,6 @@
 #include "hmaincontext.h"
 #include "kfadewidgeteffect.h"
 #include "hloginwidget.h"
-#include "hrdioprovider.h"
 #include "lastfm/ws.h"
 #include <QSettings>
 #include "ui_hmainwindow.h"
@@ -43,12 +42,7 @@ void HMainWindow::keyPressEvent(QKeyEvent *e) {
 }
 
 void HMainWindow::setupMainContext() {
-    HRdioProvider* hrp=new HRdioProvider;
-    QWidget* l=hrp->initWidget();
-    ui->widget->layout()->addWidget(l);
-    QEventLoop ev;
-    connect(l,SIGNAL(destroyed()),&ev,SLOT(quit()));
-    ev.exec();
+    HPlayer::singleton()->loadPlugins(ui->widget->layout());
 
     if(ui->toolbar->isHidden()) {
         QPropertyAnimation* pa= new QPropertyAnimation(ui->toolbar,"maximumHeight");

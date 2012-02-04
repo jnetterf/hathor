@@ -12,7 +12,6 @@
 #include <QDesktopServices>
 #include <QPalette>
 #include "lastfmext.h"
-#include "hrdioprovider.h"
 #include "hsearchcontext.h"
 #include "hplayercontext.h"
 #include "kfadewidgeteffect.h"

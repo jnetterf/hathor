@@ -1,7 +1,6 @@
 #ifndef HRDIOINTERFACE_H
 #define HRDIOINTERFACE_H
 
-#include "hloginwidget.h"
 #include <QString>
 #include "hbrowser.h"
 #include "hauthaction.h"
@@ -10,6 +9,12 @@
 #include "habstractmusicinterface.h"
 #include <QTime>
 #include <QNetworkCookieJar>
+#include <QGraphicsView>
+#include <QPropertyAnimation>
+#include <QScrollBar>
+#include <QWheelEvent>
+#include <QGraphicsPixmapItem>
+#include <QLineEdit>
 
 class HArtist;
 class HAlbum;
@@ -17,7 +22,82 @@ class HTrack;
 
 class HRdioProvider;
 
-class HRdioLoginWidget : public HGraphicsView {
+class HRdioFadePixmap : public QObject, public QGraphicsPixmapItem {
+    Q_OBJECT
+    Q_PROPERTY(qreal echoOpacity READ echoOpacity WRITE setEchoOpacity)
+public slots:
+    void setEchoOpacity(qreal opacity){QGraphicsPixmapItem::setOpacity(opacity);}
+    void show() { QGraphicsPixmapItem::show(); }
+public:
+    qreal echoOpacity() const { return QGraphicsPixmapItem::opacity();}
+};
+
+class MagicLineEdit : public QLineEdit {
+    Q_OBJECT public:
+    MagicLineEdit(QWidget* parent=0) : QLineEdit(parent) {
+        setStyleSheet("QLineEdit {"
+                      "border: 1px solid #141414;"
+                      "border-radius: 4px;"
+                      "color: #1e1e1e;"
+                      "font-family: Arial;"
+                      "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                                                       "stop: 0 #ffffff, stop: 1 #aaaaaa);"
+                      "selection-background-color: #e8e8e8;"
+                      "selection-color: #262627"
+                      "}");
+    }
+    MagicLineEdit(const QString &a, QWidget *parent) : QLineEdit(a,parent) {}
+    void focusInEvent(QFocusEvent *) { emit gotFocus(); }
+signals:
+    void gotFocus();
+};
+
+class HRdioGraphicsView : public QGraphicsView
+{
+    Q_OBJECT
+public:
+    explicit HRdioGraphicsView(QWidget *parent = 0) :QGraphicsView(parent), s_hidePos(0), s_max(0) {}
+
+    int s_hidePos;
+    int s_max;
+
+protected:
+    void wheelEvent(QWheelEvent *event) {
+        QPropertyAnimation* pa=new QPropertyAnimation(verticalScrollBar(),"value");
+        pa->setStartValue(verticalScrollBar()->value());
+        pa->setEndValue(verticalScrollBar()->value()-event->delta()*2.5);
+        pa->setDuration(100);
+        pa->start(QPropertyAnimation::DeleteWhenStopped);
+    }
+    void resizeEvent(QResizeEvent *event) {
+        QGraphicsView::resizeEvent(event);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        verticalScrollBar()->setMaximum(s_max);
+    }
+    void showEvent(QShowEvent *event) {
+        QGraphicsView::showEvent(event);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        verticalScrollBar()->setMaximum(s_max);
+        verticalScrollBar()->setValue(s_hidePos);
+    }
+    void hideEvent(QHideEvent *event) {
+        s_hidePos=verticalScrollBar()->value();
+        QGraphicsView::hideEvent(event);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        verticalScrollBar()->setMaximum(s_max);
+    }
+
+signals:
+
+public slots:
+    void setMax(int max) {
+        s_max=max;
+        verticalScrollBar()->setMaximum(s_max);
+    }
+
+};
+
+class HRdioLoginWidget : public HRdioGraphicsView {
     Q_OBJECT
     HRdioProvider* s_rep;
 public:
@@ -42,7 +122,7 @@ signals:
 
 private:
     bool stage1;
-    FadePixmap* rpx;
+    HRdioFadePixmap* rpx;
     QGraphicsScene* sc;
     QGraphicsTextItem* tx;
     QLabel* affil, * nothanks;
@@ -113,18 +193,22 @@ public:
     void emitStateChanged() { emit stateChanged(getState()); if(getState()==Playing) s_playedYet=1; if(getState()==Stopped&&s_playedYet) emit finished(); }
 };
 
-struct HSendScoreTriplet_Rdio {
+struct HSendScoreTriplet_Rdio : public QObject{
+    Q_OBJECT
     HTrack& track;
     QObject* o;
     QString m;
     bool& s_ready;
+    bool& s_calmDown;
     static QList<HSendScoreTriplet_Rdio*> s_list;
 public:
-    HSendScoreTriplet_Rdio(HTrack& a,QObject* b, QString c, bool&r) : track(a), o(b), m(c), s_ready(r) {
-        if(!s_list.size()) doMagic();
-        else s_list.push_back(this);
+    HSendScoreTriplet_Rdio(HTrack& a,QObject* b, QString c, bool&r, bool&cd) : track(a), o(b), m(c), s_ready(r), s_calmDown(cd) {
+        if(!s_list.size()) {
+            s_list.push_back(0);
+            QTimer::singleShot(0,this,SLOT(doMagic()));
+        } else s_list.push_back(this);
     }
-
+public slots:
     void doMagic();
 
 };
@@ -139,7 +223,7 @@ class HRdioProvider : public QObject, public HAbstractTrackProvider {
 public: //HAbstractTrackProvider
     int globalScore() { return 90; /*Rdio is really good!*/ }
     void sendScore(HTrack& track,QObject* o,QString m) {
-        new HSendScoreTriplet_Rdio(track,o,m,s_ready);
+        new HSendScoreTriplet_Rdio(track,o,m,s_ready,s_calmDown);
     }
     void sendTrack(HTrack& track,QObject* o,QString m) {
         HAbstractTrackInterface* ti=new HRdioTrackInterface(track,getKey(track));
@@ -201,6 +285,7 @@ private:
     HAuthAction* s_auth;
 
     bool s_ready;
+    bool s_calmDown;
     static HRdioProvider* _singleton;
 
 //    HRdioProvider(QString username, QString password);

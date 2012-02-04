@@ -6,24 +6,21 @@
 
 QT       += core phonon xml network
 
-TARGET = local-plugin-for-hathor
+TARGET = rdio-plugin-for-hathor
 TEMPLATE = lib
 CONFIG += plugin oauth
 
 win32:LIBS += -llastfm0
 debug:win32:DESTDIR = ../hathor/debug/plugins
 release:win32:DESTDIR = ../hathor/release/plugins
-!win32:DESTDIR = ../hathor/plugins
+!win32:DESTDIR = ../hathor/plugins/
 debug:win32:LIBS += "../libhathor/debug/hathor.lib"
 release:win32:LIBS += "../libhathor/release/hathor.lib"
 
-SOURCES += hlocalprovider.cpp \
-    hlocalintro.cpp
+SOURCES += hrdioprovider.cpp \
+    hauthaction.cpp
 
-HEADERS += hlocalprovider.h \
-    hlocalintro.h
+HEADERS += hrdioprovider.h \
+    hauthaction.h
 
 INCLUDEPATH+="../libhathor"
-
-FORMS += \
-    hlocalintro.ui

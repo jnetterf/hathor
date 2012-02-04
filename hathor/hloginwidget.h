@@ -25,7 +25,6 @@ namespace Ui {
 class HLoginWidget;
 }
 
-
 class FadePixmap : public QObject, public QGraphicsPixmapItem {
     Q_OBJECT
     Q_PROPERTY(qreal echoOpacity READ echoOpacity WRITE setEchoOpacity)

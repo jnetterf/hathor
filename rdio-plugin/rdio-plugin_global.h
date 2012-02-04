@@ -1,0 +1,12 @@
+#ifndef RDIOPLUGIN_GLOBAL_H
+#define RDIOPLUGIN_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(RDIOPLUGIN_LIBRARY)
+#  define RDIOPLUGINSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define RDIOPLUGINSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // RDIOPLUGIN_GLOBAL_H

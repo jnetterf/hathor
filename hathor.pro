@@ -2,4 +2,5 @@ TEMPLATE=subdirs
 CONFIG += ordered
 SUBDIRS = libhathor \
           local-plugin \
-          hathor
+          hathor \
+    rdio-plugin

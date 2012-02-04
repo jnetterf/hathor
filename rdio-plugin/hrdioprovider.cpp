@@ -20,22 +20,18 @@
 #include <QTimer>
 #include <QDesktopWidget>
 #include <QCompleter>
-#include "hartistcontext.h"
-#include "halbumcontext.h"
-#include "htrackcontext.h"
+#include <QGraphicsProxyWidget>
 #include <lastfm/ws.h>
 #include <lastfm/misc.h>
 #include <lastfm/XmlQuery>
 #include <QGraphicsColorizeEffect>
 #include <QDesktopServices>
 #include <QPalette>
+#include <QApplication>
 #include "lastfmext.h"
-#include "hrdioprovider.h"
-#include "hsearchcontext.h"
-#include "hplayercontext.h"
 #include "kfadewidgeteffect.h"
 
-HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HGraphicsView(parent),
+HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HRdioGraphicsView(parent),
   s_rep(rep)
 {
     QSettings sett("hathorMP","rdioKeys");
@@ -68,7 +64,7 @@ HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HGraphi
     tx->setPos(300,30);
     tx->setFont(QFont("Candara",25));
     qDebug()<<"About to restore...";
-    rpx = new FadePixmap;
+    rpx = new HRdioFadePixmap;
     rpx->setPixmap(QPixmap(":/icons/rdio.png").scaledToHeight(100,Qt::SmoothTransformation));
     rpx->setPos(000,0);
     rpx->show();
@@ -479,7 +475,7 @@ bool HRdioProvider::restore() {
     oauth(s_rdioToken,s_rdioSecret,s_oauthToken,s_oauthSecret);
     if(ok()) {
         HPlayer::singleton()->installProvider(this);
-        return _singleton=this;
+        return (_singleton=this);
     } else {
 //        delete this;
         return 0;
@@ -487,8 +483,9 @@ bool HRdioProvider::restore() {
 }
 
 HRdioProvider::HRdioProvider() :
-    s_login(0), ti(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0)
+    ti(0), s_login(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0), s_calmDown(0)
 {
+    qDebug()<<"HRDIO";
     s_login=new HRdioLoginWidget(this);
 }
 
@@ -747,12 +744,23 @@ QString HRdioProvider::Key::getKey() {
 QList<HSendScoreTriplet_Rdio*> HSendScoreTriplet_Rdio::s_list;
 
 void HSendScoreTriplet_Rdio::doMagic() {
+    if(s_calmDown) {
+        qWarning()<<"We should never get here!!!";
+        return;
+    }
+    s_calmDown=1;
     if(!s_list.size()) s_list.push_back(0);
     bool ok=HRdioProvider::singleton()->getKey(track)!="_NO_RESULT_";
     QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(int,ok?(s_ready?80:1):0),Q_ARG(HAbstractTrackProvider*,HRdioProvider::singleton()));
     while(s_list.size()) {
         if(s_list.first()==0) s_list.pop_front();
-        else s_list.takeFirst()->doMagic();
+        else {
+            QTimer::singleShot(0,s_list.takeFirst(),SLOT(doMagic()));
+            break;
+        }
+//        QTimer::singleShot(0,this,SLOT(doMagic()));
     }
+    s_calmDown=0;
 }
 
+Q_EXPORT_PLUGIN2(hrdio_provider, HRdioProvider)

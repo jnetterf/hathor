@@ -1,7 +1,6 @@
 #include "hartistcontext.h"
 #include "ui_artistcontext.h"
 #include "halbumbox.h"
-#include "hrdioprovider.h"
 #include "htrackbox.h"
 #include "htagbox.h"
 #include "hartistbox.h"

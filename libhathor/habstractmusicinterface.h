@@ -7,6 +7,8 @@
 #include "halbum.h"
 #include "hartist.h"
 
+#include <QLayout>
+
 #include <phonon/MediaObject>
 
 class LIBHATHORSHARED_EXPORT HAbstractTrackInterface : public QObject {
@@ -47,6 +49,7 @@ class LIBHATHORSHARED_EXPORT HAbstractTrackProvider {
     virtual void sendTrack(HTrack& track,QObject* obj,QString slot)=0;
         //When the HAbstractTrackInterface* is created, send it and this to obj->slot using
         //QMetaObject::invokeMethod(..., QARG(HAbstractTrackInterface*,...) Q_ARG(HAbstractTrackProvider*,...)
+        // MUST RETURN IMMEDIATELY!
 
     virtual QWidget* initWidget() = 0;
         // When this provider is initilized, initWidget() is shown until it is destroyed. Use this if you need login info,
@@ -116,6 +119,7 @@ class LIBHATHORSHARED_EXPORT HStandardQueue : public HAbstractQueue {
     HPlayer_PotentialTrack* s_currentTrack;
     QList<HPlayer_PotentialTrack*> s_queue;
     bool s_attached;
+    QMutex s_lock;
 public:
     HStandardQueue(QList<HAbstractTrackProvider*>& providers, bool& shuffle) : s_providers(providers), s_shuffle(shuffle), s_currentTrack(0), s_attached(1) {}
     HTrack* currentTrack() { if(s_currentTrack) return &s_currentTrack->track; else return 0;}
@@ -141,7 +145,7 @@ class LIBHATHORSHARED_EXPORT HPlayer : public QObject{
     static HPlayer* s_singleton;
     bool s_shuffle;
     HAbstractQueue* Q;
-    HPlayer() : s_providers(), s_shuffle(0), Q(0) { s_singleton=this; loadPlugins(); }
+    HPlayer() : s_providers(), s_shuffle(0), Q(0) { s_singleton=this; /* WE DON'T LOAD THE PLUGINS ANYMORE */ }
 public:
     static HPlayer* singleton() { if(!s_singleton) {s_singleton=new HPlayer;} return s_singleton; }
     HTrack* currentTrack() { return Q?Q->currentTrack():0; }
@@ -164,7 +168,7 @@ public slots:
 
     void playNext();
 
-    void loadPlugins();
+    void loadPlugins(QLayout* l);
 
 signals:
     void stateChanged(HAbstractTrackInterface::State);
