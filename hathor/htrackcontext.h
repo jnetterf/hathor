@@ -4,26 +4,33 @@
 #include <QWidget>
 #include "hloginwidget.h"
 #include "hartist.h"
+#include "hplaywidget.h"
 
 namespace Ui {
 class HTrackContext;
 }
 
+class QGraphicsBlurEffect;
+
 class HTrackContext : public QWidget
 {
     Q_OBJECT
     HTrack& s_rep;
-    int s_albumLoadCount, s_artistLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount;
+    int s_albumLoadCount, s_artistLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount, s_similarToLoad;
 
     int s_listenerCountCache, s_playCountCache;
     int s_bpm;
+    bool s_loved;
     QString s_character;
     QString s_key;
     bool s_contentSet;
+    HPlayWidget* s_pw;
+    QGraphicsBlurEffect* s_ge;
     explicit HTrackContext(HTrack& rep, QWidget *parent = 0);
     static QHash<QString,HTrackContext*> s_map;
     QWidget* s_slideshow;
     QTime s_showTime;
+    QList<HTrack*> s_loadedSimilar;
     void showEvent(QShowEvent *e);
 public:
     static HTrackContext* getContext(HTrack& rep);
@@ -35,11 +42,12 @@ public slots:
     void loadAlbum();
 //    void loadTracks();
     void loadTags();
-    void loadSimilar();
+    void loadSimilar(int s=-1);
     void loadShouts();
     void setSlideshow(QWidget*);
 
-    void playTrack();
+    void play();
+    void hidePlay();
 
     void setContent(QString);
     void setListenerCount(int);
@@ -50,7 +58,9 @@ public slots:
     void setAlbums(QList<HAlbum*>);
     void setTags(QList<HTag*>);
     void setShouts(QList<HShout*>);
-    void setSimilar(QList<HTrack*>);
+    void setSimilar(HTrack*);
+
+    void setLoved(bool);
 
     void setBpm(double);
     void setValence(double);
@@ -65,6 +75,8 @@ public slots:
     void setTempoInstability(double);
     void setRhythmicIntricacy(double);
     void setSpeed(double);
+
+    void toggleLoved();
 
 private:
     Ui::HTrackContext *ui;

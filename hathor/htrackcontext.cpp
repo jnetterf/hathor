@@ -10,6 +10,9 @@
 #include <QRect>
 #include <QScrollBar>
 #include <QMenu>
+#include <QIcon>
+#include "kfadewidgeteffect.h"
+#include <QGraphicsBlurEffect>
 
 QHash<QString, HTrackContext*> HTrackContext::s_map;
 
@@ -28,7 +31,11 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_tagLoadCount(0),
     s_similarLoadCount(0),
     s_shoutLoadCount(0),
+    s_similarToLoad(10),
+    s_loved(0),
     s_contentSet(0),
+    s_pw(0),
+    s_ge(0),
     s_slideshow(0),
     ui(new Ui::HTrackContext)
 {
@@ -43,7 +50,8 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 
     connect(ui->label_moreDescription,SIGNAL(linkActivated(QString)),this,SLOT(showMoreBio()));
 
-    connect(ui->button_play,SIGNAL(clicked()),this,SLOT(playTrack()));
+    connect(ui->button_play,SIGNAL(clicked()),this,SLOT(play()));
+    connect(ui->toolButton_loved,SIGNAL(clicked()),this,SLOT(toggleLoved()));
 //    connect(ui->button_more,SIGNAL(clicked()),this,SLOT(playSimilar()));
 
     ui->widget_artist->setLayout(new QVBoxLayout);
@@ -93,6 +101,8 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_rep.sendTempoInstability(this,"setTempoInstability");
     s_rep.sendRhythmicIntricacy(this,"setRhythmicIntricacy");
     s_rep.sendSpeed(this,"setSpeed");
+
+    s_rep.sendLoved(this,"setLoved");
 }
 
 HTrackContext::~HTrackContext()
@@ -117,15 +127,16 @@ void HTrackContext::showEvent(QShowEvent *e) {
         ui->widget_similar->layout()->removeItem(ui->widget_similar->layout()->itemAt(0));
     }
 
+    s_loadedSimilar.clear();
+
     s_artistLoadCount=0;
     s_tagLoadCount=0;
     s_albumLoadCount=0;
-    s_similarLoadCount=0;
 
     loadArtist();
     loadTags();
     loadAlbum();
-    loadSimilar();
+    loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
 
     QWidget::showEvent(e);
 }
@@ -173,15 +184,44 @@ void HTrackContext::loadShouts()
     s_rep.sendShouts(this,"setShouts");
 }
 
-void HTrackContext::loadSimilar()
-{
-    ui->label_moreTracks->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendSimilar(this,"setSimilar");
+void HTrackContext::loadSimilar(int s)
+{   
+    ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
+    if(s==-1) s_rep.sendSimilar(this,"setSimilar",s_similarToLoad);
+    else {
+        s_similarLoadCount=0;
+        s_similarToLoad=4;
+        s_rep.sendSimilar(this,"setSimilar",s);
+    }
 }
 
-void HTrackContext::playTrack() {
-    HPlayer::singleton()->clear();
-    HPlayer::singleton()->getStandardQueue()->queue(&s_rep);
+//void HTrackContext::play() {
+//    HPlayer::singleton()->clear();
+//    HPlayer::singleton()->getStandardQueue()->queue(&s_rep);
+//}
+
+void HTrackContext::play() {
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(this);
+    setGraphicsEffect(s_ge=new QGraphicsBlurEffect(this));
+    setEnabled(0);
+    if(!s_pw) {
+        s_pw = new HPlayWidget(s_rep,this->parentWidget());
+    } else s_pw->reset();
+    s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
+    s_pw->adjustSize();
+    s_pw->show();
+    connect(s_pw,SIGNAL(closed()),this,SLOT(hidePlay()));
+    fwe->start();
+}
+
+void HTrackContext::hidePlay() {
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(this);
+    delete s_ge;
+    s_ge=0;
+    s_pw->hide();
+    setEnabled(1);
+    fwe->start();
+
 }
 
 void HTrackContext::setContent(QString t) {
@@ -277,32 +317,64 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
     s_shoutLoadCount=i;
 }
 
-void HTrackContext::setSimilar(QList<HTrack *> tracks) {
-    int i;
-    int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
-    for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
-        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
-        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+void HTrackContext::setSimilar(HTrack* similar) {
+    if(s_loadedSimilar.contains(similar)) return;
+    s_loadedSimilar.push_back(similar);
+    {
+        HTrackBox* ab=HTrackBox::getBox(*similar);
+        if(s_showTime.msecsTo(QTime::currentTime())>110||!similar->isCached()) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
             pa->setStartValue(0);
-            pa->setEndValue(40);
+            pa->setEndValue(ab->sizeHint().height());
             pa->setDuration(500);
             pa->start(QAbstractAnimation::DeleteWhenStopped);
         }
+        ab->adjustSize();
         ui->widget_similar->layout()->addWidget(ab);
     }
-    if(i-s_similarLoadCount!=toLoad) {
-        ui->label_moreTracks->hide();
-    } else {
-        ui->label_moreTracks->setText(
+//    if(i-s_similarLoadCount!=toLoad) {
+//        ui->label_moreArtists->hide();
+    /*} else*/ {
+        ui->label_moreArtists->setText(
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
             "p, li { white-space: pre-wrap; }"
             "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
+    s_similarLoadCount++;
+    s_similarToLoad+=2;
 
-    s_similarLoadCount=i;
+
+
+
+//    int i;
+//    int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
+//    for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
+//        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
+//        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+//            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+//            pa->setStartValue(0);
+//            pa->setEndValue(40);
+//            pa->setDuration(500);
+//            pa->start(QAbstractAnimation::DeleteWhenStopped);
+//        }
+//        ui->widget_similar->layout()->addWidget(ab);
+//    }
+//    if(i-s_similarLoadCount!=toLoad) {
+//        ui->label_moreTracks->hide();
+//    } else {
+//        ui->label_moreTracks->setText(
+//            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+//            "p, li { white-space: pre-wrap; }"
+//            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+//            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+//            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+//    }
+
+//    s_similarLoadCount=i;
 }
 
 void HTrackContext::setSlideshow(QWidget *w) {
@@ -316,6 +388,26 @@ void HTrackContext::setSlideshow(QWidget *w) {
     ui->scrollArea_3->hide();
     w->adjustSize();
     ui->frame_header->adjustSize();
+}
+
+void HTrackContext::setLoved(bool a) {
+    if(a) {
+        ui->toolButton_loved->setIcon(QIcon(":/icons/heart-red.png"));
+    }
+}
+
+void HTrackContext::toggleLoved() {
+    QMap<QString, QString> params;
+    params["method"] = s_loved?"track.unlove":"track.love";
+    params["artist"] = s_rep.getArtistName();
+    params["track"] = s_rep.getTrackName();
+
+    QNetworkReply* reply = lastfmext_post( params );
+    QEventLoop loop;
+    QTimer::singleShot(2850,&loop,SLOT(quit()));
+    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+    loop.exec();
+    setLoved(!s_loved);
 }
 
 void HTrackContext::setBpm(double d) {

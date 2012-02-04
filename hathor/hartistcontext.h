@@ -9,7 +9,7 @@ namespace Ui {
 class HArtistContext;
 }
 
-class HArtistPlayWidget;
+class HPlayWidget;
 
 class HArtistContext : public QWidget
 {
@@ -19,7 +19,7 @@ class HArtistContext : public QWidget
     int s_playCountCache, s_listenerCountCache, s_userPlayCountCache, deltaWidth;
     int s_tagsToLoad;
     QGraphicsEffect* s_ge;
-    HArtistPlayWidget* s_pw;
+    HPlayWidget* s_pw;
     int s_albumsToLoad, s_tracksToLoad, s_similarToLoad;
 
     void resizeEvent(QResizeEvent *);

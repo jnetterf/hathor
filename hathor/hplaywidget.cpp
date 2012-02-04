@@ -4,14 +4,50 @@
 #include "habstractmusicinterface.h"
 #include <QTimer>
 
-HArtistPlayWidget::HArtistPlayWidget(HArtist &artist, QWidget *parent) :
+HPlayWidget::HPlayWidget(HArtist &artist, QWidget *parent) :
     QWidget(parent),
-    s_artist(artist),
+    s_rep(&artist),
     ui(new Ui::HPlayWidget)
 {
     ui->setupUi(this);
     ui->label_info->setText("<center><B>"+artist.getName()+"</B> (<A href=\"close\">close</A>)");
 
+    doSetup();
+}
+
+HPlayWidget::HPlayWidget(HAlbum &album, QWidget *parent) :
+    QWidget(parent),
+    s_rep(&album),
+    ui(new Ui::HPlayWidget)
+{
+    ui->setupUi(this);
+    ui->label_info->setText("<center><B>"+album.getAlbumName()+"</B> (<A href=\"close\">close</A>)");
+    ui->button_morphStation->hide();
+    ui->button_similarArtists->hide();
+    ui->button_topSongs->hide();
+    ui->commandLinkButton_6->hide();
+    ui->button_topAlbums->setText("Album");
+
+    doSetup();
+}
+
+HPlayWidget::HPlayWidget(HTrack &track, QWidget *parent) :
+    QWidget(parent),
+    s_rep(&track),
+    ui(new Ui::HPlayWidget)
+{
+    ui->setupUi(this);
+    ui->label_info->setText("<center><B>"+track.getTrackName()+" by "+track.getArtistName()+"</B> (<A href=\"close\">close</A>)");
+    ui->button_morphStation->hide();
+    ui->button_similarArtists->setText("Similar Tracks");
+    ui->button_topSongs->setText("Play");
+    ui->commandLinkButton_6->hide();
+    ui->button_topAlbums->hide();
+
+    doSetup();
+}
+
+void HPlayWidget::doSetup() {
     connect(ui->button_similarArtists,SIGNAL(clicked()),this,SLOT(similarArtists()));
     connect(ui->button_morphStation,SIGNAL(clicked()),this,SLOT(morphStation()));
     connect(ui->button_topAlbums,SIGNAL(clicked()),this,SLOT(topAlbums()));
@@ -32,15 +68,15 @@ HArtistPlayWidget::HArtistPlayWidget(HArtist &artist, QWidget *parent) :
     connect(ui->tb_r5,SIGNAL(clicked()),this,SLOT(play5()));
 }
 
-void HArtistPlayWidget::reset() {
+void HPlayWidget::reset() {
     ui->frame_l->hide();
     ui->frame_r->hide();
     ui->verticalLayout_2->addWidget(ui->frame_l);
     ui->verticalLayout_3->addWidget(ui->frame_r);
 
-    ui->button_morphStation->show();
+    if(!dynamic_cast<HTrack*>(s_rep)) ui->button_morphStation->show();
     ui->button_similarArtists->show();
-    ui->button_topAlbums->show();
+    if(!dynamic_cast<HTrack*>(s_rep)) ui->button_topAlbums->show();
     ui->button_topSongs->show();
 
     ui->tb_l1->setText("5");
@@ -55,7 +91,7 @@ void HArtistPlayWidget::reset() {
     ui->tb_r5->setText("All");
 }
 
-void HArtistPlayWidget::similarArtists() {
+void HPlayWidget::similarArtists() {
     s_state=SimilarArtists;
     KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->frame);
     reset();
@@ -67,7 +103,7 @@ void HArtistPlayWidget::similarArtists() {
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
 
-void HArtistPlayWidget::morphStation() {
+void HPlayWidget::morphStation() {
     s_state=MorphStation;
     KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->frame);
     reset();
@@ -78,7 +114,7 @@ void HArtistPlayWidget::morphStation() {
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
 
-void HArtistPlayWidget::topAlbums() {
+void HPlayWidget::topAlbums() {
     s_state=TopAlbums;
     KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->frame);
     reset();
@@ -95,7 +131,16 @@ void HArtistPlayWidget::topAlbums() {
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
 
-void HArtistPlayWidget::topSongs() {
+void HPlayWidget::topSongs() {
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
+
+    if(track) {
+        if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+        QMetaObject::invokeMethod(HPlayer::singleton()->getStandardQueue(),"queue",Qt::QueuedConnection,Q_ARG(HTrack*,track));
+        emit closed();
+        return;
+    }
+
     s_state=TopSongs;
     KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->frame);
     reset();
@@ -107,104 +152,119 @@ void HArtistPlayWidget::topSongs() {
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
 
-void HArtistPlayWidget::play1() {
+void HPlayWidget::play1() {
     if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+    HArtist* art=dynamic_cast<HArtist*>(s_rep);
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
     switch(s_state) {
     case TopSongs:
-        s_artist.sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",5);
+        if(art) art->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",5);
         break;
     case TopAlbums:
-        s_artist.sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",1);
+        if(art) art->sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",1);
         break;
     case SimilarArtists:
     case MorphStation:  //for now...
         s_echoSongCount=1;
-        s_artist.sendSimilar(this,"echo",5);
+        if(art) art->sendSimilar(this,"echo",5);
+        if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",5);
         break;
     }
     emit closed();
 }
 
-void HArtistPlayWidget::play2() {
+void HPlayWidget::play2() {
     if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+    HArtist* art=dynamic_cast<HArtist*>(s_rep);
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
     switch(s_state) {
     case TopSongs:
-        s_artist.sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",10);
+        if(art) art->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",10);
         break;
     case TopAlbums:
-        s_artist.sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",2);
+        if(art) art->sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",2);
         break;
     case SimilarArtists:
     case MorphStation:  //for now...
         s_echoSongCount=2;
-        s_artist.sendSimilar(this,"echo",5);
+        if(art) art->sendSimilar(this,"echo",5);
+        if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",10);
         break;
     }
     emit closed();
 }
 
-void HArtistPlayWidget::play3() {
+void HPlayWidget::play3() {
     if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+    HArtist* art=dynamic_cast<HArtist*>(s_rep);
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
 
     switch(s_state) {
     case TopSongs:
-        s_artist.sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",20);
+        if(art) art->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",20);
         break;
     case TopAlbums:
-        s_artist.sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",5);
+        if(art) art->sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",5);
         break;
     case SimilarArtists:
     case MorphStation:  //for now...
         s_echoSongCount=2;
-        s_artist.sendSimilar(this,"echo",10);
+        if(art) art->sendSimilar(this,"echo",10);
+        if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",20);
         break;
     }
     emit closed();
 }
 
-void HArtistPlayWidget::play4() {
+void HPlayWidget::play4() {
     if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+    HArtist* art=dynamic_cast<HArtist*>(s_rep);
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
 
     switch(s_state) {
     case TopSongs:
-        s_artist.sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",50);
+        if(art) art->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",50);
         break;
     case TopAlbums:
-        s_artist.sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",10);
+        if(art) art->sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue",10);
         break;
     case SimilarArtists:
     case MorphStation:  //for now...
         s_echoSongCount=5;
-        s_artist.sendSimilar(this,"echo",10);
+        if(art) art->sendSimilar(this,"echo",10);
+        if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",50);
         break;
     }
     emit closed();
 }
 
-void HArtistPlayWidget::play5() {
+void HPlayWidget::play5() {
     if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+    HArtist* art=dynamic_cast<HArtist*>(s_rep);
+    HTrack* track=dynamic_cast<HTrack*>(s_rep);
 
     switch(s_state) {
     case TopSongs:
-        s_artist.sendTracks(HPlayer::singleton()->getStandardQueue(),"queue");
+        if(art) art->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue");
         break;
     case TopAlbums:
-        s_artist.sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue");
+        if(art) art->sendAlbums(HPlayer::singleton()->getStandardQueue(),"queue");
         break;
     case SimilarArtists:
     case MorphStation:  //for now...
         s_echoSongCount=10;
-        s_artist.sendSimilar(this,"echo",20);
+        if(art) art->sendSimilar(this,"echo",20);
+        if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue");
         break;
     }
     emit closed();
 }
 
-void HArtistPlayWidget::echo(HArtist *a) {
+void HPlayWidget::echo(HArtist *a) {
     a->sendTracks(HPlayer::singleton()->getStandardQueue(),"queue",s_echoSongCount);
 }
 
-HArtistPlayWidget::~HArtistPlayWidget()
+HPlayWidget::~HPlayWidget()
 {
     delete ui;
 }

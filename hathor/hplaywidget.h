@@ -8,10 +8,10 @@ namespace Ui {
 class HPlayWidget;
 }
 
-class HArtistPlayWidget : public QWidget
+class HPlayWidget : public QWidget
 {
     Q_OBJECT
-    HArtist& s_artist;
+    HObject* s_rep;
     enum State {
         SimilarArtists,
         MorphStation,
@@ -21,10 +21,13 @@ class HArtistPlayWidget : public QWidget
     int s_echoSongCount;
 
 public:
-    explicit HArtistPlayWidget(HArtist& artist, QWidget *parent = 0);
-    ~HArtistPlayWidget();
+    explicit HPlayWidget(HArtist& artist, QWidget *parent = 0);
+    explicit HPlayWidget(HTrack& artist, QWidget *parent = 0);
+    explicit HPlayWidget(HAlbum& artist, QWidget *parent = 0);
+    ~HPlayWidget();
 
 public slots:
+    void doSetup();
     void reset();
     void similarArtists();
     void morphStation();

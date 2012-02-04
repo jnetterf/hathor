@@ -30,6 +30,13 @@ public slots:
     void sendData_processQueue();
 };
 
+struct HTrackTriplet {
+    QObject* first;
+    QString second;
+    int third;
+    HTrackTriplet(QObject* co,QString cm,int cc) : first(co), second(cm), third(cc) {}
+};
+
 class LIBHATHORSHARED_EXPORT HTrack : public HObject
 {
     Q_OBJECT
@@ -40,7 +47,7 @@ class LIBHATHORSHARED_EXPORT HTrack : public HObject
     QList< QPair<QObject*,QString> > s_tagQueue;
     QList< QPair<QObject*,QString> > s_extraTagQueue;
     QList< QPair<QObject*,QString> > s_albumQueue;
-    QList< QPair<QObject*,QString> > s_similarQueue;
+    QList< HTrackTriplet > s_similarQueue;
 
     QStringList s_albumAlbumNameCache;
     QStringList s_albumArtistNameCache;
@@ -92,7 +99,7 @@ public slots:
 
     void sendSimilarTrackNames(QObject*,QString); /* QStringList */
     void sendSimilarTrackArtistNames(QObject*,QString); /* QStringList */
-    void sendSimilar(QObject*,QString); /* QList<HTrack*> */
+    void sendSimilar(QObject*,QString,int=-1); /* QList<HTrack*> */
     void sendSimilar_2(QStringList); /* for internal use */
     void sendSimilar_3(QStringList); /* for internal use */
     void sendSimilarScores(QObject*,QString); /* QList<double> */

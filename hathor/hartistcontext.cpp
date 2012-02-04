@@ -196,7 +196,7 @@ void HArtistContext::play() {
     setGraphicsEffect(s_ge=new QGraphicsBlurEffect(this));
     setEnabled(0);
     if(!s_pw) {
-        s_pw = new HArtistPlayWidget(s_rep,this->parentWidget());
+        s_pw = new HPlayWidget(s_rep,this->parentWidget());
     } else s_pw->reset();
     s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
     s_pw->adjustSize();

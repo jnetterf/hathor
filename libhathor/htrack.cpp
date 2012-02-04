@@ -120,8 +120,8 @@ void HTrack::sendAlbums_3(QStringList t) {
 void HTrack::sendSimilarTrackNames(QObject *o, QString m) { s_similarData.sendProperty("similarNames",o,m); }
 void HTrack::sendSimilarTrackArtistNames(QObject *o, QString m) { s_similarData.sendProperty("similarArtistNames",o,m); }
 
-void HTrack::sendSimilar(QObject * o, QString m) {
-    s_similarQueue.push_back(qMakePair(o,m));
+void HTrack::sendSimilar(QObject * o, QString m, int s) {
+    s_similarQueue.push_back(HTrackTriplet(o,m,s));
     sendSimilarTrackNames(this,"sendSimilar_2");
     sendSimilarTrackArtistNames(this,"sendSimilar_3");
 }
@@ -145,8 +145,10 @@ void HTrack::sendSimilar_3(QStringList t) {
             ret.push_back(&HTrack::get(s_trackArtistNameCache[i],s_trackNameCache[i]));
         }
         while(s_similarQueue.size()) {
-            QPair< QObject*, QString > p=s_similarQueue.takeFirst();
-            QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(QList<HTrack*>,ret));
+            HTrackTriplet p=s_similarQueue.takeFirst();
+            for(int i=0;i<ret.size()&&(p.third==-1||i<p.third);i++) {
+                QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HTrack*,ret[i]));
+            }
         }
         s_similarQueue.clear();
     }

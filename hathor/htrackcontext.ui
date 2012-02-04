@@ -1286,7 +1286,7 @@
                    </spacer>
                   </item>
                   <item>
-                   <widget class="QToolButton" name="toolButton">
+                   <widget class="QToolButton" name="toolButton_loved">
                     <property name="minimumSize">
                      <size>
                       <width>44</width>
