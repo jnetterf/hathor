@@ -66,7 +66,6 @@ public slots:
     void showTabHint();
     void doPassword();
     void doLogin();
-    void onLoginChanged(QString login);
 
     void finish(int a=0);
 

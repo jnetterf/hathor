@@ -84,12 +84,10 @@ void HBackground::showStuff() {
 
     QList<ArtistAvatar*> x_;
     QList<ArtistAvatar*> l_[20];
-    ArtistAvatar* first=NULL;
 
 
     QTime curtime=QTime::currentTime();
     int l=0;
-    int t=200;
     QSettings sett("hathorMP","global");
     QGraphicsTextItem* ti=_sc->addText("Top Artists",QFont("Candara",30,75));
     PlayLibraryButton* pb=new PlayLibraryButton(list);
@@ -133,7 +131,6 @@ void HBackground::showStuff() {
                 fp=new ArtistAvatar(_sc,list[i].name(),aal);
             x_[COLUMN]=fp;
         }
-        if(i==6)first=fp;
 
         fp->setPixmap(pix);
         fp->setPos(197+_nX[COLUMN],-250+_nv[COLUMN]);
@@ -245,7 +242,6 @@ void HBackground::showStuff() {
                 fp=new ArtistAvatar(_sc,list[i].name(),aal);
             x_[COLUMN]=fp;
         }
-        if(i==6)first=fp;
 
         fp->setPixmap(pix);
         fp->setPos(197+_nX[COLUMN],maxY+_nv[COLUMN]);

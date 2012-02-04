@@ -2,8 +2,10 @@
 #define HALBUMCONTEXT_H
 
 #include <QWidget>
+#include <QGraphicsBlurEffect>
 #include "hloginwidget.h"
 #include "halbum.h"
+#include "hplaywidget.h"
 
 namespace Ui {
 class HAlbumContext;
@@ -17,6 +19,8 @@ class HAlbumContext : public QWidget
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
     int deltaWidth;
     QTime s_showTime;
+    HPlayWidget* s_pw;
+    QGraphicsBlurEffect* s_ge;
     explicit HAlbumContext(HAlbum& rep, QWidget *parent = 0);
     static QHash<QString,HAlbumContext*> s_map;
     void showEvent(QShowEvent *);
@@ -33,6 +37,7 @@ public slots:
     void loadShouts();
 
     void play();
+    void hidePlay();
 
     void setPlayCount(int);
     void setListenerCount(int);

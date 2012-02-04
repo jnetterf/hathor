@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>414</width>
-    <height>262</height>
+    <height>277</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,14 +26,20 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_info">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Imogen Heap&lt;/span&gt; (&lt;a href=&quot;close&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;close&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <item row="2" column="3">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
-       </widget>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
       </item>
-      <item row="3" column="0" colspan="2">
+      <item row="3" column="1" colspan="2">
        <widget class="QCommandLinkButton" name="commandLinkButton_6">
         <property name="minimumSize">
          <size>
@@ -62,7 +68,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="2" column="1">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QCommandLinkButton" name="button_topSongs">
@@ -229,7 +235,7 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="1">
+      <item row="2" column="2">
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <widget class="QCommandLinkButton" name="button_similarArtists">
@@ -396,7 +402,27 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item row="2" column="0">
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="0" colspan="4">
+       <widget class="QLabel" name="label_info">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Imogen Heap&lt;/span&gt; (&lt;a href=&quot;close&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;close&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="4">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <spacer name="horizontalSpacer_2">

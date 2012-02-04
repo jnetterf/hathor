@@ -21,14 +21,19 @@ HPlayWidget::HPlayWidget(HAlbum &album, QWidget *parent) :
     ui(new Ui::HPlayWidget)
 {
     ui->setupUi(this);
-    ui->label_info->setText("<center><B>"+album.getAlbumName()+"</B> (<A href=\"close\">close</A>)");
-    ui->button_morphStation->hide();
-    ui->button_similarArtists->hide();
-    ui->button_topSongs->hide();
-    ui->commandLinkButton_6->hide();
+    ui->label_info->setText("<center><B>"+album.getAlbumName()+" by "+album.getArtistName()+"</B> (<A href=\"close\">close</A>)");
+    delete ui->button_morphStation; ui->button_morphStation=0;
+    delete ui->button_similarArtists; ui->button_similarArtists=0;
+    delete ui->button_topSongs; ui->button_topSongs=0;
+    delete ui->commandLinkButton_6; ui->commandLinkButton_6=0;
+    delete ui->frame_r; ui->frame_r=0;
     ui->button_topAlbums->setText("Album");
 
+    ui->verticalLayout_3->deleteLater();
+    ui->button_topAlbums->adjustSize();
+
     doSetup();
+    adjustSize();
 }
 
 HPlayWidget::HPlayWidget(HTrack &track, QWidget *parent) :
@@ -48,47 +53,56 @@ HPlayWidget::HPlayWidget(HTrack &track, QWidget *parent) :
 }
 
 void HPlayWidget::doSetup() {
-    connect(ui->button_similarArtists,SIGNAL(clicked()),this,SLOT(similarArtists()));
-    connect(ui->button_morphStation,SIGNAL(clicked()),this,SLOT(morphStation()));
-    connect(ui->button_topAlbums,SIGNAL(clicked()),this,SLOT(topAlbums()));
-    connect(ui->button_topSongs,SIGNAL(clicked()),this,SLOT(topSongs()));
-    connect(ui->label_info,SIGNAL(linkActivated(QString)),this,SIGNAL(closed()));
-    ui->frame_l->hide();
-    ui->frame_r->hide();
+    if(ui->button_similarArtists) connect(ui->button_similarArtists,SIGNAL(clicked()),this,SLOT(similarArtists()));
+    if(ui->button_morphStation) connect(ui->button_morphStation,SIGNAL(clicked()),this,SLOT(morphStation()));
+    if(ui->button_topAlbums) connect(ui->button_topAlbums,SIGNAL(clicked()),this,SLOT(topAlbums()));
+    if(ui->button_topSongs) connect(ui->button_topSongs,SIGNAL(clicked()),this,SLOT(topSongs()));
+    if(ui->label_info) connect(ui->label_info,SIGNAL(linkActivated(QString)),this,SIGNAL(closed()));
 
-    connect(ui->tb_l1,SIGNAL(clicked()),this,SLOT(play1()));
-    connect(ui->tb_r1,SIGNAL(clicked()),this,SLOT(play1()));
-    connect(ui->tb_l2,SIGNAL(clicked()),this,SLOT(play2()));
-    connect(ui->tb_r2,SIGNAL(clicked()),this,SLOT(play2()));
-    connect(ui->tb_l3,SIGNAL(clicked()),this,SLOT(play3()));
-    connect(ui->tb_r3,SIGNAL(clicked()),this,SLOT(play3()));
-    connect(ui->tb_l4,SIGNAL(clicked()),this,SLOT(play4()));
-    connect(ui->tb_r4,SIGNAL(clicked()),this,SLOT(play4()));
-    connect(ui->tb_l5,SIGNAL(clicked()),this,SLOT(play5()));
-    connect(ui->tb_r5,SIGNAL(clicked()),this,SLOT(play5()));
+    if(ui->frame_r) {
+        ui->frame_r->hide();
+        connect(ui->tb_r1,SIGNAL(clicked()),this,SLOT(play1()));
+        connect(ui->tb_r2,SIGNAL(clicked()),this,SLOT(play2()));
+        connect(ui->tb_r3,SIGNAL(clicked()),this,SLOT(play3()));
+        connect(ui->tb_r4,SIGNAL(clicked()),this,SLOT(play4()));
+        connect(ui->tb_r5,SIGNAL(clicked()),this,SLOT(play5()));
+    }
+
+    if(ui->frame_l) {
+        ui->frame_l->hide();
+        connect(ui->tb_l1,SIGNAL(clicked()),this,SLOT(play1()));
+        connect(ui->tb_l2,SIGNAL(clicked()),this,SLOT(play2()));
+        connect(ui->tb_l3,SIGNAL(clicked()),this,SLOT(play3()));
+        connect(ui->tb_l4,SIGNAL(clicked()),this,SLOT(play4()));
+        connect(ui->tb_l5,SIGNAL(clicked()),this,SLOT(play5()));
+    }
 }
 
 void HPlayWidget::reset() {
     ui->frame_l->hide();
-    ui->frame_r->hide();
+    if(ui->frame_r) ui->frame_r->hide();
     ui->verticalLayout_2->addWidget(ui->frame_l);
-    ui->verticalLayout_3->addWidget(ui->frame_r);
+    if(ui->frame_r) ui->verticalLayout_3->addWidget(ui->frame_r);
 
-    if(!dynamic_cast<HTrack*>(s_rep)) ui->button_morphStation->show();
-    ui->button_similarArtists->show();
+    if(!dynamic_cast<HTrack*>(s_rep)&&!dynamic_cast<HAlbum*>(s_rep)) ui->button_morphStation->show();
+    if(!dynamic_cast<HAlbum*>(s_rep)) ui->button_similarArtists->show();
     if(!dynamic_cast<HTrack*>(s_rep)) ui->button_topAlbums->show();
-    ui->button_topSongs->show();
+    if(!dynamic_cast<HAlbum*>(s_rep)) ui->button_topSongs->show();
 
-    ui->tb_l1->setText("5");
-    ui->tb_l2->setText("10");
-    ui->tb_l3->setText("20");
-    ui->tb_l4->setText("50");
-    ui->tb_l5->setText("All");
-    ui->tb_r1->setText("5");
-    ui->tb_r2->setText("10");
-    ui->tb_r3->setText("20");
-    ui->tb_r4->setText("50");
-    ui->tb_r5->setText("All");
+    if(ui->frame_l) {
+        ui->tb_l1->setText("5");
+        ui->tb_l2->setText("10");
+        ui->tb_l3->setText("20");
+        ui->tb_l4->setText("50");
+        ui->tb_l5->setText("All");
+    }
+    if(ui->frame_r) {
+        ui->tb_r1->setText("5");
+        ui->tb_r2->setText("10");
+        ui->tb_r3->setText("20");
+        ui->tb_r4->setText("50");
+        ui->tb_r5->setText("All");
+    }
 }
 
 void HPlayWidget::similarArtists() {
@@ -97,8 +111,8 @@ void HPlayWidget::similarArtists() {
     reset();
     ui->label_info->setText("<center><B>How many songs do you want to play?</B> (<A href=\"close\">close</A>)");
     ui->button_similarArtists->hide();
-    ui->frame_r->show();
-    ui->verticalLayout_3->insertWidget(0,ui->frame_r);
+    if(ui->frame_r) ui->frame_r->show();
+    if(ui->frame_r) ui->verticalLayout_3->insertWidget(0,ui->frame_r);
     ui->label_rType->setText("<B><center>Similar Artists");
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
@@ -109,12 +123,21 @@ void HPlayWidget::morphStation() {
     reset();
     ui->label_info->setText("<center><B>How many songs do you want to play?</B> (<A href=\"close\">close</A>)");
     ui->button_morphStation->hide();
-    ui->frame_r->show();
+    if(ui->frame_r) ui->frame_r->show();
     ui->label_rType->setText("<B><center>Morphing Station");
     QTimer::singleShot(0,kfe,SLOT(start()));
 }
 
 void HPlayWidget::topAlbums() {
+    HAlbum* album=dynamic_cast<HAlbum*>(s_rep);
+
+    if(album) {
+        if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
+        QMetaObject::invokeMethod(HPlayer::singleton()->getStandardQueue(),"queue",Qt::QueuedConnection,Q_ARG(HAlbum*,album));
+        emit closed();
+        return;
+    }
+
     s_state=TopAlbums;
     KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->frame);
     reset();

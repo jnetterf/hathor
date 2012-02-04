@@ -30,6 +30,7 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     s_artistLoadCount(0),
     s_shoutLoadCount(0),
     s_cachedPlayCount(-1),s_cachedListenerCount(-1),s_cachedUserPlayCount(-1),
+    s_pw(0), s_ge(0),
     ui(new Ui::HAlbumContext)
 {
     s_showTime=QTime::currentTime();
@@ -188,8 +189,26 @@ void HAlbumContext::loadShouts()
 }
 
 void HAlbumContext::play() {
-    HPlayer::singleton()->clear();
-    s_rep.sendTracks(HPlayer::singleton()->getStandardQueue(), "queue");
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(this);
+    setGraphicsEffect(s_ge=new QGraphicsBlurEffect(this));
+    setEnabled(0);
+    if(!s_pw) {
+        s_pw = new HPlayWidget(s_rep,this->parentWidget());
+    } else s_pw->reset();
+    s_pw->setGeometry(parentWidget()->width()/2-s_pw->geometry().width()/2,50,s_pw->geometry().width(),s_pw->geometry().height());
+    s_pw->adjustSize();
+    s_pw->show();
+    connect(s_pw,SIGNAL(closed()),this,SLOT(hidePlay()));
+    fwe->start();
+}
+
+void HAlbumContext::hidePlay() {
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(this);
+    delete s_ge;
+    s_ge=0;
+    s_pw->hide();
+    setEnabled(1);
+    fwe->start();
 }
 
 void HAlbumContext::setPlayCount(int a) {

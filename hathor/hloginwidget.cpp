@@ -81,7 +81,6 @@ void HLoginWidget::continueLoading() {
     QSettings settings("hathorMP","lastfm_ext");
     s_superSecret=settings.value("keys").toMap();
     s_superSecret_rdio=settings.value("keys_rdio").toMap();
-    connect(a,SIGNAL(textChanged(QString)),this,SLOT(onLoginChanged(QString)));
 
     ///
     rpx = new FadePixmap;
@@ -130,15 +129,6 @@ void HLoginWidget::continueLoading() {
     nothanks->setFont(QFont("Candara",30));
     nothanks->adjustSize();
 }
-
-void HLoginWidget::onLoginChanged(QString login) {
-//    if(!s_superSecret.value(login).isNull()) {
-//        b->setText(s_superSecret.value(login).toString());
-//        return;
-//    }
-//    b->setText("");
-}
-
 
 void HLoginWidget::showTabHint() {
     if(!a->text().size()) return;
