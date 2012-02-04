@@ -36,6 +36,7 @@ public slots:
     void setBackEnabled(bool enabled);
     void setPlayEnabled(bool enabled);
     void setPlayChecked(bool checked);
+    void setHomeEnabled(bool enabled);
     bool playChecked();
 
     void tryPlay(bool play);

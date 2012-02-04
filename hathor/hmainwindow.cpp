@@ -91,6 +91,7 @@ void HMainWindow::setContext(QWidget *ac) {
     s_contextStack.push_back(ac);
     ac->adjustSize();
     ui->toolbar->setBackEnabled(1);
+    ui->toolbar->setHomeEnabled(1);
     s_curContext=ac;
     s_curContext->show();
     QTimer::singleShot(140,kwe,SLOT(start()));
@@ -110,7 +111,15 @@ void HMainWindow::back() {
     s_curContext=s_contextStack.back();
 
     ui->toolbar->setBackEnabled(s_contextStack.size()!=1);
+    ui->toolbar->setHomeEnabled(s_contextStack.size()!=1);
     QTimer::singleShot(140,kwe,SLOT(start()));
+}
+
+void HMainWindow::home() {
+    if(!s_contextStack.size()) return;
+    while(s_contextStack.size()>2) s_contextStack.pop_back();
+    back();
+    ui->toolbar->setHomeEnabled(0);
 }
 
 

@@ -14,5 +14,6 @@
         <file>media-shuffle.png</file>
         <file>media-play-alt.png</file>
         <file>heart-red.png</file>
+        <file>Home_icon.gif</file>
     </qresource>
 </RCC>
