@@ -14,8 +14,8 @@ win32:LIBS += -llastfm0
 debug:win32:DESTDIR = ../hathor/debug/plugins
 release:win32:DESTDIR = ../hathor/release/plugins
 !win32:DESTDIR = ../hathor/plugins
-debug:win32:LIBS += "../libhathor/debug/hathor.lib"
-release:win32:LIBS += "../libhathor/release/hathor.lib"
+debug:win32:LIBS += "../hathor/debug/hathor.lib"
+release:win32:LIBS += "../hathor/release/hathor.lib"
 
 SOURCES += hlocalprovider.cpp \
     hlocalintro.cpp

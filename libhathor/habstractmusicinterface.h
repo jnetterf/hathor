@@ -151,11 +151,7 @@ public:
     HTrack* currentTrack() { return Q?Q->currentTrack():0; }
     HAbstractTrackInterface* currentTrackInterface() { return Q?Q->currentTrackInterface():0; }
     HStandardQueue* getStandardQueue();
-    QString getProviderName() {
-        HStandardQueue* sq= dynamic_cast<HStandardQueue*>(Q);
-        if(!sq) return "unknown source";
-        else if(sq->currentPotentialTrack()&&sq->currentPotentialTrack()->getProvider()) return sq->currentPotentialTrack()->getProvider()->name();
-    }
+    QString getProviderName();
 
 public slots:
     void installProvider(HAbstractTrackProvider*);

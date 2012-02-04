@@ -29,7 +29,6 @@
 #include <QPalette>
 #include <QApplication>
 #include "lastfmext.h"
-#include "kfadewidgeteffect.h"
 
 HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HRdioGraphicsView(parent),
   s_rep(rep)

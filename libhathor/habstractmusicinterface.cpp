@@ -137,6 +137,12 @@ HStandardQueue* HPlayer::getStandardQueue() {
     return sq;
 }
 
+QString HPlayer::getProviderName()  {
+    HStandardQueue* sq= dynamic_cast<HStandardQueue*>(Q);
+    if(!sq) return "unknown source";
+    else if(sq->currentPotentialTrack()&&sq->currentPotentialTrack()->getProvider()) return sq->currentPotentialTrack()->getProvider()->name();
+}
+
 void HStandardQueue::queue(HTrack *track) {
     QMutexLocker l(&s_lock);
     if(!s_currentTrack) emit stateChanged(HAbstractTrackInterface::Searching);
