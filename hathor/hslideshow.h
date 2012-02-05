@@ -8,6 +8,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
 #include <QDebug>
+#include <QTime>
+#include <QPropertyAnimation>
 #include "htrack.h"
 #include "hartist.h"
 
@@ -17,15 +19,26 @@ class SlideshowItem : public QObject, public QGraphicsPixmapItem {
     Q_PROPERTY(qreal echoScale READ echoScale WRITE setEchoScale)
     Q_PROPERTY(qreal echoX READ echoX WRITE setEchoX)
     Q_PROPERTY(qreal echoY READ echoY WRITE setEchoY)
+    QTime wt,xt,yt,zt;
 public slots:
-    void setEchoOpacity(qreal opacity){QGraphicsPixmapItem::setOpacity(opacity);}
+    void setEchoOpacity(qreal opacity){
+        if(wt.msecsTo(QTime::currentTime())<50) return;
+        wt=QTime::currentTime();
+        QGraphicsPixmapItem::setOpacity(opacity);
+    }
     void setEchoScale(qreal scale){
+        if(xt.msecsTo(QTime::currentTime())<50) return;
+        xt=QTime::currentTime();
         QGraphicsPixmapItem::setScale(scale);
     }
     void setEchoX(qreal x) {
+        if(yt.msecsTo(QTime::currentTime())<50) return;
+        yt=QTime::currentTime();
         setPos(x,y());
     }
     void setEchoY(qreal y) {
+        if(zt.msecsTo(QTime::currentTime())<50) return;
+        zt=QTime::currentTime();
         setPos(x(),y);
     }
 

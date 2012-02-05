@@ -102,6 +102,7 @@ void HBrowser::loadFinishedLogic(bool s)
 void HBrowser::urlChangedLogic(QUrl u)
 {
     s_url=u.toString();
+    emit newUrl();
 //    s_webPath->setText(url.toString());
 }
 

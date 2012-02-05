@@ -422,6 +422,7 @@ public:
             }
         }
         for(int i=0;i<ArtistAvatar::_u_.size();i++) ArtistAvatar::_u_[i]->hideInfo();
+        ArtistAvatar::_okCur=0;
         QGraphicsScene::mouseMoveEvent(event);
     }
 
@@ -430,6 +431,13 @@ public:
 class HMainContext : public HGraphicsView {
     Q_OBJECT
     MagicScene* sc;
+
+    void leaveEvent(QEvent *e) {
+        for(int i=0;i<ArtistAvatar::_u_.size();i++) ArtistAvatar::_u_[i]->hideInfo();
+        ArtistAvatar::_okCur=0;
+        HGraphicsView::leaveEvent(e);
+    }
+
 public:
     explicit HMainContext(QWidget *parent = 0);
 

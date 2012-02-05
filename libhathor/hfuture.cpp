@@ -1,5 +1,6 @@
 #include "hfuture.h"
 #include "lastfmext.h"
+#include "hnettloger.h"
 
 #include <QTimer>
 #include <QSettings>
@@ -82,6 +83,12 @@ template<> const char* name< QList<double> >() { return "QList<double>"; }
 template<typename T> const char* name() { return "UNKNOWN_TYPE_HFUTURE_CPP"; }
 
 void HCachedInfo::sendData() {
+    QString desc;
+    if(params.contains("track")) desc+="track="+params["track"]+" ";
+    if(params.contains("album")) desc+="album="+params["album"]+" ";
+    if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
+    HL("[LOAD] HCI/SEND DATA: "+params["method"]+" "+desc);
+
     QMutexLocker lock(&mutex);  //DO NOT USE INVOKEMETHOD!!
     Q_UNUSED(lock);
 
@@ -123,6 +130,8 @@ void HCachedInfo::sendData() {
             return;
         }
 
+        HL("[LOAD] NOT CACHED: "+params["method"]+" "+desc);
+
         getting=new HRunOnceNotifier;
         if(ss_connections<3) {
             ++ss_connections;
@@ -148,6 +157,13 @@ void HCachedInfo::sendData_process() {
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError||!process( QString::fromUtf8(reply->readAll()) )) {
         --ss_connections;
         QByteArray ba=reply->readAll();
+
+        QString desc;
+        if(params.contains("track")) desc+="track="+params["track"]+" ";
+        if(params.contains("album")) desc+="album="+params["album"]+" ";
+        if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
+        HL("[LOAD] HCI/ERROR!!!: "+params["method"]+" "+desc);
+
         qDebug()<<"GOT ERROR - INVALID DATA RECORDED!";
         getting->emitNotify();
         getting=0;
@@ -193,6 +209,12 @@ void HCachedInfo::sendData_process() {
 }
 
 void HCachedInfo::sendData_processQueue() {
+    QString desc;
+    if(params.contains("track")) desc+="track="+params["track"]+" ";
+    if(params.contains("album")) desc+="album="+params["album"]+" ";
+    if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
+    HL("[LOAD] HCI/FINISH: "+params["method"]+" "+desc);
+
     if(!got) return;
     for(int i=0;i<data.size();i++) {
         data.values()[i]->send();

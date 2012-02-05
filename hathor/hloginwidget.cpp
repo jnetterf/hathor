@@ -15,6 +15,8 @@
 #include "hsearchcontext.h"
 #include "hplayercontext.h"
 #include "kfadewidgeteffect.h"
+#include "hlfmwebloginaction.h"
+#include "hnettloger.h"
 
 HLoginWidget::HLoginWidget(QWidget *parent):HGraphicsView(parent) {
     setMinimumHeight(768);
@@ -33,13 +35,16 @@ HLoginWidget::HLoginWidget(QWidget *parent):HGraphicsView(parent) {
 }
 
 void HLoginWidget::continueLoading() {
-    QSettings auth("hathorMP","auth");
+    QSettings auth("Nettek","last.fm for Hathor");
     if(auth.value("lfm.username").isValid()&&auth.value("lfm.key").isValid()) {
         lastfm::ws::Username = auth.value("lfm.username").toString();
         lastfm::ws::SessionKey = auth.value("lfm.key").toString();
         hide();
         emit showMainContext();
         deleteLater();
+        //******
+        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
+        HL("[INIT] LFM/RESTORE");
         return;
     }
     ///
@@ -78,37 +83,7 @@ void HLoginWidget::continueLoading() {
 
     QTimer::singleShot(200,a,SLOT(setFocus()));
 
-    QSettings settings("hathorMP","lastfm_ext");
-    s_superSecret=settings.value("keys").toMap();
-    s_superSecret_rdio=settings.value("keys_rdio").toMap();
-
     ///
-    rpx = new FadePixmap;
-    rpx->setPixmap(QPixmap(":/icons/rdio.png").scaledToHeight(100,Qt::SmoothTransformation));
-    rpx->setPos(000,0);
-    rpx->hide();
-    sc->addItem(rpx);
-    ranim=new QPropertyAnimation(rpx, "echoOpacity");
-    ranim->setStartValue(1.0);
-    ranim->setEndValue(0.0);
-    ranim->setDuration(1000);
-    ///
-    ranim2=new QPropertyAnimation(tx, "opacity");
-    ranim2->setStartValue(0.0);
-    ranim2->setEndValue(1.0);
-    ranim2->setDuration(1000);
-    ///
-    ranim3=0;
-    ///
-    ra=new MagicLineEdit;rb=new MagicLineEdit;
-    ra->resize(400, 100);rb->resize(400,100);
-    ra->setFont(QFont("Arial",60));rb->setFont(QFont("Arial",60));
-    ra->setPlaceholderText("email"); rb->setPlaceholderText("password");
-    rb->setEchoMode(QLineEdit::Password);
-    sc->addWidget(ra)->setPos(380,0); sc->addWidget(rb)->setPos(800,0);
-    ra->hide();
-    rb->hide();
-
     affil=new QLabel;
     affil->setText("<a href=\"http://click.linksynergy.com/fs-bin/click?id=EtH0bqD6seI&offerid=221756.10000004&type=3&subid=0\" >"
                    "Sign up free!</a>");
@@ -131,6 +106,8 @@ void HLoginWidget::continueLoading() {
 }
 
 void HLoginWidget::showTabHint() {
+    lastfm::ws::Username=a->text();
+    HL("[INIT] LFM/TABHINT");
     if(!a->text().size()) return;
     disconnect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
     connect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
@@ -142,6 +119,7 @@ void HLoginWidget::showTabHint() {
 }
 
 void HLoginWidget::doPassword() {
+    HL("[INIT] LFM/PASSWORD");
     disconnect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
     disconnect(a,SIGNAL(textChanged(QString)),this,SLOT(showTabHint()));
 
@@ -191,6 +169,7 @@ void HLoginWidget::doPassword() {
 }
 
 void HLoginWidget::doLogin() {
+    HL("[INIT] LFM/LOGIN");
     b->setEnabled(0);
 
     lastfm::ws::Username = a->text();
@@ -207,12 +186,13 @@ void HLoginWidget::doLogin() {
     loop.exec();
 
     try {
-        QSettings auth("hathorMP","auth");
+        QSettings auth("Nettek","last.fm for Hathor");
         lastfm::XmlQuery const lfm = lastfm::ws::parse( reply );
         lastfm::ws::Username = lfm["session"]["name"].text();
         lastfm::ws::SessionKey = lfm["session"]["key"].text();
 
         auth.setValue("lfm.username",lfm["session"]["name"].text());
+        auth.setValue("lfm.password",b->text());
         auth.setValue("lfm.key",lfm["session"]["key"].text());
 
         {
@@ -256,6 +236,7 @@ void HLoginWidget::doLogin() {
         tx->setOpacity(0);
 
     } catch (std::runtime_error& e) {
+        HL("[INIT] LFM/ERROR LOGGING IN");
         tx->setFont(QFont("Candara",60));
         tx->setPlainText("Press tab.");
         tx->setOpacity(0);
@@ -277,7 +258,6 @@ void HLoginWidget::doLogin() {
         anim3->start();
         b->setEnabled(1);
         b->setText("");
-        s_superSecret.insert(a->text(),"");
         a->setText("");
         a->setFocus();
 
@@ -287,25 +267,14 @@ void HLoginWidget::doLogin() {
 }
 
 void HLoginWidget::finish(int ax) {
-    show();
-    QRectF arect = sc->sceneRect();
-    arect.translate(ax,800);
-    sc->setSceneRect(arect);
-
-    QSettings auth("hathorMP","auth");
-    auth.setValue("lfm.username",lastfm::ws::Username);
-    auth.setValue("lfm.key",lastfm::ws::SessionKey);
-
-    QSettings settings("hathorMP","lastfm_ext");
-    s_superSecret.insert(a->text(),b->text());
-    settings.setValue("keys",s_superSecret);
-
+    HL("[INIT] LFM/FINISHED");
     hide();
     emit showMainContext();
     deleteLater();
 }
 
 void HLoginWidget::openLink(QString s) {
+    HL("[INIT] LFM/OPEN LINK:"+s);
     QDesktopServices::openUrl(QUrl(s));
 }
 

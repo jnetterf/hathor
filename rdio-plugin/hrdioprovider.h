@@ -223,6 +223,10 @@ class HRdioProvider : public QObject, public HAbstractTrackProvider {
 public: //HAbstractTrackProvider
     int globalScore() { return 90; /*Rdio is really good!*/ }
     void sendScore(HTrack& track,QObject* o,QString m) {
+        if(!s_ready) {
+            QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(int,0),Q_ARG(HAbstractTrackProvider*,HRdioProvider::singleton()));
+            return;
+        }
         new HSendScoreTriplet_Rdio(track,o,m,s_ready,s_calmDown);
     }
     void sendTrack(HTrack& track,QObject* o,QString m) {

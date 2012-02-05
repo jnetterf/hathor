@@ -7,6 +7,7 @@
 #include "hshoutbox.h"
 #include "hartistbox.h"
 #include "habstractmusicinterface.h"
+#include "hnettloger.h"
 #include <QRect>
 #include <QScrollBar>
 #include <QMenu>
@@ -77,6 +78,7 @@ HAlbumContext::~HAlbumContext()
 
 void HAlbumContext::showEvent(QShowEvent * e)
 {
+    HL("[NOTE] HAC/Show: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 

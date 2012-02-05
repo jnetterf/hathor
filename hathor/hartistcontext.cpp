@@ -7,6 +7,7 @@
 #include "hshoutbox.h"
 #include "kfadewidgeteffect.h"
 #include "hplaywidget.h"
+#include "hnettloger.h"
 #include <QRect>
 #include <QScrollBar>
 #include <QGraphicsBlurEffect>
@@ -92,6 +93,7 @@ void HArtistContext::continueLoading() {
 
 
 void HArtistContext::showEvent(QShowEvent * e) {
+    HL("[NOTE] HAC/Show: "+s_rep.getName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
     s_loadedAlbums.clear();

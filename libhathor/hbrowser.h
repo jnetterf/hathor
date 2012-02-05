@@ -84,6 +84,7 @@ public slots:
     void setInput(QString input,QString value);
     void clickInput(QString input);
 signals:
+    void newUrl();
     void ready();
     void visiblityChanged(bool);
 

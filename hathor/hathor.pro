@@ -21,7 +21,9 @@ HEADERS += \
     hslideshow.h \
     hmainwindow.h \
     hmaincontext.h \
-    hplaywidget.h
+    hplaywidget.h \
+    hconfigcontext.h \
+    hlfmwebloginaction.h
 
 SOURCES += \
     hloginwidget.cpp \
@@ -45,7 +47,9 @@ SOURCES += \
     hslideshow.cpp \
     hmainwindow.cpp \
     hmaincontext.cpp \
-    hplaywidget.cpp
+    hplaywidget.cpp \
+    hconfigcontext.cpp \
+    hlfmwebloginaction.cpp
 
 !win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor
 debug:win32:LIBS += -llastfm0 ./debug/hathor.lib
@@ -71,7 +75,8 @@ FORMS += \
     hplayercontext.ui \
     hsearchcontext.ui \
     hmainwindow.ui \
-    hplaywidget.ui
+    hplaywidget.ui \
+    hconfigcontext.ui
 
 RESOURCES += \
     icons.qrc

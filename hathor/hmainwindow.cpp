@@ -10,6 +10,7 @@
 #include "hartistcontext.h"
 #include "htrackcontext.h"
 #include "halbumcontext.h"
+#include "hconfigcontext.h"
 
 HMainWindow* HMainWindow::s_singleton=0;
 
@@ -120,6 +121,11 @@ void HMainWindow::home() {
     while(s_contextStack.size()>2) s_contextStack.pop_back();
     back();
     ui->toolbar->setHomeEnabled(0);
+}
+
+void HMainWindow::config() {
+    if(dynamic_cast<HConfigContext*>(s_curContext)) return;
+    setContext(HConfigContext::singleton());
 }
 
 

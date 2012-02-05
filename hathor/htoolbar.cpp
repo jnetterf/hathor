@@ -22,6 +22,7 @@ HToolbar::HToolbar(QWidget *parent) :
     connect(ui->label_status,SIGNAL(linkActivated(QString)),HMainWindow::singleton(),SLOT(showNowPlaying()));
     connect(ui->toolButton_backButton,SIGNAL(pressed()),HMainWindow::singleton(),SLOT(back()));
     connect(ui->toolButton_home,SIGNAL(pressed()),HMainWindow::singleton(),SLOT(home()));
+    connect(ui->toolButton_config,SIGNAL(pressed()),HMainWindow::singleton(),SLOT(config()));
     connect(ui->toolButton_shuffle,SIGNAL(toggled(bool)),HPlayer::singleton(),SLOT(setShuffle(bool)));
     connect(HPlayer::singleton(),SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SLOT(onStateChanged(HAbstractTrackInterface::State)));
     connect(HPlayer::singleton(),SIGNAL(trackChanged(HTrack&)),this,SLOT(onTrackChanged(HTrack&)));

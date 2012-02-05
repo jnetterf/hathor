@@ -32,6 +32,7 @@ public slots:
     void setContext(QWidget *ac);
     void back();
     void home();
+    void config();
     void search(QString s);
     void showNowPlaying();
 

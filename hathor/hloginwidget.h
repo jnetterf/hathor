@@ -76,17 +76,13 @@ signals:
 
 private:
     bool stage1;
-    FadePixmap* px, *rpx;
+    FadePixmap* px;
     QGraphicsScene* sc;
     QGraphicsTextItem* tx;
     QLabel* affil, * nothanks;
     QPropertyAnimation* anim,*anim2,*anim3;
-    QPropertyAnimation* ranim,*ranim2,*ranim3;
     MagicLineEdit*a,*b;
-    MagicLineEdit*ra,*rb;
     Ui::HLoginWidget *ui;
-    QMap<QString,QVariant> s_superSecret;
-    QMap<QString,QVariant> s_superSecret_rdio;
 };
 
 #endif // MAINWINDOW_H

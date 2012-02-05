@@ -12,6 +12,7 @@
 #include <QMenu>
 #include <QIcon>
 #include "kfadewidgeteffect.h"
+#include "hnettloger.h"
 #include <QGraphicsBlurEffect>
 
 QHash<QString, HTrackContext*> HTrackContext::s_map;
@@ -111,6 +112,7 @@ HTrackContext::~HTrackContext()
 }
 
 void HTrackContext::showEvent(QShowEvent *e) {
+    HL("[NOTE] HAC/Show: "+s_rep.getTrackName()+" "+s_rep.getArtistName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 
@@ -318,6 +320,12 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
 }
 
 void HTrackContext::setSimilar(HTrack* similar) {
+    ui->label_moreArtists->setText(
+        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+        "p, li { white-space: pre-wrap; }"
+        "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+        "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+        "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     if(s_loadedSimilar.contains(similar)) return;
     s_loadedSimilar.push_back(similar);
     {
@@ -337,12 +345,6 @@ void HTrackContext::setSimilar(HTrack* similar) {
 //    if(i-s_similarLoadCount!=toLoad) {
 //        ui->label_moreArtists->hide();
     /*} else*/ {
-        ui->label_moreArtists->setText(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-            "p, li { white-space: pre-wrap; }"
-            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
     s_similarLoadCount++;
     s_similarToLoad+=2;
@@ -397,6 +399,8 @@ void HTrackContext::setLoved(bool a) {
 }
 
 void HTrackContext::toggleLoved() {
+    HL("[PLAY] HTC/TOGGLELOVED"+s_rep.getTrackName()+" by "+s_rep.getArtistName()+" TO "+(s_loved?"unloved":"loved"));
+
     QMap<QString, QString> params;
     params["method"] = s_loved?"track.unlove":"track.love";
     params["artist"] = s_rep.getArtistName();

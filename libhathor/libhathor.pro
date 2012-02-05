@@ -22,7 +22,8 @@ SOURCES += habstractmusicinterface.cpp \
     htrack.cpp \
     huser.cpp \
     lastfmext.cpp \
-    hfuture.cpp
+    hfuture.cpp \
+    hnettloger.cpp
 
 HEADERS += habstractmusicinterface.h\
         libhathor_global.h \
@@ -37,7 +38,8 @@ HEADERS += habstractmusicinterface.h\
     htrack.h \
     huser.h \
     lastfmext.h \
-    hfuture.h
+    hfuture.h \
+    hnettloger.h
 
 CONFIG += oauth
 win32:LIBS += -llastfm0

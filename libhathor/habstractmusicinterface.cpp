@@ -1,4 +1,5 @@
 #include "habstractmusicinterface.h"
+#include "hnettloger.h"
 #include <QDebug>
 #include <QDir>
 #include <QApplication>
@@ -16,6 +17,7 @@ void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
 void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
     if(s_rem==-1) return;
     QMutexLocker locker(&mutex);
+    HL("[PLAY] PPT/Score "+QString::number(score)+" Provider:"+tp->name()+" Track:"+track.getTrackName()+" by "+track.getArtistName());
 //    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
     if(score>s_score&&score) {
         if(p_ti) {
@@ -39,7 +41,10 @@ HAbstractTrackProvider* HPlayer_PotentialTrack::getProvider() {
 }
 
 void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackProvider *tp) {
-    if(s_rem==-1) return;
+    if(s_rem==-1) {
+        HL("[ERR ] PPT/TP send too late for"+tp->name());
+        return;
+    }
     QMutexLocker locker(&mutex);
     Q_UNUSED(locker);
     if(tp!=s_bestProviderSoFar) {
@@ -52,13 +57,14 @@ void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackPr
 }
 
 void HPlayer_PotentialTrack::play() {
+    HL("[PLAY] PPT/REQUEST: "+track.getTrackName()+" by "+track.getArtistName());
     if(s_rem>0) { s_readyToPlay=1; return; }
     if(s_readyToSkip) { skip(); return; }
     if(!p_ti) {
         emit finished();
         return;
     }
-    qDebug()<<"PLAYING!!!"<<p_ti->getTrack().getTrackName();
+    HL("[PLAY] PPT/REALSTART: "+track.getTrackName()+" by "+track.getArtistName());
     s_rem=-1;
     connect(p_ti,SIGNAL(finished()),this,SIGNAL(finished()));
     connect(p_ti,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
@@ -67,16 +73,20 @@ void HPlayer_PotentialTrack::play() {
 }
 
 void HPlayer_PotentialTrack::resume() {
+    HL("[PLAY] PPT/RESUME"+track.getTrackName()+" by "+track.getArtistName());
     if(p_ti&&s_rem==-1) { p_ti->play(); }
 }
 
 void HPlayer_PotentialTrack::skip()  {
-    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
+    HL("[PLAY] PPT/SKIP"+track.getTrackName()+" by "+track.getArtistName()+" _ "+(s_readyToSkip?"delayed":"immediate"));
+
+//    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
     if(s_rem>0) { s_readyToSkip=1; }
     if(p_ti) { p_ti->skip(); }
 }
 
 void HPlayer_PotentialTrack::pause() {
+    HL("[PLAY] PPT/PAUSE"+track.getTrackName()+" by "+track.getArtistName()+" _ "+(s_readyToPause?"delayed":"immediate"));
     if(s_rem>0) { s_readyToPause=1; return; }
     else if(s_rem==-1&&p_ti) { p_ti->pause(); }
 }
@@ -204,6 +214,8 @@ void HPlayer::resume() {
 }
 
 void HStandardQueue::playNext() {
+
+    HL("[PLAY] HSQ/PLAYNEXT");
     if(s_currentTrack) {
         disconnect(s_currentTrack,0,this,0);
         s_currentTrack->skip();
@@ -227,6 +239,7 @@ void HStandardQueue::playNext() {
 }
 
 void HPlayer::playNext() {
+    HL("[PLAY] HPL/PLAYNEXT"+QString(Q?"queue exists":"no queue"));
     if(Q) Q->playNext();
 }
 
@@ -245,10 +258,10 @@ void HPlayer::loadPlugins(QLayout *l) {
                 qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
                 continue;
             }
+            HL("[INIT] HPL/Loading plugin "+fileName);
             QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
             QObject *plugin = loader.instance();
             if (plugin) {
-                qDebug()<<"Loading plugin"<<fileName+"...";
                 loaded.push_back(fileName);
                 HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
 
@@ -262,6 +275,7 @@ void HPlayer::loadPlugins(QLayout *l) {
                     }
 
                     installProvider(p);
+                    HL("[INIT] HPL/Done loading plugin");
                 }
             }
         }
