@@ -54,7 +54,7 @@ void HMainWindow::setupMainContext() {
         ui->toolbar->show();
     }
 
-    QSettings sett("hathorMP","global");
+    QSettings sett("Nettek","Hathor_global");
     if(sett.value("precached",0).toBool()) {
         ui->toolbar->setMessageSimple("<i><center>Loading...</center></i>");
     } else {

@@ -33,7 +33,7 @@
 HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HRdioGraphicsView(parent),
   s_rep(rep)
 {
-    QSettings sett("hathorMP","rdioKeys");
+    QSettings sett("Nettek","rdioKeys");
     if(sett.value("rdioEnabled").toString()=="FALSE") {
         QTimer::singleShot(0,this,SLOT(deleteLater()));
         return;
@@ -84,7 +84,7 @@ void HRdioLoginWidget::finishLoading() {
     tx->setOpacity(0);
     ///
 
-    QSettings settings("hathorMP","lastfm_ext");
+    QSettings settings("Nettek","lastfm_ext");
     s_superSecret_rdio=settings.value("keys_rdio").toMap();
 
     ///
@@ -288,7 +288,7 @@ void HRdioLoginWidget::rdio2(int ax) {
     arect.translate(ax,800);
     sc->setSceneRect(arect);
 
-    QSettings auth("hathorMP","auth");
+    QSettings auth("Nettek","auth");
     auth.setValue("lfm.username",lastfm::ws::Username);
     auth.setValue("lfm.key",lastfm::ws::SessionKey);
 
@@ -302,7 +302,7 @@ void HRdioLoginWidget::openLink(QString s) {
 }
 
 void HRdioLoginWidget::skipRdio() {
-    QSettings sett("hathorMP","rdioKeys");
+    QSettings sett("Nettek","rdioKeys");
     sett.setValue("rdioEnabled","FALSE");
     rdio2(0);
 }
@@ -429,7 +429,7 @@ bool HRdioProvider::login(QString username, QString password) {
 
     if(ok()) {
         HPlayer::singleton()->installProvider(this);
-        QSettings auth("hathorMP","auth");
+        QSettings auth("Nettek","auth");
         auth.setValue("rdio.token",s_rdioToken);
         auth.setValue("rdio.secret",s_rdioSecret);
         auth.setValue("rdio.oauthToken",s_oauthToken);
@@ -444,7 +444,7 @@ bool HRdioProvider::login(QString username, QString password) {
 }
 
 bool HRdioProvider::restore() {
-    QSettings auth("hathorMP","auth");
+    QSettings auth("Nettek","auth");
 //    HRdioProvider* hri=new HRdioProvider(auth.value("rdio.token").toString(),
 //                                           auth.value("rdio.secret").toString(),
 //                                           auth.value("rdio.oauthToken").toString(),
@@ -457,7 +457,7 @@ bool HRdioProvider::restore() {
     s_oauthSecret=auth.value("rdio.oauthSecret").toString().toUtf8();
     s_auth=0;
     s_ready=0;
-    QSettings sett("hathorMP","rdioKeys");
+    QSettings sett("Nettek","rdioKeys");
     if(sett.value("password").toString().size()) {
         HRdioLoginAction la(s_browser,sett.value("username").toString(),sett.value("password").toString());
         QEventLoop el;
@@ -727,7 +727,7 @@ QString HRdioProvider::Key::getKey() {
         QEventLoop loop; connect(s_rdioKey_getting,SIGNAL(notify()),&loop,SLOT(quit())); loop.exec();
         return s_rdioKey;
     }
-//    QSettings sett("hathorMP","rdioKeys");
+//    QSettings sett("Nettek","rdioKeys");
 //    if(sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).isValid()) {
 //        return s_rdioKey=sett.value("key for "+track.getArtistName()+"__"+track.getTrackName()).toString();
 //    }

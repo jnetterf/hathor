@@ -13,7 +13,7 @@ eloginaction.cpp
 
 HAuthAction::HAuthAction(HBrowser &browser, QString username, QString password) : HAction(browser), s_username(username), s_password(password)
 {
-    QSettings sett("hathorMP","rdioKeys");
+    QSettings sett("Nettek","rdioKeys");
     sett.setValue("username",username);
     sett.setValue("password",password);
     QMultiMap<QByteArray,QByteArray> map1;

@@ -80,7 +80,7 @@ void HTag::InfoData::getData(QString tag) {
         bool loved;
         bool got;
         */
-    QSettings sett("hathorMP","tagInfo");
+    QSettings sett("Nettek","Hathor_tagInfo");
     if(sett.value("cache for "+tag,0).toInt()==2) {
         summary=sett.value("summary for "+tag).toString();
         content=sett.value("content for "+tag).toString();
