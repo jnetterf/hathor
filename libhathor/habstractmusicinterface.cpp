@@ -151,6 +151,7 @@ QString HPlayer::getProviderName()  {
     HStandardQueue* sq= dynamic_cast<HStandardQueue*>(Q);
     if(!sq) return "unknown source";
     else if(sq->currentPotentialTrack()&&sq->currentPotentialTrack()->getProvider()) return sq->currentPotentialTrack()->getProvider()->name();
+    return "bad provider...";
 }
 
 void HStandardQueue::queue(HTrack *track) {
@@ -258,7 +259,6 @@ void HPlayer::loadPlugins(QLayout *l) {
                 qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
                 continue;
             }
-            HL("[INIT] HPL/Loading plugin "+fileName);
             QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
             QObject *plugin = loader.instance();
             if (plugin) {
@@ -275,7 +275,7 @@ void HPlayer::loadPlugins(QLayout *l) {
                     }
 
                     installProvider(p);
-                    HL("[INIT] HPL/Done loading plugin");
+                    HL("[INIT] HPL/Loading plugin "+fileName);
                 }
             }
         }
