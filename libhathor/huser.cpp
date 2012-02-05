@@ -145,7 +145,7 @@ void HUser::InfoData::getData(QString username) {
     }
     got=1;
 
-    QSettings sett("hathorMP","userInfo");
+    QSettings sett("Nettek","Hathor_userInfo");
 
     if(sett.value("cache for "+username,0).toInt()==2) {
         realName=sett.value("realName "+username).toString();
@@ -242,7 +242,7 @@ void HUser::TopTrackData::getData(QString username) {
     }
     got=1;
 
-    QSettings sett("hathorMP","topTrackData");
+    QSettings sett("Nettek","Hathor_topTrackData");
 
     if(sett.value("cache for "+username,0).toInt()==2) {
         QStringList names, artists;

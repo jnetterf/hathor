@@ -453,7 +453,7 @@ void HArtist::ExtraPictureData::getData(QString artist) {
     H_BEGIN_RUN_ONCE_MINIMAL
     got_urls=1;
 
-    QSettings sett("hathorMP","artistExtraImages");
+    QSettings sett("Netek","Hathor_artistExtraImages");
     if(sett.value("cache for "+artist,0).toInt()==2) {
         pic_urls=sett.value("pic_urls for "+artist).toStringList();
         H_END_RUN_ONCE_MINIMAL

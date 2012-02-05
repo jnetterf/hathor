@@ -88,7 +88,7 @@ void HBackground::showStuff() {
 
     QTime curtime=QTime::currentTime();
     int l=0;
-    QSettings sett("hathorMP","global");
+    QSettings sett("Nettek","Hathor_global");
     QGraphicsTextItem* ti=_sc->addText("Top Artists",QFont("Candara",30,75));
     PlayLibraryButton* pb=new PlayLibraryButton(list);
     pb->setPos(183,-305);
