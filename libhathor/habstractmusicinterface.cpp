@@ -293,7 +293,7 @@ void HPlayer::loadPlugins(QLayout *l) {
     }
 }
 
-void HScrobbler::onSongStart(HTrack *t) {
+void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
     if(s_cur&&s_heuristic.secsTo(QTime::currentTime())>30000) {     //TODO::CACHE
         QMap<QString, QString> params;
         params["method"] = "track.scrobble";
@@ -302,10 +302,10 @@ void HScrobbler::onSongStart(HTrack *t) {
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-        QEventLoop loop;
-        QTimer::singleShot(2850,&loop,SLOT(quit()));
-        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-        loop.exec();
+//        QEventLoop loop;
+//        QTimer::singleShot(2850,&loop,SLOT(quit()));
+//        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+//        loop.exec();
     }
     s_heuristic=QTime::currentTime();
     s_cur=t;
@@ -316,9 +316,9 @@ void HScrobbler::onSongStart(HTrack *t) {
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-        QEventLoop loop;
-        QTimer::singleShot(2850,&loop,SLOT(quit()));
-        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-        loop.exec();
+//        QEventLoop loop;
+//        QTimer::singleShot(2850,&loop,SLOT(quit()));
+//        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+//        loop.exec();
     }
 }
