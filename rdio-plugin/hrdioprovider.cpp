@@ -425,6 +425,7 @@ bool HRdioProvider::login(QString username, QString password) {
     QEventLoop loop;
     loop.connect(s_auth, SIGNAL(gotOauth(QByteArray,QByteArray,QByteArray,QByteArray)), SLOT(quit()) );
     loop.connect(s_auth, SIGNAL(error(QString)), SLOT(quit()) );
+    loop.connect(&s_browser,SIGNAL(rdioFail()),SLOT(quit()));
     loop.exec();
 
     if(ok()) {

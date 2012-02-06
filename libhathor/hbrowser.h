@@ -87,6 +87,7 @@ signals:
     void newUrl();
     void ready();
     void visiblityChanged(bool);
+    void rdioFail();
 
 public:
     static QMultiMap<QByteArray,QByteArray> request(const QByteArray& consumerKey,const QByteArray& consumerSecret,const QString& url,QMultiMap<QByteArray,QByteArray> params);

@@ -4,6 +4,8 @@
 #include "hloginwidget.h"
 #include "lastfm/ws.h"
 #include <QSettings>
+#include <QGraphicsOpacityEffect>
+#include <QDesktopServices>
 #include "ui_hmainwindow.h"
 #include "hsearchcontext.h"
 #include "hplayercontext.h"
@@ -14,7 +16,9 @@
 
 HMainWindow* HMainWindow::s_singleton=0;
 
-HMainWindow::HMainWindow() : ui(new Ui::HMainWindow) {
+HMainWindow::HMainWindow() : ui(new Ui::HMainWindow), s_ge(0), s_getLoggingAllowed(0) {
+    QSettings vl("Nettek","log");
+    vl.setValue("pluginDialog",false);
     Q_ASSERT(!s_singleton);
     lastfm::ws::ApiKey = "2930525005911a092c4ecea896316eab";
     lastfm::ws::SharedSecret = "abfb0f3af98ab1997d290eeb3e064e01";
@@ -27,6 +31,8 @@ HMainWindow::HMainWindow() : ui(new Ui::HMainWindow) {
         ui->widget->layout()->addWidget(l);
         connect(l,SIGNAL(showMainContext()),this,SLOT(setupMainContext()));
     qApp->setQuitOnLastWindowClosed(true);
+
+    connect(HPlayer::singleton(),SIGNAL(cantFind()),this,SLOT(cantFind()));
 }
 
 void HMainWindow::keyPressEvent(QKeyEvent *e) {
@@ -66,6 +72,11 @@ void HMainWindow::setupMainContext() {
     mc->setup();
     if(ui->toolbar->message()=="<i><center>Loading...</center></i>"||ui->toolbar->message()=="<i><center>Loading...</center></i>") ui->toolbar->clearMessage();
     s_contextStack.push_back(s_curContext=mc);
+
+    QSettings s_l("Nettek","logging");
+    if(s_l.value("permission").isNull()||s_l.value("permission").toString()=="AskMeLater") {
+        QTimer::singleShot(60000,this,SLOT(setGetLoggingAllowed()));
+    }
 }
 
 void HMainWindow::showContext(HArtist& a) {
@@ -138,8 +149,97 @@ void HMainWindow::search(QString s) {
     HSearchContext::singleton()->setSearchTerm(s);
 }
 
+void HMainWindow::ask(QString str, QObject *replyTo, QString replySlot) {
+    if(!replyTo) return;
+    if(s_curQuestion.replyTo) {
+        s_question_Q.push_back(HQuestion(str,replyTo,replySlot));
+    }
+    else {
+        s_curQuestion=HQuestion(str,replyTo,replySlot);
+        activateQuestion();
+    }
+}
+
+void HMainWindow::activateQuestion() {
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(ui->widget);
+    ui->widget->setGraphicsEffect(s_ge=new QGraphicsBlurEffect);
+    ui->widget->setEnabled(0);
+    ui->toolbar->setEnabled(0);
+    HQuestionWidget* qw=new HQuestionWidget(this,s_curQuestion.str);
+    qw->adjustSize();
+    if(qw->width()<100) qw->setMinimumWidth(100);
+    if(qw->height()<20) qw->setMinimumWidth(20);
+    qw->setGeometry(ui->widget->width()/2-qw->geometry().width()/2,ui->widget->height()/2-qw->geometry().height()/2,qw->geometry().width(),qw->geometry().height());
+    qw->show();
+    QGraphicsOpacityEffect* oe=new QGraphicsOpacityEffect;
+    QPropertyAnimation* pa=new QPropertyAnimation(oe,"opacity");
+    pa->setStartValue(0.0);
+    pa->setEndValue(0.8);
+    pa->setDuration(1000);
+    pa->start(QAbstractAnimation::DeleteWhenStopped);
+//    oe->setOpacity(0.8);
+    qw->setGraphicsEffect(oe);
+    connect(qw,SIGNAL(done(QString)),this,SLOT(hideAsk(QString)));
+    fwe->start();
+}
+
+
+void HMainWindow::hideAsk(QString l) {
+    QMetaObject::invokeMethod(s_curQuestion.replyTo,s_curQuestion.replySlot.toAscii(),Qt::QueuedConnection,Q_ARG(QString,l));
+
+    KFadeWidgetEffect* fwe=new KFadeWidgetEffect(ui->widget);
+    delete s_ge;
+    s_ge=0;
+    ui->widget->setEnabled(1);
+    ui->toolbar->setEnabled(1);
+    fwe->start();
+
+    if(s_question_Q.size()) {
+        s_curQuestion=s_question_Q.takeFirst();
+        QTimer::singleShot(300,this,SLOT(activateQuestion()));
+    }
+    s_curQuestion=HQuestion();
+}
+
+
 void HMainWindow::showNowPlaying() {
     if(s_curContext!=HPlayerContext::singleton()) setContext(HPlayerContext::singleton());
+}
+
+void HMainWindow::setGetLoggingAllowed() {
+    s_getLoggingAllowed=1;
+}
+
+void HMainWindow::getLogging() {
+    if(!s_getLoggingAllowed) return;
+    s_getLoggingAllowed=0;
+    ask("<center><B><font size='4'>Help make Hathor better!</B><br></font>Hathor logs crashes, page load times, and other boring information which can be used to improve Hathor.<br>"
+        "Can Hathor send this info off to its developper?<br><br><A href=\"no\">Configure Hathor</A>&nbsp;&nbsp;or&nbsp;&nbsp;<B><font size='4'><A href=\"yes\">Yes! I'm a good person!</A></B>",this,"setLogging");
+}
+
+void HMainWindow::setLogging(QString result) {
+    if(result=="yet") {
+        QSettings s_l("Nettek","logging");
+        s_l.setValue("permission","yes");
+    } else if(result=="no") {
+        config();
+    }
+}
+
+void HMainWindow::cantFind() {
+    QSettings l("Nettek","log");
+    if(!l.value("pluginDialog").toBool()) {
+        l.setValue("pluginDialog",true);
+        HMainWindow::singleton()->ask("<center><b><font size='4'>Sorry, Hathor couldn't find a song you wanted to listen to.</b></font><br>"
+                                      "Go to <A href=\"http://hathor.nettek.ca/plugins\">hathor.nettek.ca/plugins</A> to get more plugins!<br>"
+                                      "If you added music to your local collection, you may need to restart Hathor.<br><br><A href=\"null\">close</A>",
+                                      HMainWindow::singleton(),"openUrl");
+    }
+}
+
+void HMainWindow::openUrl(QString a) {
+    if(a=="null") return;
+    QDesktopServices::openUrl(QUrl(a));
 }
 
 void HMainWindow::setTitle(HTrack& a) {

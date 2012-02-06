@@ -125,6 +125,7 @@ void HBrowser::setInput(QString input, QString value)
     qWarning()<<"Could not find an input named"<<input<<"and give it a value";
     if(input=="id_email") {
         QMessageBox::critical(0,"Rdio","An error occured while trying to access the Rdio website. Please try again later...");
+        emit rdioFail();
     }
 }
 
@@ -171,6 +172,7 @@ QMultiMap<QByteArray,QByteArray> HBrowser::request(const QByteArray& consumerKey
     QOAuth::Interface a;
     a.setConsumerKey(consumerKey);
     a.setConsumerSecret(consumerSecret);
+    a.setRequestTimeout(2500);
 
     QMultiMap<QByteArray,QByteArray> ret=a.requestToken(url,QOAuth::POST,QOAuth::HMAC_SHA1,params);
     s_notifier->emitNotify();
@@ -192,6 +194,7 @@ QMultiMap<QByteArray,QByteArray> HBrowser::request(const QByteArray& consumerKey
     QOAuth::Interface a;
     a.setConsumerKey(consumerKey);
     a.setConsumerSecret(consumerSecret);
+    a.setRequestTimeout(2500);
     QMultiMap<QByteArray,QByteArray> ret=a.accessToken(url,QOAuth::POST,token,tokenShared,QOAuth::HMAC_SHA1,params);
     s_notifier->emitNotify();
     s_notifier=0;

@@ -3,6 +3,7 @@
 #include "kfadewidgeteffect.h"
 #include "habstractmusicinterface.h"
 #include <QTimer>
+#include "hmainwindow.h"
 
 HPlayWidget::HPlayWidget(HArtist &artist, QWidget *parent) :
     QWidget(parent),
@@ -135,6 +136,7 @@ void HPlayWidget::topAlbums() {
         if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
         QMetaObject::invokeMethod(HPlayer::singleton()->getStandardQueue(),"queue",Qt::QueuedConnection,Q_ARG(HAlbum*,album));
         emit closed();
+        HMainWindow::singleton()->getLogging();
         return;
     }
 
@@ -161,6 +163,7 @@ void HPlayWidget::topSongs() {
         if(ui->radioButton_play->isChecked()) HPlayer::singleton()->clear();
         QMetaObject::invokeMethod(HPlayer::singleton()->getStandardQueue(),"queue",Qt::QueuedConnection,Q_ARG(HTrack*,track));
         emit closed();
+        HMainWindow::singleton()->getLogging();
         return;
     }
 
@@ -193,6 +196,7 @@ void HPlayWidget::play1() {
         if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",5);
         break;
     }
+    HMainWindow::singleton()->getLogging();
     emit closed();
 }
 
@@ -214,6 +218,7 @@ void HPlayWidget::play2() {
         if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",10);
         break;
     }
+    HMainWindow::singleton()->getLogging();
     emit closed();
 }
 
@@ -236,6 +241,7 @@ void HPlayWidget::play3() {
         if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",20);
         break;
     }
+    HMainWindow::singleton()->getLogging();
     emit closed();
 }
 
@@ -258,6 +264,7 @@ void HPlayWidget::play4() {
         if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue",50);
         break;
     }
+    HMainWindow::singleton()->getLogging();
     emit closed();
 }
 
@@ -280,6 +287,7 @@ void HPlayWidget::play5() {
         if(track) track->sendSimilar(HPlayer::singleton()->getStandardQueue(),"queue");
         break;
     }
+    HMainWindow::singleton()->getLogging();
     emit closed();
 }
 

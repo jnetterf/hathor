@@ -7,6 +7,7 @@
 #include "halbum.h"
 #include "hartist.h"
 
+#include <QTime>
 #include <QLayout>
 
 #include <phonon/MediaObject>
@@ -78,6 +79,7 @@ public:
 signals:
     void startedPlaying(HTrack& t);
     void finished();
+    void cantFind();
     void stateChanged(HAbstractTrackInterface::State);
 public slots:
     void regProvider(HAbstractTrackProvider* tp);
@@ -125,6 +127,8 @@ public:
     HTrack* currentTrack() { if(s_currentTrack) return &s_currentTrack->track; else return 0;}
     HAbstractTrackInterface* currentTrackInterface() { return s_currentTrack?s_currentTrack->p_ti:0; }
     HPlayer_PotentialTrack* currentPotentialTrack() { return s_currentTrack; }
+signals:
+    void cantFind();
 public slots:
     void queue(HTrack* track);
     void queue(HAlbum* album);
@@ -139,13 +143,25 @@ public slots:
     void playNext();
 };
 
+class LIBHATHORSHARED_EXPORT HScrobbler : public QObject {
+    Q_OBJECT
+    static HScrobbler* s_singleton;
+    QTime s_heuristic;
+    HTrack* s_cur;
+    HScrobbler() : s_heuristic(QTime::currentTime()), s_cur(0) {}
+public:
+    static HScrobbler* singleton() { if(!s_singleton) s_singleton = new HScrobbler; return s_singleton; }
+public slots:
+    void onSongStart(HTrack* t);
+};
+
 class LIBHATHORSHARED_EXPORT HPlayer : public QObject{
     Q_OBJECT
     QList<HAbstractTrackProvider*> s_providers;
     static HPlayer* s_singleton;
     bool s_shuffle;
     HAbstractQueue* Q;
-    HPlayer() : s_providers(), s_shuffle(0), Q(0) { s_singleton=this; /* WE DON'T LOAD THE PLUGINS ANYMORE */ }
+    HPlayer() : s_providers(), s_shuffle(0), Q(0) { s_singleton=this; }
 public:
     static HPlayer* singleton() { if(!s_singleton) {s_singleton=new HPlayer;} return s_singleton; }
     HTrack* currentTrack() { return Q?Q->currentTrack():0; }
@@ -170,6 +186,7 @@ signals:
     void stateChanged(HAbstractTrackInterface::State);
     void trackChanged(HTrack& t);
     void shuffleToggled(bool);
+    void cantFind();
 };
 
 class LIBHATHORSHARED_EXPORT HPhononTrackInterface : public HAbstractTrackInterface {

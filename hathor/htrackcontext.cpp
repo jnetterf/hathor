@@ -381,7 +381,7 @@ void HTrackContext::setSimilar(HTrack* similar) {
 
 void HTrackContext::setSlideshow(QWidget *w) {
     if(!w) {
-        delete s_slideshow;
+        s_slideshow=0;
         return;
     }
     s_slideshow=w;

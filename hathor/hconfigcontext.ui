@@ -527,6 +527,9 @@
                <property name="text">
                 <string>Scrobble music to last.fm.</string>
                </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -573,6 +576,9 @@
                <property name="text">
                 <string>Show similar artists and songs</string>
                </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -617,7 +623,10 @@
                 </font>
                </property>
                <property name="text">
-                <string>Only show/play albums and tracks that are local or cached</string>
+                <string>Show/play albums and tracks, even if they aren't local or cached</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -630,7 +639,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Enable this if you have a bad connection, or don't want online sources.</string>
+                <string>Disable this if you have a bad connection, or don't want online sources.</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -665,6 +674,9 @@
                <property name="text">
                 <string>Enable animations</string>
                </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item>
@@ -677,6 +689,103 @@
                </property>
                <property name="text">
                 <string>Disable this if you are old-school or have an old-school computer.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_9">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>5</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="Line" name="line_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_12">
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Privacy Settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="label_13">
+                 <property name="font">
+                  <font>
+                   <family>Candara</family>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Logging policy:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboBox">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <family>Candara</family>
+                  </font>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>ask me later</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>send all useful information</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>send critical information</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>don't send anything</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_14">
+               <property name="font">
+                <font>
+                 <family>Candara</family>
+                 <italic>true</italic>
+                </font>
+               </property>
+               <property name="text">
+                <string>Hathor relies on logs to fix bugs, improve highly used features, decrease loading times, and more... Thank you for your support!</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
                </property>
               </widget>
              </item>

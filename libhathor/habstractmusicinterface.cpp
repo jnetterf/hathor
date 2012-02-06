@@ -1,12 +1,16 @@
 #include "habstractmusicinterface.h"
 #include "hnettloger.h"
+#include "lastfmext.h"
 #include <QDebug>
 #include <QDir>
 #include <QApplication>
 #include <QPluginLoader>
+#include <QEventLoop>
+#include <QNetworkReply>
 #include <QWidget>
 
 HPlayer* HPlayer::s_singleton=0;
+HScrobbler* HScrobbler::s_singleton;
 
 void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
     if(s_rem==-1) return;
@@ -32,7 +36,10 @@ void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
     }
     if(!s_rem) {
         if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
-        else emit finished();
+        else {
+            emit cantFind();
+            emit finished();
+        }
     }
 }
 
@@ -141,6 +148,7 @@ HStandardQueue* HPlayer::getStandardQueue() {
 
     if(Q) clear();
     Q=sq=new HStandardQueue(s_providers,s_shuffle);
+    connect(sq,SIGNAL(cantFind()),this,SIGNAL(cantFind()));
     connect(Q,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
     connect(Q,SIGNAL(trackChanged(HTrack&)),this,SIGNAL(trackChanged(HTrack&)));
     connect(Q,SIGNAL(shuffleToggled(bool)),this,SIGNAL(shuffleToggled(bool)));
@@ -160,6 +168,7 @@ void HStandardQueue::queue(HTrack *track) {
 
     HPlayer_PotentialTrack* pt=new HPlayer_PotentialTrack(*track);
     s_queue.push_back(pt);
+    connect(pt,SIGNAL(cantFind()),this,SIGNAL(cantFind()));
     for(int i=0;i<s_providers.size();i++) {
         pt->regProvider(s_providers[i]);
     }
@@ -232,8 +241,10 @@ void HStandardQueue::playNext() {
         connect(s_currentTrack,SIGNAL(startedPlaying(HTrack&)),this,SIGNAL(trackChanged(HTrack&)));
         emit stateChanged(HAbstractTrackInterface::Searching);
         qDebug()<<"ABOUT TO PLAY!";
+        HScrobbler::singleton()->onSongStart(&s_currentTrack->track);
         s_currentTrack->play();
     } else {
+        HScrobbler::singleton()->onSongStart(0);
         s_currentTrack=0;
         emit stateChanged(HAbstractTrackInterface::Stopped);
     }
@@ -279,5 +290,35 @@ void HPlayer::loadPlugins(QLayout *l) {
                 }
             }
         }
+    }
+}
+
+void HScrobbler::onSongStart(HTrack *t) {
+    if(s_cur&&s_heuristic.secsTo(QTime::currentTime())>30000) {     //TODO::CACHE
+        QMap<QString, QString> params;
+        params["method"] = "track.scrobble";
+        params["timestamp"] = QString::number(QDateTime::currentDateTime().toTime_t());
+        params["artist"] = s_cur->getArtistName();
+        params["track"] = s_cur->getTrackName();
+
+        QNetworkReply* reply = lastfmext_post( params );
+        QEventLoop loop;
+        QTimer::singleShot(2850,&loop,SLOT(quit()));
+        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+        loop.exec();
+    }
+    s_heuristic=QTime::currentTime();
+    s_cur=t;
+    if(t) {
+        QMap<QString, QString> params;
+        params["method"] = "track.updateNowPlaying";
+        params["artist"] = s_cur->getArtistName();
+        params["track"] = s_cur->getTrackName();
+
+        QNetworkReply* reply = lastfmext_post( params );
+        QEventLoop loop;
+        QTimer::singleShot(2850,&loop,SLOT(quit()));
+        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+        loop.exec();
     }
 }
