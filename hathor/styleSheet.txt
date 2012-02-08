@@ -188,13 +188,13 @@ QPushButton::disabled {
   QScrollBar:vertical {
       border: 0px solid transparent;
       background: transparent;
-      width: 4px;
+      width: 6px;
       margin: 0px 0 0px 0;
   }
   QScrollBar::handle:vertical {
-      background: #e8e8e8;
+      background: #a8a8a8;
       min-height: 20px;
-      border: 2px solid #e8e8e8;
+      border: 2px solid #a8a8a8;
       border-radius: 2px;
   }
   QScrollBar::add-line:vertical {

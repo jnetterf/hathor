@@ -25,7 +25,9 @@ class LIBHATHORSHARED_EXPORT HCachedInfo : public QObject {
     friend class HAlbum;
     static int ss_connections;
     static QList< QPair<QObject*, QString> > ss_futureConnetions;
-    static QSettings sett;
+    static QSettings _sett_;
+    static QHash<QString,QVariant> sett;
+    static bool _opened;
 
     QMutex mutex;
     QMap<QString, QString> params;
@@ -41,8 +43,6 @@ class LIBHATHORSHARED_EXPORT HCachedInfo : public QObject {
     template<typename T> struct Datum : AbstractDatum {
         T data;
         void send() {
-//            QMutexLocker locker(&m);
-//            Q_UNUSED(locker);
             while(queue.size()) {
                 m.lock();
                 QPair<QObject*,QString> p=queue.takeFirst();
@@ -59,6 +59,7 @@ class LIBHATHORSHARED_EXPORT HCachedInfo : public QObject {
     bool got;
     HRunOnceNotifier* getting;
 public:
+    static void save();
     HCachedInfo() : got(0), getting(0) {}
     void setParams(QMap<QString, QString> cparams) {
         params=cparams;
@@ -106,8 +107,14 @@ class LIBHATHORSHARED_EXPORT HCachedPixmap : public QObject {
     bool tryAgain;
     static int ss_connections;
 
-public:
     HCachedPixmap(const QUrl& url);
+    static QHash<QUrl,HCachedPixmap*> s_map;
+public:
+    static HCachedPixmap* get(const QUrl& url) {
+        if(!s_map.contains(url)) s_map[url]=new HCachedPixmap(url);
+        return s_map[url];
+    }
+
 public slots:
     void send(QObject*o,QString m) { queue.push_back(qMakePair(o,m)); if(!pix.isNull()) processDownload_2();}
     void download();

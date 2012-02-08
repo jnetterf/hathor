@@ -5,13 +5,13 @@
 #include <QMainWindow>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QEventLoop>
 #include <QLineEdit>
 #include <QPropertyAnimation>
 #include <QTimer>
 #include <QLabel>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsScene>
+#include <QFont>
 #include <QXmlReader>
 #include <QSettings>
 #include "hartist.h"
@@ -47,27 +47,92 @@ public:
     }
 };
 
-class PlayLibraryButton : public QObject, public QGraphicsPixmapItem {
+class ArtistLabel : public QGraphicsTextItem {
     Q_OBJECT
-    Q_PROPERTY(qreal echoOpacity READ echoOpacity WRITE setEchoOpacity)
-    QList<lastfm::Artist> s_rec;
 public:
-    PlayLibraryButton(QList<lastfm::Artist> a) : s_rec(a) {
-        setPixmap(QPixmap(":/icons/media-play-alt.png").scaledToWidth(60));
+    static QList<ArtistLabel*> _u_;
+    static ArtistLabel* _cur_;
+    HArtist& s_rep;
+    bool s_vis;
+    QGraphicsPixmapItem* s_px;
+    ArtistLabel(HArtist& rep) : s_rep(rep),s_vis(1),s_px(0) {
+        _u_.push_back(this);
+        hideInfo();
     }
-    void mousePressEvent(QGraphicsSceneMouseEvent *e) {
-        if((e->buttons()&Qt::LeftButton)==0) return;
-        HToolbar::singleton()->setMessage("<center>Caching data... 0/"+QString::number(s_rec.size())+"</center>");
-        for(int j=0;j<s_rec.size();j++) {
-            HToolbar::singleton()->setMessageSimple("<center>Caching data... "+QString::number(j)+"/"+QString::number(s_rec.size())+"</center>");
-//            HArtist::get(s_rec[j].name()).getTracks();
-        }
-        HToolbar::singleton()->clearMessage();
-        (new HPlayLibraryThread(s_rec))->start();
+    ~ArtistLabel() {
+        _u_.removeOne(this);
     }
-    qreal echoOpacity() { return QGraphicsPixmapItem::opacity(); }
+
 public slots:
-    void setEchoOpacity(qreal opacity){QGraphicsPixmapItem::setOpacity(opacity);}
+    void showInfo() {
+        if(s_vis) return;
+        s_vis=1;
+        if(_cur_==this) return;
+        _cur_=this;
+        for(int i=0;i<ArtistLabel::_u_.size();i++) if(ArtistLabel::_u_[i]!=this) ArtistLabel::_u_[i]->hideInfo();
+        setHtml("<html>"
+                "<table bgcolor='lightgrey' border='0' width='919' ><tr>"
+                "<td><B><font size='6' face='candara' color='black'>"+s_rep.getName()+"</font>");
+        QPropertyAnimation* pa=new QPropertyAnimation(this,"opacity");
+        pa->setStartValue(0.1);
+        pa->setEndValue(1.0);
+        pa->setDuration(400);
+        pa->setEasingCurve(QEasingCurve::OutSine);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+        if(s_px) {
+            s_px->show();
+            s_rep.sendTagNames(this,"setTags");
+        } else QTimer::singleShot(20,this,SLOT(requestInfo()));
+    }
+    void requestInfo() {
+        if(!s_vis) return;
+        s_rep.sendPic(HArtist::Large,this,"setPic");
+        s_rep.sendTagNames(this,"setTags");
+    }
+
+    void hideInfo() {
+        if(!s_vis) return;
+        if(s_px) s_px->hide();
+        s_vis=0;
+        setHtml("<html>"
+                "<table border='0' width='919' ><tr>"
+                "<td><font size='6' face='candara' color='white'>"+s_rep.getName()+"</font>");
+        QPropertyAnimation* pa=new QPropertyAnimation(this,"opacity");
+        pa->setStartValue(0.1);
+        pa->setEndValue(1.0);
+        pa->setDuration(600);
+        pa->setEasingCurve(QEasingCurve::OutSine);
+        pa->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+    void setPic(QPixmap p) {
+        if(!s_vis) return;
+        if(s_px) {
+            s_px->show();
+            return;
+        }
+
+        s_px=new QGraphicsPixmapItem(p,this);
+
+//        QFontMetrics fm(QFont("candara",18,75));
+        s_px->setX(923-p.width());
+        s_px->setY(4);
+        s_px->show();
+    }
+    void setTags(QStringList l) {
+        if(!s_vis) return;
+        setHtml("<html>"
+                "<table bgcolor='lightgrey' border='0' width='919' ><tr>"
+                "<td><B><font size='6' face='candara' color='black'>"+s_rep.getName()+"</font></B></table><br>"
+                "<font size='2' face='candara' color='white'>"+
+                l.join(", "));
+    }
+
+private:
+    void mousePressEvent(QGraphicsSceneMouseEvent*) {
+        emit showContext();
+    }
+signals:
+    void showContext();
 };
 
 class ArtistAvatar : public QObject, public QGraphicsPixmapItem {
@@ -173,6 +238,10 @@ public:
         _neighbours_[1]=up;
         foreach(ArtistAvatar* a,up._aa) a->_neighbours_[3]._aa.push_back(this);
         _u_.push_back(this);
+    }
+
+    ~ArtistAvatar() {
+        _u_.removeOne(this);
     }
 
     void addLeft(ArtistAvatar* left) {
@@ -420,8 +489,16 @@ public:
                 QGraphicsScene::mouseMoveEvent(event);
                 return;
             }
+
+            ArtistLabel* al=dynamic_cast<ArtistLabel*>(items(event->scenePos())[i]);
+            if(al){
+                al->showInfo();
+                QGraphicsScene::mouseMoveEvent(event);
+                return;
+            }
         }
         for(int i=0;i<ArtistAvatar::_u_.size();i++) ArtistAvatar::_u_[i]->hideInfo();
+        for(int i=0;i<ArtistLabel::_u_.size();i++) ArtistLabel::_u_[i]->hideInfo();
         ArtistAvatar::_okCur=0;
         QGraphicsScene::mouseMoveEvent(event);
     }

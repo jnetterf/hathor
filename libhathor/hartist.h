@@ -60,6 +60,33 @@ public slots:
     void sendData_processQueue();
 };
 
+struct ExtraPictureData : QObject {
+    Q_OBJECT
+    friend class HArtist;
+private:
+    bool s_errored;
+    QList<HCachedPixmap*> pics;
+    QStringList pic_urls;
+    bool got_urls;
+    bool getting;
+    QString s_artist;
+    QSettings sett;
+
+    struct HEPTriplet {
+        QObject* first;
+        QString second;
+        int third;
+        HEPTriplet(QObject* a,QString b,int c) : first(a), second(b), third(c) {}
+    };
+    QList<HEPTriplet> s_queue;
+
+    void sendPics(QObject* o,QString m,int c);
+    ExtraPictureData(QString artist);
+public slots:
+    void processPicUrls();
+    void procQueue();
+};
+
 class LIBHATHORSHARED_EXPORT HArtist : public HObject
 {
     Q_OBJECT
@@ -116,9 +143,8 @@ public slots:
     void sendSimilar(QObject* o,QString m, int count=-1); /* multiple HArtist* */
     void sendShouts(QObject* o,QString m); /* QList<HShout*> */
     void sendSimilarScores(QObject* o,QString m); /* QList<double> */
-    QPixmap getExtraPic(int which); //which<=getExtraPicCachedCount() /*QPixmap */
-    int getExtraPicCount(); /* int */
-    int getExtraPicCachedCount(); /* int */
+
+    void sendExtraPics(QObject* o,QString m, int count);
 
 private:
     static QHash<QString, HArtist*> _map;
@@ -132,16 +158,7 @@ private:
     ArtistTrackData s_trackData;
     ArtistSimilarData s_similarData;
     ArtistShoutData s_shoutData;
-
-    struct ExtraPictureData {
-        QList<QPixmap> pics;
-        QStringList pic_urls;
-        bool got_urls;
-        HRunOnceNotifier* getting;
-        ExtraPictureData() : got_urls(0),getting(0) {}
-        void getData(QString artist);
-        void fetchAnother();
-    } s_extraPictureData;
+    ExtraPictureData s_extraPictureData;
 
 public slots:
     void sendPic_2(PictureSize p,QString pic); /* for internal use */

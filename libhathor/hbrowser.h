@@ -91,7 +91,9 @@ signals:
 
 public:
     static QMultiMap<QByteArray,QByteArray> request(const QByteArray& consumerKey,const QByteArray& consumerSecret,const QString& url,QMultiMap<QByteArray,QByteArray> params);
+    // DANGER : WILL NOT RETURN UNTIL AN ANSWER HAS BEEN OBTAINED
     static QMultiMap<QByteArray,QByteArray> request(const QByteArray& consumerKey,const QByteArray& consumerSecret,const QString& url,QMultiMap<QByteArray,QByteArray> params,const QByteArray &token,const QByteArray &tokenShared);
+    // DANGER : WILL NOT RETURN UNTIL AN ANSWER HAS BEEN OBTAINED
 };
 
 #endif // EMBEDDEDBROWSER_H

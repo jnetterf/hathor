@@ -5,7 +5,6 @@
 #include <QDir>
 #include <QApplication>
 #include <QPluginLoader>
-#include <QEventLoop>
 #include <QNetworkReply>
 #include <QWidget>
 
@@ -21,7 +20,7 @@ void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
 void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
     if(s_rem==-1) return;
     QMutexLocker locker(&mutex);
-    HL("[PLAY] PPT/Score "+QString::number(score)+" Provider:"+tp->name()+" Track:"+track.getTrackName()+" by "+track.getArtistName());
+    HL("regScore: "+QString::number(score)+" Provider:"+tp->name()+" Track:"+track.getTrackName()+" by "+track.getArtistName());
 //    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
     if(score>s_score&&score) {
         if(p_ti) {
@@ -163,6 +162,7 @@ QString HPlayer::getProviderName()  {
 }
 
 void HStandardQueue::queue(HTrack *track) {
+    if(!track) return;
     QMutexLocker l(&s_lock);
     if(!s_currentTrack) emit stateChanged(HAbstractTrackInterface::Searching);
 
@@ -176,6 +176,7 @@ void HStandardQueue::queue(HTrack *track) {
 }
 
 void HStandardQueue::queue(HAlbum* album) {
+    if(!album) return;
     album->sendTracks(this,"queue");
 }
 
@@ -256,45 +257,65 @@ void HPlayer::playNext() {
 }
 
 void HPlayer::loadPlugins(QLayout *l) {
-    QStringList cl;
+    qDebug()<<qApp->applicationDirPath();
     cl.push_back(qApp->applicationDirPath());
     cl.push_back("/usr/share/hathor-20120128");
     cl.push_back("/usr/local/share/hathor-20120128");
-    QStringList loaded;
-    for(int i=0;i<cl.size();i++) {
-        QDir pluginsDir = QDir(cl[i]);
-        pluginsDir.cd("plugins");
+    s_i=0;
+    this->l=l;
+    loadPlugins_continue();
+}
 
-        foreach (QString fileName, pluginsDir.entryList(QDir::Files)) {
-            if(loaded.contains(fileName)) {
-                qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
-                continue;
-            }
-            QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
-            QObject *plugin = loader.instance();
-            if (plugin) {
-                loaded.push_back(fileName);
-                HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
+void HPlayer::loadPlugins_continue() {
+    if(s_i>=cl.size()) {
+        emit doneLoadingPlugins();
+        return;
+    }
+    pluginsDir = QDir(cl[s_i]);
+    pluginsDir.cd("plugins");
 
-                if(p) {
-                    QWidget* lw=p->initWidget();
-                    if(lw) {
-                        l->addWidget(lw);
-                        QEventLoop ev;
-                        connect(lw,SIGNAL(destroyed()),&ev,SLOT(quit()));
-                        ev.exec();
-                    }
+    s_j=0;
+    subfiles=pluginsDir.entryList(QDir::Files);
+    loadPlugins_continue_continue();
+    s_i++;
+}
 
-                    installProvider(p);
-                    HL("[INIT] HPL/Loading plugin "+fileName);
+void HPlayer::loadPlugins_continue_continue() {
+    if(s_j>=subfiles.size()) {
+        QTimer::singleShot(0,this,SLOT(loadPlugins_continue()));
+        return;
+    }
+
+    QString fileName=subfiles[s_j];
+    if(loaded.contains(fileName)) {
+        qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
+    } else {
+        QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
+        QObject *plugin = loader.instance();
+        if (plugin) {
+            loaded.push_back(fileName);
+            HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
+
+            if(p) {
+                HL("[INIT] HPL/Loading plugin "+fileName);
+                QWidget* lw=p->initWidget();
+                installProvider(p);
+                if(lw) {
+                    l->addWidget(lw);
+                    connect(lw,SIGNAL(destroyed()),this,SLOT(loadPlugins_continue_continue()));
+                } else {
+                    QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
                 }
+
             }
         }
     }
+
+    ++s_j;
 }
 
 void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
-    if(s_cur&&s_heuristic.secsTo(QTime::currentTime())>30000) {     //TODO::CACHE
+    if(s_cur&&s_heuristic.secsTo(QTime::currentTime())>30) {     //TODO::CACHE
         QMap<QString, QString> params;
         params["method"] = "track.scrobble";
         params["timestamp"] = QString::number(QDateTime::currentDateTime().toTime_t());
@@ -302,10 +323,7 @@ void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-//        QEventLoop loop;
-//        QTimer::singleShot(2850,&loop,SLOT(quit()));
-//        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-//        loop.exec();
+        // FIX ME
     }
     s_heuristic=QTime::currentTime();
     s_cur=t;
@@ -316,9 +334,6 @@ void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-//        QEventLoop loop;
-//        QTimer::singleShot(2850,&loop,SLOT(quit()));
-//        loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-//        loop.exec();
+        // FIX ME
     }
 }

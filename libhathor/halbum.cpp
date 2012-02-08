@@ -8,7 +8,6 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QHttp>
-#include <QEventLoop>
 #include <QSettings>
 #include "hartist.h"
 #include <lastfm/ws.h>
@@ -81,7 +80,7 @@ void HAlbum::sendPic(PictureSize p, QObject *obj, const char *member) {
 }
 
 void HAlbum::sendPic_2(PictureSize p,QString pic) {
-    if(!s_cachedPixmap[p]) s_cachedPixmap[p]=new HCachedPixmap(QUrl(pic));
+    if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
         s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
     }

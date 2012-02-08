@@ -7,7 +7,6 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsView>
-#include <QEventLoop>
 #include <QLineEdit>
 #include <QPropertyAnimation>
 #include <QTimer>
@@ -66,6 +65,7 @@ public slots:
     void showTabHint();
     void doPassword();
     void doLogin();
+    void doLogin2();
 
     void finish(int a=0);
 

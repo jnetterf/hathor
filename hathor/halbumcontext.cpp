@@ -62,7 +62,7 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
 
     ui->label_albumPic->adjustSize();
     ui->frame_art->adjustSize();
@@ -78,7 +78,7 @@ HAlbumContext::~HAlbumContext()
 
 void HAlbumContext::showEvent(QShowEvent * e)
 {
-    HL("[NOTE] HAC/Show: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
+    HL("HAlbumContext::showEvent: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 
@@ -249,11 +249,14 @@ void HAlbumContext::setSummary(QString s) {
     }
 }
 
+void HAlbumContext::setMePic(QPixmap pic) {
+    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+}
+
 void HAlbumContext::setShouts(QList<HShout *> shouts) {
     int i;
     int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
     for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        shouts[i]->getShouter().getPic(HUser::Medium);    //CACHE
         HShoutBox* ab=new HShoutBox(*shouts[i],this);
         ui->widget_comments->layout()->addWidget(ab);
 
@@ -275,7 +278,6 @@ void HAlbumContext::addTags(QList<HTag*> tags) {
     int i;
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
-        tags[i]->getContent();    //CACHE
         HTagBox* ab=HTagBox::getBox(*tags[i]);
         if(s_showTime.msecsTo(QTime::currentTime())>110) {
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");

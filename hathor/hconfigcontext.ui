@@ -516,7 +516,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QCheckBox" name="checkBox">
+              <widget class="QCheckBox" name="checkBox_scrobble">
                <property name="font">
                 <font>
                  <family>Candara</family>
@@ -565,7 +565,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QCheckBox" name="checkBox_2">
+              <widget class="QCheckBox" name="checkBox_similar">
                <property name="font">
                 <font>
                  <family>Candara</family>
@@ -615,6 +615,9 @@
              </item>
              <item>
               <widget class="QCheckBox" name="checkBox_3">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="font">
                 <font>
                  <family>Candara</family>
@@ -639,7 +642,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Disable this if you have a bad connection, or don't want online sources.</string>
+                <string>Disable this if you have a bad connection, or don't want online sources. (Coming soon)</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -664,6 +667,9 @@
              </item>
              <item>
               <widget class="QCheckBox" name="checkBox_4">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="font">
                 <font>
                  <family>Candara</family>
@@ -688,7 +694,7 @@
                 </font>
                </property>
                <property name="text">
-                <string>Disable this if you are old-school or have an old-school computer.</string>
+                <string>Disable this if you are old-school or have an old-school computer. (Coming soon)</string>
                </property>
               </widget>
              </item>
@@ -737,7 +743,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QComboBox" name="comboBox">
+                <widget class="QComboBox" name="comboBox_log">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>

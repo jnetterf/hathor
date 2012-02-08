@@ -38,6 +38,7 @@ public:
 
 public slots:
     void showMoreBio();
+    void setMePic(QPixmap p);
     void loadArtist();
     void loadAlbum();
 //    void loadTracks();
@@ -62,7 +63,7 @@ public slots:
 
     void setLoved(bool);
 
-    void setBpm(double);
+    void setBpm(int);
     void setValence(double);
     void setAggression(double);
     void setAvgLoudness(double);

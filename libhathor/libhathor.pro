@@ -42,7 +42,7 @@ HEADERS += habstractmusicinterface.h\
     hnettloger.h
 
 CONFIG += oauth
-win32:LIBS += -llastfm0
+win32:LIBS += -llastfm0 -ltag
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN

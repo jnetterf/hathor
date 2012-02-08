@@ -18,6 +18,9 @@ public:
     explicit HShoutBox(HShout& rep, QWidget *parent);
     ~HShoutBox();
 
+public slots:
+    void setPic(QPixmap p);
+
 private:
     Ui::HShoutBox *ui;
 };

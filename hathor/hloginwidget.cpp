@@ -47,6 +47,7 @@ void HLoginWidget::continueLoading() {
         HL("[INIT] LFM/RESTORE");
         return;
     }
+    HL("[INIT] LFM/FIRST");
     ///
     px = new FadePixmap;
     px->setPixmap(QPixmap(":/icons/lfmRed.jpg").scaledToHeight(100,Qt::SmoothTransformation));
@@ -107,7 +108,6 @@ void HLoginWidget::continueLoading() {
 
 void HLoginWidget::showTabHint() {
     lastfm::ws::Username=a->text();
-    HL("[INIT] LFM/TABHINT");
     if(!a->text().size()) return;
     disconnect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
     connect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
@@ -119,7 +119,6 @@ void HLoginWidget::showTabHint() {
 }
 
 void HLoginWidget::doPassword() {
-    HL("[INIT] LFM/PASSWORD");
     disconnect(b, SIGNAL(gotFocus()),this,SLOT(doPassword()));
     disconnect(a,SIGNAL(textChanged(QString)),this,SLOT(showTabHint()));
 
@@ -169,7 +168,6 @@ void HLoginWidget::doPassword() {
 }
 
 void HLoginWidget::doLogin() {
-    HL("[INIT] LFM/LOGIN");
     b->setEnabled(0);
 
     lastfm::ws::Username = a->text();
@@ -181,10 +179,11 @@ void HLoginWidget::doLogin() {
     params["authToken"] = lastfm::md5( (lastfm::ws::Username + lastfm::md5( password.toUtf8() )).toUtf8() );
     QNetworkReply* reply = lastfmext_post( params );
 
-    QEventLoop loop;
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
+    connect(reply,SIGNAL(finished()),this,SLOT(doLogin2()));
+}
 
+void HLoginWidget::doLogin2() {
+    QNetworkReply* reply = dynamic_cast<QNetworkReply*>(sender());
     try {
         QSettings auth("Nettek","last.fm for Hathor");
         lastfm::XmlQuery const lfm = lastfm::ws::parse( reply );
@@ -232,7 +231,6 @@ void HLoginWidget::doLogin() {
 
         QTimer::singleShot(210,this,SLOT(finish()));
 
-        HUser::get(lastfm::ws::Username).getPic(HUser::Medium); //CACHE
         tx->setOpacity(0);
 
     } catch (std::runtime_error& e) {
@@ -267,7 +265,6 @@ void HLoginWidget::doLogin() {
 }
 
 void HLoginWidget::finish(int ax) {
-    HL("[INIT] LFM/FINISHED");
     hide();
     emit showMainContext();
     deleteLater();

@@ -7,7 +7,6 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QHttp>
-#include <QEventLoop>
 #include <QSettings>
 #include <QTimer>
 #include <QDomDocument>
@@ -16,8 +15,9 @@
 
 QHash<QString, HUser*> HUser::_map;
 
-HUser::HUser(QString username) : s_username(username)
+HUser::HUser(QString username) : s_username(username), s_infoData(username)
 {
+    for(int i=0;i<4;i++) s_cachedPixmap[i]=0;
 }
 
 HUser& HUser::get(QString username) {
@@ -29,278 +29,171 @@ HUser& HUser::get(QString username) {
     return get(username);
 }
 
-QString HUser::getRealName() {
-    if(s_infoData.got) {
-        return s_infoData.realName;
-    }
-    s_infoData.getData(s_username);
-    return getRealName();
+void HUser::sendRealName(QObject* o, QString m) {
+    s_infoData.sendProperty("realName",o,m);
 }
 
-QPixmap HUser::getPic(PictureSize p) {
-    if(s_pictureData.got[p]) return s_pictureData.pics[p];
-    if(s_infoData.got) {
-        while(s_infoData.pics[p].isEmpty()&&p) p=(PictureSize)((int)p-1);
-        s_pictureData.getData(s_infoData.pics[p],p);
-        return getPic(p);
-    }
-    s_infoData.getData(s_username);
-    return getPic(p);
+void HUser::sendPicNames(PictureSize p, QObject* obj, QString member) {
+    s_infoData.sendProperty("pic_"+QString::number(p),obj,member);
 }
 
-int HUser::getAge() {
-    if(s_infoData.got) {
-        return s_infoData.age;
-    }
-    s_infoData.getData(s_username);
-    return getAge();
+void HUser::sendPic(PictureSize p, QObject* obj, QString member) {
+    s_picQueue[p].push_back(qMakePair(obj,QString(member)));
+    sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data());
 }
 
-bool HUser::getMale() {
-    if(s_infoData.got) {
-        return s_infoData.male;
+void HUser::sendPic_2(PictureSize p,QString pic) {
+    if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
+    for(int i=0;i<s_picQueue[p].size();i++) {
+        s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
     }
-    s_infoData.getData(s_username);
-    return getMale();
+    s_picQueue[p].clear();
 }
 
-int HUser::getPlayCount() {
-    if(s_infoData.got) {
-        return s_infoData.playCount;
-    }
-    s_infoData.getData(s_username);
-    return getPlayCount();
+void HUser::sendAge(QObject* o, QString m) {
+    s_infoData.sendProperty("age",o,m);
 }
 
-int HUser::getPlaylists() {
-    if(s_infoData.got) {
-        return s_infoData.playlists;
-    }
-    s_infoData.getData(s_username);
-    return getPlaylists();
+void HUser::sendGender(QObject* o, QString m) {
+    s_infoData.sendProperty("gender",o,m);
 }
 
-QList<HTrack*> HUser::getTopTracks() {
-    if(s_topTrackData.got) {
-        return s_topTrackData.topTracks;
-    }
-    s_topTrackData.getData(s_username);
-    return getTopTracks();
+void HUser::sendPlayCount(QObject* o, QString m) {
+    s_infoData.sendProperty("playCount",o,m);
 }
+
+void HUser::sendPlaylists(QObject* o, QString m) {
+    s_infoData.sendProperty("playlistCount",o,m);
+}
+
+//QList<HTrack*> HUser::sendTopTracks() {
+//    if(s_topTrackData.got) {
+//        return s_topTrackData.topTracks;
+//    }
+//    s_topTrackData.getData(s_username);
+//    return getTopTracks();
+//}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-
-static QPixmap download(QUrl url, bool tryAgain=1) {
-    if(!url.isValid()||url.isEmpty()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
-    QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
-    if(!QFile::exists(t)) {
-        QDir r=QDir::root();
-        r.mkpath(t);
-    }
-
-    QString x=url.toString();
-    QString y=x;
-    y.remove(0,y.lastIndexOf('.'));
-    t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
-
-    if(!QFile::exists(t)) {
-        QHttp http;
-        QEventLoop loop;
-        QFile file;
-        QObject::connect(&http, SIGNAL(done(bool)), &loop, SLOT(quit()));
-
-        file.setFileName(t);
-        file.open(QIODevice::WriteOnly);
-
-        http.setHost(url.host(), url.port(80));
-        http.get(url.toEncoded(QUrl::RemoveScheme | QUrl::RemoveAuthority),
-                 &file);
-        loop.exec();
-        file.close();
-    }
-    QPixmap apix;
-    apix.load(t);
-    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
-    return apix;
-}
-
-
-void HUser::PictureData::getData(QString url,HUser::PictureSize size) {
-    if(got[size]) {
-        return;
-    }
-    got[size]=1;
-    pics[size]=download(url);   //caches
-    if(pics[size].isNull()) pics[size]=download(url);   //jic
-    if(!pics[size].height()) {
-        pics[size]=QPixmap(126,200);
-        pics[size].fill(Qt::red);
-    }
-}
-
-void HUser::InfoData::getData(QString username) {
-    if(got) {
-        return;
-    }
-    got=1;
-
-    QSettings sett("Nettek","Hathor_userInfo");
-
-    if(sett.value("cache for "+username,0).toInt()==2) {
-        realName=sett.value("realName "+username).toString();
-
-        pics[0]=sett.value("smallPic for "+username).toString();
-        pics[1]=sett.value("mediumPic for "+username).toString();
-        pics[2]=sett.value("largePic for "+username).toString();
-        pics[3]=sett.value("megaPic for "+username).toString();
-
-        country=sett.value("country for "+username).toString();
-        age=sett.value("age for "+username).toInt();
-        male=sett.value("male for "+username).toBool();
-        playCount=sett.value("playcount for "+username).toInt();
-        playlists=sett.value("playlists for "+username).toInt();
-        return;
-    }
-
+HUser::InfoData::InfoData(QString username) {
     QMap<QString, QString> params;
     params["method"] = "user.getInfo";
     params["user"] = username;
-    QNetworkReply* reply = lastfmext_post( params );
+    setParams(params);
 
-    QEventLoop loop;
-    QTimer::singleShot(2850,&loop,SLOT(quit()));
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
+    QByteArray b=QCryptographicHash::hash(username.toUtf8()+"USERINFO",QCryptographicHash::Md5).toHex();
+    addProperty<QString>("realName",b);
 
-    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        got=0;
-        QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
-        getData(username);
-        return;
-    }
-    /*
-        QString realName;
-        QString pics[4];
-        QString country;
-        int age;
-        bool male;
-        int playCount;
-        int playlists;
-        bool got;
-        */
-    male=0;
-    playCount=0;
-    playlists=0;
-    age=0;
+    addProperty<QString>("pic_0",b);
+    addProperty<QString>("pic_1",b);
+    addProperty<QString>("pic_2",b);
+    addProperty<QString>("pic_3",b);
+
+    addProperty<QString>("country",b);
+    addProperty<int>("age",b);
+    addProperty<QString>("gender",b);
+    addProperty<int>("playCount",b);
+    addProperty<int>("playlistCount",b);
+}
+
+bool HUser::InfoData::process(const QString &data) {
     try {
         QDomDocument doc;
-        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
+        doc.setContent( data );
 
         QDomElement element = doc.documentElement();
+        setProperty<QString>("gender","unknown");
 
         for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     if ( m.nodeName() == "image") {
-                        if(m.attributes().namedItem("size").nodeValue()=="small") pics[Small]=( l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="medium") pics[Medium]=( l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="large") pics[Large]=( l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="extralarge") pics[Mega]=( l.toText().data() );   //not mega!
+                        if(m.attributes().namedItem("size").nodeValue()=="small") setProperty( "pic_0", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="medium") setProperty( "pic_1", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="large") setProperty( "pic_2", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="extralarge") setProperty( "pic_3", l.toText().data() );   //not mega!
                     }
-                    else if ( m.nodeName() == "name") realName = l.toText().data();
-                    else if ( m.nodeName() == "country") country = l.toText().data();
-                    else if ( m.nodeName() == "age" ) age = l.toText().data().toInt();
-                    else if ( m.nodeName() == "gender" ) male = ((l.toText().data()=="m")?1:0);
-                    else if ( m.nodeName() == "playcount" ) playCount = l.toText().data().toInt();
-                    else if ( m.nodeName() == "playlists" ) playlists = l.toText().data().toInt();
+                    else if ( m.nodeName() == "name") setProperty("realName", l.toText().data());
+                    else if ( m.nodeName() == "country") setProperty("country",l.toText().data());
+                    else if ( m.nodeName() == "age" ) setProperty("age",l.toText().data().toInt());
+                    else if ( m.nodeName() == "gender" ) setProperty<QString>("gender",((l.toText().data()=="m")?"male":"female"));
+                    else if ( m.nodeName() == "playcount" ) setProperty("playCount",l.toText().data().toInt());
+                    else if ( m.nodeName() == "playlists" ) setProperty("playlistCount",l.toText().data().toInt());
                 }
             }
         }
 
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
+        return 0;
     }
-    sett.setValue("cache for "+username,2);
-    sett.setValue("realName "+username,realName);
-
-    sett.setValue("smallPic for "+username,pics[0]);
-    sett.setValue("mediumPic for "+username,pics[1]);
-    sett.setValue("largePic for "+username,pics[2]);
-    sett.setValue("megaPic for "+username,pics[3]);
-
-    sett.setValue("country for "+username,country);
-    sett.setValue("age for "+username,age);
-    sett.setValue("male for "+username,male);
-    sett.setValue("playcount for "+username,playCount);
-    sett.setValue("playlists for "+username,playlists);
+    return 1;
 }
 
-void HUser::TopTrackData::getData(QString username) {
-    if(got) {
-        return;
-    }
-    got=1;
+//void HUser::TopTrackData::getData(QString username) {
+//    if(got) {
+//        return;
+//    }
+//    got=1;
 
-    QSettings sett("Nettek","Hathor_topTrackData");
+//    QSettings sett("Nettek","Hathor_topTrackData");
 
-    if(sett.value("cache for "+username,0).toInt()==2) {
-        QStringList names, artists;
-        names=sett.value("topTrackNames for "+username).toStringList();
-        artists=sett.value("topTrackArtists for "+username).toStringList();
-        for(int i=0;i<names.size()&&i<artists.size();i++) {
-            topTracks.push_back(&HTrack::get(artists[i],names[i]));
-        }
-        return;
-    }
+//    if(sett.value("cache for "+username,0).toInt()==2) {
+//        QStringList names, artists;
+//        names=sett.value("topTrackNames for "+username).toStringList();
+//        artists=sett.value("topTrackArtists for "+username).toStringList();
+//        for(int i=0;i<names.size()&&i<artists.size();i++) {
+//            topTracks.push_back(&HTrack::get(artists[i],names[i]));
+//        }
+//        return;
+//    }
 
-    QMap<QString, QString> params;
-    params["method"] = "user.getTopTracks";
-    params["user"] = username;
-    params["period"] = "3month";
-    QNetworkReply* reply = lastfmext_post( params );
+//    QMap<QString, QString> params;
+//    params["method"] = "user.getTopTracks";
+//    params["user"] = username;
+//    params["period"] = "3month";
+//    QNetworkReply* reply = lastfmext_post( params );
 
-    QEventLoop loop;
-    QTimer::singleShot(2850,&loop,SLOT(quit()));
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
+//    QTimer::singleShot(2850,&loop,SLOT(quit()));
+//    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
+//    loop.exec();
 
-    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        got=0;
-        QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
-        getData(username);
-        return;
-    }
+//    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
+//        got=0;
+//        getData(username);
+//        return;
+//    }
 
-    QStringList names,artists;
-    try {
-        QDomDocument doc;
-        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
+//    QStringList names,artists;
+//    try {
+//        QDomDocument doc;
+//        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
 
-        QDomElement element = doc.documentElement();
+//        QDomElement element = doc.documentElement();
 
-        for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
-            for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
-                for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
-                    for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
-                        if ( l.nodeName() == "name" ) names.push_back(k.toText().data());
-                        for (QDomNode j = k.firstChild(); !j.isNull(); j = j.nextSibling()) {
-                            if ( k.nodeName() == "name" ) {
-                                artists.push_back(j.toText().data());
-                                topTracks.push_back(&HTrack::get(artists.back(),names.back()));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+//        for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
+//            for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
+//                for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
+//                    for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
+//                        if ( l.nodeName() == "name" ) names.push_back(k.toText().data());
+//                        for (QDomNode j = k.firstChild(); !j.isNull(); j = j.nextSibling()) {
+//                            if ( k.nodeName() == "name" ) {
+//                                artists.push_back(j.toText().data());
+//                                topTracks.push_back(&HTrack::get(artists.back(),names.back()));
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
-    } catch (std::runtime_error& e) {
-        qWarning() << e.what();
-    }
-    sett.setValue("cache for "+username,2);
+//    } catch (std::runtime_error& e) {
+//        qWarning() << e.what();
+//    }
+//    sett.setValue("cache for "+username,2);
 
-    sett.setValue("topTrackNames for "+username,names);
-    sett.setValue("topTrackArtists for "+username,artists);
-}
+//    sett.setValue("topTrackNames for "+username,names);
+//    sett.setValue("topTrackArtists for "+username,artists);
+//}
 

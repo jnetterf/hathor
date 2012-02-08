@@ -219,6 +219,7 @@ class HRdioProvider : public QObject, public HAbstractTrackProvider {
     friend class HTrack;
     HRdioTrackInterface* ti;
     HRdioLoginWidget* s_login;
+    bool s_badSet;
 
 public: //HAbstractTrackProvider
     int globalScore() { return 90; /*Rdio is really good!*/ }
@@ -311,6 +312,7 @@ public:
 public slots:
     void oauth(QByteArray rdioToken, QByteArray rdioSecret, QByteArray oauthToken,QByteArray oauthSecret);
     void jsCallback(QString cb);
+    void noOp() {}
 
 signals:
     void positionChanged(double newPos);

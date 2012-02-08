@@ -20,6 +20,7 @@ class HAlbumBox : public HGrowingWidget
     static QHash<QString,HAlbumBox*> s_map;
     QTime s_showTime;
     QString s_tagString;
+    bool s_gotTags;
 
 public:
     static HAlbumBox* getBox(HAlbum& album);

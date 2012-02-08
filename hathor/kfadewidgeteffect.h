@@ -73,7 +73,7 @@ class /*KDEUI_EXPORT */KFadeWidgetEffect : public QWidget
          *
          * \param duration The duration of the animation in milliseconds.
          */
-        void start(int duration = 250);
+        void start(int duration = 400);
 
     protected:
         /**

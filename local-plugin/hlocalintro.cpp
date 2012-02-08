@@ -1,6 +1,9 @@
 #include "hlocalintro.h"
 #include "hlocalprovider.h"
 #include "ui_hlocalintro.h"
+#include <QString>
+#include <taglib/fileref.h>
+#include <taglib/tag.h>
 
 HLocalIntro::HLocalIntro(bool enableSelection, HLocalProvider *parent) :
     QWidget(),
@@ -77,39 +80,14 @@ void HLocalIntro::go() {
         }
     }
 
-    Phonon::MediaObject mo;
     ui->progressBar_scan->setRange(0,files.size());
     for(int i=0;i<files.size();i++) {
+//        if(s_theInverseHash.contains(files[i])) continue;
         ui->progressBar_scan->setValue(i);
-        if(s_theInverseHash.contains(files[i])) continue;
-        Phonon::MediaSource ms(files[i]);
-        mo.setCurrentSource(ms);
-
-        //
-        // BEHOLD - THE GREATEST HACK MANKIND HAS EVER WITNESSED: (no really, fix this)
-        //
-
-        mo.play();
-        mo.pause();
-        QEventLoop loop;
-        connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-        QTimer::singleShot(20,&loop,SLOT(quit()));
-        loop.exec();
-        if(!mo.metaData("ARTIST").size()||!mo.metaData("ARTIST").first().size()||!mo.metaData("TITLE").size()||!mo.metaData("TITLE").first().size()) {
-            connect(&mo,SIGNAL(metaDataChanged()),&loop,SLOT(quit()));
-            QTimer::singleShot(20,&loop,SLOT(quit()));
-            loop.exec();
-        }
-
-        if(mo.metaData("ARTIST").size()&&mo.metaData("TITLE").size()) {
-            s_theGreatHash.insert(s_prov->local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()),files[i]);
-            s_theInverseHash.insert(files[i],s_prov->local_standardized(mo.metaData("ARTIST").first()+"__"+mo.metaData("TITLE").first()));
-        }
-
-        mo.stop();
-        //
-        // End.
-        //
+        TagLib::FileRef f(files[i].toStdString().c_str());
+        if(!f.tag()) continue;
+        s_theGreatHash.insert(s_prov->local_standardized(QString(f.tag()->artist().toCString(1))  +"__"+QString(f.tag()->title().toCString(1))),files[i]);
+        s_theInverseHash.insert(files[i],s_prov->local_standardized(QString(f.tag()->artist().toCString(1))+"__"+QString(f.tag()->title().toCString(1))));
     }
     s_settings.setValue("The Great Hash",QVariant::fromValue(s_theGreatHash));
     s_settings.setValue("The Inverse Hash",QVariant::fromValue(s_theInverseHash));

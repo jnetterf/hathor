@@ -8,7 +8,6 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QHttp>
-#include <QEventLoop>
 #include <QSettings>
 #include <QVariant>
 #include <QDomDocument>
@@ -149,6 +148,7 @@ void HTrack::sendSimilar_3(QStringList t) {
             for(int i=0;i<ret.size()&&(p.third==-1||i<p.third);i++) {
                 QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HTrack*,ret[i]));
             }
+            if(p.third>=ret.size()) QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HTrack*,0));
         }
         s_similarQueue.clear();
     }
@@ -285,58 +285,6 @@ bool HTrack::ExtraTagData::process(const QString &data) {
     return 1;
 }
 
-//void HTrack::ShoutData::getData(QString artist,QString track) {
-//    H_BEGIN_RUN_ONCE
-
-//    // no cache?
-
-//    QMap<QString, QString> params;
-//    params["method"] = "track.getShouts";
-//    params["artist"] = artist;
-//    params["track"] = track;
-//    QNetworkReply* reply = lastfmext_post( params );
-
-//    QEventLoop loop;
-//    QTimer::singleShot(2850,&loop,SLOT(quit()));
-//    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-//    loop.exec();
-
-//    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-//        H_END_RUN_ONCE
-//        got=0;
-//        QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
-//        getData(artist,track);
-//        return;
-//    }
-
-//    try {
-//        QString body,author,date;
-//        QDomDocument doc;
-//        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
-
-//        QDomElement element = doc.documentElement();
-
-//        for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
-//            for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
-//                for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
-//                    for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
-//                        if ( l.nodeName() == "body" ) body = k.toText().data();
-//                        else if ( l.nodeName() == "author" ) author = k.toText().data();
-//                        else if ( l.nodeName() == "date") {
-//                            date = k.toText().data();
-//                            shouts.push_back(new HShout(body,HUser::get(author),date));
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
-//    } catch (std::runtime_error& e) {
-//        qWarning() << e.what();
-//    }
-//    H_END_RUN_ONCE
-//}
-
 HTrack::SimilarData::SimilarData(QString artist,QString track) {
     QMap<QString, QString> params;
     params["method"] = "track.getSimilar";
@@ -392,7 +340,7 @@ HTrack::AudioFeatures::AudioFeatures(QString artist,QString track) {
     setParams(params);
 
     QByteArray b=QCryptographicHash::hash(artist.toUtf8()+track.toUtf8()+"TRACKAF",QCryptographicHash::Md5).toHex();
-    addProperty<double>("bpm",b);
+    addProperty<int>("bpm",b);
     addProperty<double>("valence",b);
     addProperty<double>("aggression",b);
     addProperty<double>("avg_loudness",b);
@@ -426,7 +374,7 @@ bool HTrack::AudioFeatures::process(const QString &data) {
         for(QDomNode n = element.firstChild(); !n.isNull(); n = n.nextSibling()) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
-                    if(m.nodeName()=="bpm") setProperty("bpm",l.toText().data().toDouble());
+                    if(m.nodeName()=="bpm") setProperty("bpm",l.toText().data().toInt());
                     if(m.nodeName()=="valence") setProperty("valence",l.toText().data().toDouble());
                     if(m.nodeName()=="aggression") setProperty("aggression",l.toText().data().toDouble());
                     if(m.nodeName()=="avg_loudness") setProperty("avg_loudness",l.toText().data().toDouble());

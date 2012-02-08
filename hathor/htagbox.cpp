@@ -17,8 +17,10 @@ HTagBox::HTagBox(HTag &rep, QWidget *parent) :
 {
     ui->setupUi(this);
     ui->label_tag->setText("<A href=\"more\">"+rep.getTagName()+"</A>");
-//    ui->label_reachAndTaggings->setText("Built by <B>"+QString::number(rep.getTaggings())+"</B> and used <B>"+QString::number(rep.getReach())+"</B> times!");
-    QString sum=rep.getSummary();
+    rep.sendSummary(this,"setSummary");
+}
+
+void HTagBox::setSummary(QString sum) {
     sum.truncate(120);
     ui->label_desc->setText(sum+"...");
 }

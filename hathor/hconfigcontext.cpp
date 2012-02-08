@@ -15,12 +15,16 @@ HConfigContext::HConfigContext(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->widget_comments->setLayout(new QVBoxLayout);
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
     connect(&s_browser,SIGNAL(ready()),this,SLOT(getShouts()));
     connect(ui->textEdit_shout,SIGNAL(textChanged()),this,SLOT(validateShout()));
     connect(ui->pushButton_post,SIGNAL(clicked()),this,SLOT(shout()));
     s_browser.loadPage("http://www.last.fm/group/Hathor+Users");
     validateShout();
+
+    connect(ui->comboBox_log,SIGNAL(activated(int)),this,SLOT(setLogPolicy()));
+    connect(ui->checkBox_scrobble,SIGNAL(clicked(bool)),this,SLOT(setLogPolicy()));
+    connect(ui->checkBox_similar,SIGNAL(toggled(bool)),this,SLOT(setLogPolicy()));
 }
 
 HConfigContext::~HConfigContext()
@@ -57,12 +61,15 @@ void HConfigContext::getShouts() {
 
     int i;
     for(i=0;i<shouts.size()&&i<15;i++) {
-        shouts[i]->getShouter().getPic(HUser::Medium);    //CACHE
         HShoutBox* ab=new HShoutBox(*shouts[i],this);
         ui->widget_comments->layout()->addWidget(ab);
 
     }
     ui->label_moreShoutbox->hide();
+}
+
+void HConfigContext::setMePic(QPixmap pic) {
+    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
 }
 
 void HConfigContext::validateShout() {

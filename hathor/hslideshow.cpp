@@ -1,11 +1,10 @@
 #include "hslideshow.h"
 #include <QPropertyAnimation>
 
-
 QHash<QString, HSlideshow*> HSlideshow::s_u;
 
-HSlideshow* HSlideshow::getSlideshow(HTrack &t) {
-    QString dumbName=t.getTrackName()+"__"+t.getArtistName();
+HSlideshow* HSlideshow::getSlideshow(HArtist &t) {
+    QString dumbName=t.getName();
     if(s_u.contains(dumbName)) {
         return s_u[dumbName];
     } else {
@@ -13,7 +12,7 @@ HSlideshow* HSlideshow::getSlideshow(HTrack &t) {
     }
 }
 
-HSlideshow::HSlideshow(HTrack &track, QWidget *parent) : QGraphicsView(parent), s_track(track), s_i(0), s_z(0), s_done(0)
+HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent), s_artist(artist), s_i(0), s_z(0), s_done(0)
 {
     setScene(&sc);
     setFixedWidth(900);
@@ -25,17 +24,20 @@ HSlideshow::HSlideshow(HTrack &track, QWidget *parent) : QGraphicsView(parent), 
     setResizeAnchor(QGraphicsView::NoAnchor);
     setTransformationAnchor(QGraphicsView::NoAnchor);
     setSceneRect(0,0,900,600);
-    QTimer::singleShot(300,this,SLOT(newPic()));
+    s_artist.sendExtraPics(this,"addPic",15);
 }
 
-void HSlideshow::newPic() {
+void HSlideshow::nextPic() {
     if(s_done) {
         return;
     }
-    if(s_i==s_track.getArtist().getExtraPicCount()||s_i>10) {
+    Q_ASSERT(s_cache.size());
+    if(!s_cache.size()) return;
+    if(s_i>=s_cache.size()) {
         s_i=0;
     }
-    SlideshowItem* gpi=new SlideshowItem(s_track.getArtist().getExtraPic(s_i++).scaledToWidth(900,Qt::SmoothTransformation));
+
+    SlideshowItem* gpi=new SlideshowItem(s_cache[s_i].scaledToWidth(900,Qt::SmoothTransformation));
     sc.addItem(gpi);
     gpi->setTransformationMode(Qt::SmoothTransformation);
     gpi->setZValue(++s_z);
@@ -71,6 +73,11 @@ void HSlideshow::newPic() {
     pa4->setDuration(7000);
     pa4->start(QAbstractAnimation::DeleteWhenStopped);
 
-    QTimer::singleShot(15000,this,SLOT(newPic()));
+    QTimer::singleShot(15000,this,SLOT(nextPic()));
     QTimer::singleShot(30020,gpi,SLOT(deleteLater()));
+}
+
+void HSlideshow::addPic(QPixmap p) {
+    s_cache.push_back(p);
+    if(s_cache.size()==1) nextPic();
 }

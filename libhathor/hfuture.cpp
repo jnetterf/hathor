@@ -11,11 +11,16 @@
 #include <QDir>
 #include <QCryptographicHash>
 
-QSettings HCachedInfo::sett("Nettek","Hathor");
+QSettings HCachedInfo::_sett_("Nettek","Hathor");
+QHash<QString,QVariant> HCachedInfo::sett;
+bool HCachedInfo::_opened=0;
 
 int HCachedInfo::ss_connections=0;
 int HCachedPixmap::ss_connections=0;
 QList< QPair<QObject*, QString> > HCachedInfo::ss_futureConnetions;
+
+QHash<QUrl,HCachedPixmap*> HCachedPixmap::s_map;
+
 
 HCachedPixmap::HCachedPixmap(const QUrl &url) {
     this->url=url;
@@ -83,11 +88,14 @@ template<> const char* name< QList<double> >() { return "QList<double>"; }
 template<typename T> const char* name() { return "UNKNOWN_TYPE_HFUTURE_CPP"; }
 
 void HCachedInfo::sendData() {
+    if(!_opened) {
+        sett=_sett_.value("MASTER").toHash();
+        _opened=1;
+    }
     QString desc;
     if(params.contains("track")) desc+="track="+params["track"]+" ";
     if(params.contains("album")) desc+="album="+params["album"]+" ";
     if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
-    HL("[LOAD] HCI/SEND DATA: "+params["method"]+" "+desc);
 
     QMutexLocker lock(&mutex);  //DO NOT USE INVOKEMETHOD!!
     Q_UNUSED(lock);
@@ -148,6 +156,11 @@ void HCachedInfo::activate() {
 }
 
 void HCachedInfo::sendData_process() {
+    if(!_opened) {
+        sett=_sett_.value("MASTER").toHash();
+        _opened=1;
+    }
+
     QMutexLocker lock(&mutex);
     Q_UNUSED(lock);
 
@@ -167,6 +180,7 @@ void HCachedInfo::sendData_process() {
         qDebug()<<"GOT ERROR - INVALID DATA RECORDED!";
         getting->emitNotify();
         getting=0;
+        qDebug()<<ba;
         if(!ba.size()||ba.contains("Rate Limit Exceded")) {
             QTimer::singleShot(0,this,SLOT(sendData()));
         }
@@ -177,20 +191,20 @@ void HCachedInfo::sendData_process() {
         AbstractDatum* ad=data.values().at(i);
 
         Datum<int>* id=dynamic_cast< Datum<int>* >(ad);
-        if(id) { sett.setValue(id->settingsName,id->data); continue; }
+        if(id) { sett.insert(id->settingsName,id->data); continue; }
         Datum<QString>* sd=dynamic_cast< Datum<QString>* >(ad);
-        if(sd) { sett.setValue(sd->settingsName,sd->data); continue; }
+        if(sd) { sett.insert(sd->settingsName,sd->data); continue; }
         Datum<bool>* bd=dynamic_cast< Datum<bool>* >(ad);
-        if(bd) { sett.setValue(bd->settingsName,bd->data); continue; }
+        if(bd) { sett.insert(bd->settingsName,bd->data); continue; }
         Datum<QStringList>* sld=dynamic_cast< Datum<QStringList>* >(ad);
-        if(sld) { sett.setValue(sld->settingsName,sld->data); continue; }
+        if(sld) { sett.insert(sld->settingsName,sld->data); continue; }
         Datum<double>* dd=dynamic_cast< Datum<double>* >(ad);
-        if(dd) { sett.setValue(dd->settingsName,dd->data); continue; }
+        if(dd) { sett.insert(dd->settingsName,dd->data); continue; }
         Datum<QList<double> >* sd2=dynamic_cast< Datum<QList<double> >* >(ad);
         if(sd2) {
             QVariantList vl;
             for(int i=0;i<sd2->data.size();i++) vl.push_back(sd2->data[i]);
-            sett.setValue(sd2->settingsName,vl); continue;
+            sett.insert(sd2->settingsName,vl); continue;
         }
         Q_ASSERT(0);
         qDebug()<<"Invalid property type.";
@@ -219,4 +233,8 @@ void HCachedInfo::sendData_processQueue() {
     for(int i=0;i<data.size();i++) {
         data.values()[i]->send();
     }
+}
+
+void HCachedInfo::save() {
+    _sett_.setValue("MASTER",sett);
 }

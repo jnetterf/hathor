@@ -46,6 +46,7 @@ public slots:
 
     void setPic(QPixmap);
     void setSummary(QString);
+    void setMePic(QPixmap p);
     void setShouts(QList<HShout*>);
     void addTags(QList<HTag*> tags);
 

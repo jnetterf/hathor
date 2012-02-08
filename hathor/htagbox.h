@@ -18,6 +18,9 @@ class HTagBox : public HGrowingWidget
 public:
     static HTagBox* getBox(HTag& rep);
     ~HTagBox();
+
+public slots:
+    void setSummary(QString);
     
 private:
     Ui::HTagBox *ui;

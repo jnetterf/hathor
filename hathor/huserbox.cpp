@@ -7,8 +7,12 @@ HUserBox::HUserBox(HUser &rep, QWidget *parent) :
     ui(new Ui::HUserBox)
 {
     ui->setupUi(this);
-    ui->label_pic->setPixmap(rep.getPic(HUser::Medium));
+    rep.sendPic(HUser::Medium,this,"setPic");
     ui->label_username->setText(rep.getUsername());
+}
+
+void HUserBox::setPic(QPixmap pic) {
+    ui->label_pic->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
 }
 
 HUserBox::~HUserBox()

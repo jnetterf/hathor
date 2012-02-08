@@ -16,5 +16,10 @@
         <file>heart-red.png</file>
         <file>Home_icon.gif</file>
         <file>hathor-inAction.png</file>
+        <file>view_list.png</file>
+        <file>view_album.png</file>
+        <file>view_album_sel.png</file>
+        <file>view_list_sel.png</file>
+        <file>media-play-alt-sel.png</file>
     </qresource>
 </RCC>

@@ -9,6 +9,7 @@
 
 #include <QTime>
 #include <QLayout>
+#include <QDir>
 
 #include <phonon/MediaObject>
 
@@ -162,6 +163,13 @@ class LIBHATHORSHARED_EXPORT HPlayer : public QObject{
     bool s_shuffle;
     HAbstractQueue* Q;
     HPlayer() : s_providers(), s_shuffle(0), Q(0) { s_singleton=this; }
+
+    QStringList cl;
+    QStringList loaded;
+    int s_i,s_j;
+    QStringList subfiles;
+    QDir pluginsDir;
+    QLayout*l;
 public:
     static HPlayer* singleton() { if(!s_singleton) {s_singleton=new HPlayer;} return s_singleton; }
     HTrack* currentTrack() { return Q?Q->currentTrack():0; }
@@ -181,12 +189,15 @@ public slots:
     void playNext();
 
     void loadPlugins(QLayout* l);
+    void loadPlugins_continue();
+    void loadPlugins_continue_continue();
 
 signals:
     void stateChanged(HAbstractTrackInterface::State);
     void trackChanged(HTrack& t);
     void shuffleToggled(bool);
     void cantFind();
+    void doneLoadingPlugins();
 };
 
 class LIBHATHORSHARED_EXPORT HPhononTrackInterface : public HAbstractTrackInterface {

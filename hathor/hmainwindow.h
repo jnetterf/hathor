@@ -54,9 +54,11 @@ public:
     HMainWindow();
     static HMainWindow* singleton() { return s_singleton; }
     void keyPressEvent(QKeyEvent * e);
+    void hideEvent(QHideEvent *);
 
 public slots:
     void setupMainContext();
+    void setupMainContext_2();
     void showContext(HArtist& a);
     void showContext(HAlbum& a);
     void showContext(HTrack& a);

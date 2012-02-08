@@ -2,6 +2,7 @@
 #define HTAG_H
 
 #include "hobject.h"
+#include "hfuture.h"
 #include "libhathor_global.h"
 
 #include <QStringList>
@@ -15,24 +16,19 @@ public:
 
     QString getTagName() { return s_tag; }
 
-    int getReach();
-    int getTaggings();
-    QString getSummary();
-    QString getContent();
+    void sendReach(QObject* o,QString m);   /*int*/
+    void sendTaggings(QObject* o,QString m); /*int*/
+    void sendSummary(QObject* o,QString m); /* QString */
+    void sendContent(QObject* o,QString m); /* QString */
 
 private:
     static QHash<QString, HTag*> _map;
     HTag(QString tag);  // use HTag::get(name)
 
-    struct InfoData {
-        QString summary;
-        QString content;
-        int reach;
-        int taggings;
-        bool got;
-        InfoData() : got(0) {}
-
-        void getData(QString tag);
+    struct InfoData : HCachedInfo {
+        friend class HTag;
+        InfoData(QString tag);
+        bool process(const QString& data);
     } s_infoData;
 
 private:

@@ -11,7 +11,10 @@ class HArtist;
 
 class LIBHATHORSHARED_EXPORT HUser : public HObject
 {
+    Q_OBJECT
     QString s_username;
+    HCachedPixmap* s_cachedPixmap[4];
+    QList< QPair<QObject*,QString> > s_picQueue[4];
 public:
     static HUser& get(QString username);
 
@@ -24,45 +27,32 @@ public:
 
     QString getUsername() { return s_username; }
 
-    QString getRealName();
-    QPixmap getPic(PictureSize pic);
-    int getAge();
-    bool getMale();
-    int getPlayCount();
-    int getPlaylists();
-    QList<HTrack*> getTopTracks();
+public slots:
+    void sendRealName(QObject* o, QString m); /*QString*/
+    void sendPicNames(PictureSize pic,QObject* o, QString m); /*QString*/
+    void sendPic(PictureSize pic,QObject* o, QString m); /*QPixmap */
+
+    void sendPic_2_0(QString pic) { sendPic_2((PictureSize)0,pic); }
+    void sendPic_2_1(QString pic) { sendPic_2((PictureSize)1,pic); }
+    void sendPic_2_2(QString pic) { sendPic_2((PictureSize)2,pic); }
+    void sendPic_2_3(QString pic) { sendPic_2((PictureSize)3,pic); }
+
+    void sendAge(QObject* o, QString m); /*int*/
+    void sendGender(QObject* o, QString m); /*bool*/
+    void sendPlayCount(QObject* o, QString m); /*int*/
+    void sendPlaylists(QObject* o, QString m); /*int*/
+//    void getTopTracks(); /*multiple HTrack* */
+
+    void sendPic_2(PictureSize p,QString pic); /* for internal use */
 
 private:
     static QHash<QString, HUser*> _map;
     HUser(QString username);  // use HUser::get(name)
 
-    struct InfoData {
-        QString realName;
-        QString pics[4];
-        QString country;
-        int age;
-        bool male;
-        int playCount;
-        int playlists;
-        bool got;
-        InfoData() : got(0) {}
-
-        void getData(QString user);
+    struct InfoData : HCachedInfo {
+        InfoData(QString username);
+        bool process(const QString& data);
     } s_infoData;
-
-    struct PictureData {
-        bool got[4];
-        QPixmap pics[4];
-        PictureData() { for(int i=0;i<4;i++) got[i]=0; }
-        void getData(QString url,PictureSize size);
-    } s_pictureData;
-
-    struct TopTrackData {
-        QList<HTrack*> topTracks;
-        bool got;
-        TopTrackData() : got(0) {}
-        void getData(QString user);
-    } s_topTrackData;
 
 private:
     //Degenerate copy and assignment

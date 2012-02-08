@@ -3,7 +3,6 @@
 
 #include "haction.h"
 #include <QTimer>
-#include <QEventLoop>
 #include <QDebug>
 
 class HLfmWebLoginAction : public HAction
@@ -26,11 +25,10 @@ public slots:
     }
     void last() {
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(last()));
-        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
-        QEventLoop loop;
-        QTimer::singleShot(1000,&loop,SLOT(quit()));
-        loop.exec();
-        s_browser.doJS("a.confirmButton.click()");
+//        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
+//        QTimer::singleShot(1000,&loop,SLOT(quit()));
+//        loop.exec();
+//        s_browser.doJS("a.confirmButton.click()");
         emit done();
     }
 };

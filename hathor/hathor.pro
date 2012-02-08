@@ -23,7 +23,8 @@ HEADERS += \
     hmaincontext.h \
     hplaywidget.h \
     hconfigcontext.h \
-    hlfmwebloginaction.h
+    hlfmwebloginaction.h \
+    hmaincontextoptions.h
 
 SOURCES += \
     hloginwidget.cpp \
@@ -49,11 +50,12 @@ SOURCES += \
     hmaincontext.cpp \
     hplaywidget.cpp \
     hconfigcontext.cpp \
-    hlfmwebloginaction.cpp
+    hlfmwebloginaction.cpp \
+    hmaincontextoptions.cpp
 
-!win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor
-debug:win32:LIBS += -llastfm0 ./debug/hathor.lib
-release:win32:LIBS += -llastfm0 ./release/hathor.lib
+!win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor -ltag
+debug:win32:LIBS += -llastfm0 ./debug/hathor.lib -ltag
+release:win32:LIBS += -llastfm0 ./release/hathor.lib -ltag
 
 !win32:QMAKE_LFLAGS += -Wl,-rpath=\'\$\$ORIGIN\'/../libhathor
 
@@ -76,7 +78,8 @@ FORMS += \
     hsearchcontext.ui \
     hmainwindow.ui \
     hplaywidget.ui \
-    hconfigcontext.ui
+    hconfigcontext.ui \
+    hmaincontextoptions.ui
 
 RESOURCES += \
     icons.qrc

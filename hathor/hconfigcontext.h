@@ -17,11 +17,12 @@ class HConfigContext : public QWidget
     explicit HConfigContext(QWidget *parent = 0);
     HBrowser s_browser;
 public:
-    static HConfigContext* singleton() { HL("[NOTE] Config Context"); if(!s_singleton) s_singleton=new HConfigContext; return s_singleton; }
+    static HConfigContext* singleton() { HL("HConfigContext::singleton()"); if(!s_singleton) s_singleton=new HConfigContext; return s_singleton; }
     ~HConfigContext();
 
 public slots:
     void getShouts();
+    void setMePic(QPixmap p);
     void validateShout();
     void shout();
     

@@ -17,6 +17,7 @@ HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
     HGrowingWidget(parent),
     s_album(album),
     s_cachedPlayCount(-1),s_cachedListenerCount(-1),s_cachedUserPlayCount(-1),
+    s_gotTags(0),
     ui(new Ui::HAlbumBox)
 {
     ui->setupUi(this);
@@ -55,7 +56,7 @@ void HAlbumBox::setUserPlayCount(int count) {
 }
 
 void HAlbumBox::updateCounts() {
-    if(!s_tagString.size()||(s_cachedPlayCount==-1)||(s_cachedListenerCount==-1)||(s_cachedUserPlayCount==-1)) return;
+    if(!s_gotTags||(s_cachedPlayCount==-1)||(s_cachedListenerCount==-1)||(s_cachedUserPlayCount==-1)) return;
     KFadeWidgetEffect* kwe=0;
     if(s_showTime.msecsTo(QTime::currentTime())>110) {
         kwe=new KFadeWidgetEffect(this);
@@ -80,6 +81,7 @@ void HAlbumBox::setPixmap(QPixmap p) {
 }
 
 void HAlbumBox::setTagNames(QStringList tsl) {
+    s_gotTags=1;
     for(int i=4;i<tsl.size();i++) {
         tsl.removeAt(i);
     }

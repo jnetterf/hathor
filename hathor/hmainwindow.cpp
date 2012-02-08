@@ -48,8 +48,18 @@ void HMainWindow::keyPressEvent(QKeyEvent *e) {
     }
 }
 
+void HMainWindow::hideEvent(QHideEvent *e) {
+    qDebug()<<"###SAVE";
+    HCachedInfo::save();
+    QWidget::hideEvent(e);
+}
+
 void HMainWindow::setupMainContext() {
     HPlayer::singleton()->loadPlugins(ui->widget->layout());
+    connect(HPlayer::singleton(),SIGNAL(doneLoadingPlugins()),this,SLOT(setupMainContext_2()));
+}
+
+void HMainWindow::setupMainContext_2() {
 
     if(ui->toolbar->isHidden()) {
         QPropertyAnimation* pa= new QPropertyAnimation(ui->toolbar,"maximumHeight");
@@ -197,6 +207,7 @@ void HMainWindow::hideAsk(QString l) {
     if(s_question_Q.size()) {
         s_curQuestion=s_question_Q.takeFirst();
         QTimer::singleShot(300,this,SLOT(activateQuestion()));
+        return;
     }
     s_curQuestion=HQuestion();
 }

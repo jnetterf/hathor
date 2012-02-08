@@ -50,8 +50,10 @@ public slots:
 
     void evalShout();
     void sendShout();
+    void onShoutSent();
     void setPic(QPixmap p);
     void setBio(QString bio);
+    void setMePic(QPixmap p);
 
     void setPlayCount(int a);
     void setListenerCount(int a);

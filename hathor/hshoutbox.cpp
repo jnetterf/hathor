@@ -22,7 +22,7 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     ui(new Ui::HShoutBox)
 {
     ui->setupUi(this);
-    ui->label_pic->setPixmap(rep.getShouter().getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+    rep.getShouter().sendPic(HUser::Medium,this,"setPic");
     ui->label_user->setText(rep.getShouter().getUsername()+" writes...");
     QString sh=rep.getShout();
     int li=0;
@@ -40,6 +40,10 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     adjustSize();
     setFixedHeight(minimumSizeHint().height());
     adjustSize();
+}
+
+void HShoutBox::setPic(QPixmap pic) {
+    ui->label_pic->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
 }
 
 HShoutBox::~HShoutBox()

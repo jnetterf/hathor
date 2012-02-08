@@ -73,7 +73,7 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
 
     ui->frame_header->adjustSize();
 
@@ -112,7 +112,7 @@ HTrackContext::~HTrackContext()
 }
 
 void HTrackContext::showEvent(QShowEvent *e) {
-    HL("[NOTE] HAC/Show: "+s_rep.getTrackName()+" "+s_rep.getArtistName());
+    HL("HTrackContext::showEvent: "+s_rep.getTrackName()+" "+s_rep.getArtistName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 
@@ -147,6 +147,10 @@ void HTrackContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
     s_rep.sendContent(this,"setContent");
+}
+
+void HTrackContext::setMePic(QPixmap pic) {
+    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
 }
 
 void HTrackContext::loadArtist()
@@ -253,6 +257,7 @@ void HTrackContext::setUserPlayCount(int t) {
 }
 
 void HTrackContext::setAlbums(QList<HAlbum *> t) {
+    ui->label_moreAlbums->hide();
     if(t.size())
     {
         HAlbumBox* ab=HAlbumBox::getBox(*t[0]);
@@ -273,7 +278,6 @@ void HTrackContext::setTags(QList<HTag *> tags) {
     int i;
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
-        tags[i]->getContent();    //CACHE
         HTagBox* ab=HTagBox::getBox(*tags[i]);
         if(s_showTime.msecsTo(QTime::currentTime())>110) {
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
@@ -301,7 +305,6 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
     int i;
     int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
     for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        shouts[i]->getShouter().getPic(HUser::Medium);    //CACHE
         HShoutBox* ab=new HShoutBox(*shouts[i],this);
         ui->widget_comments->layout()->addWidget(ab);
 
@@ -320,7 +323,11 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
 }
 
 void HTrackContext::setSimilar(HTrack* similar) {
-    ui->label_moreArtists->setText(
+    if(!similar) {
+        ui->label_moreTracks->hide();
+        return;
+    }
+    ui->label_moreTracks->setText(
         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
         "p, li { white-space: pre-wrap; }"
         "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
@@ -381,6 +388,7 @@ void HTrackContext::setSimilar(HTrack* similar) {
 
 void HTrackContext::setSlideshow(QWidget *w) {
     if(!w) {
+        s_slideshow->hide();
         s_slideshow=0;
         return;
     }
@@ -390,6 +398,7 @@ void HTrackContext::setSlideshow(QWidget *w) {
     ui->scrollArea_3->hide();
     w->adjustSize();
     ui->frame_header->adjustSize();
+    w->show();
 }
 
 void HTrackContext::setLoved(bool a) {
@@ -399,7 +408,7 @@ void HTrackContext::setLoved(bool a) {
 }
 
 void HTrackContext::toggleLoved() {
-    HL("[PLAY] HTC/TOGGLELOVED"+s_rep.getTrackName()+" by "+s_rep.getArtistName()+" TO "+(s_loved?"unloved":"loved"));
+    HL("HTrackContext::toggleLoved: "+s_rep.getTrackName()+" by "+s_rep.getArtistName()+" TO "+(s_loved?"unloved":"loved"));
 
     QMap<QString, QString> params;
     params["method"] = s_loved?"track.unlove":"track.love";
@@ -407,16 +416,16 @@ void HTrackContext::toggleLoved() {
     params["track"] = s_rep.getTrackName();
 
     QNetworkReply* reply = lastfmext_post( params );
-    QEventLoop loop;
-    QTimer::singleShot(2850,&loop,SLOT(quit()));
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
-    setLoved(!s_loved);
+    setLoved(!s_loved);//FIXME::REPLACE
 }
 
-void HTrackContext::setBpm(double d) {
+void HTrackContext::setBpm(int d) {
     s_bpm=d;
-    ui->label->setText(s_character+QString(s_character.size()?", ":"")+"<B>"+QString::number(s_bpm)+"</B> bpm");
+    if(s_bpm) {
+        ui->label->setText(s_character+QString(s_character.size()?", ":"")+"<B>"+QString::number(s_bpm)+"</B> bpm");
+    } else {
+        ui->label->setText("Last.fm has not yet analysed this song...");
+    }
 }
 
 void HTrackContext::setValence(double d) {

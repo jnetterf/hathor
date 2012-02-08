@@ -20,7 +20,7 @@ public:
 public slots:
     void lockGeometry() { setFixedSize(size()); }
     QSize minimumSizeHint() const { return sizeHint(); }
-
+    void setPic(QPixmap p);
 
 private:
     Ui::HUserBox *ui;

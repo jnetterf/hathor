@@ -10,7 +10,6 @@ hlocalprovider.h
 #include "hlocalprovider.h"
 #include <QDebug>
 #include <QMessageBox>
-#include <QEventLoop>
 #include <QTimer>
 #include <QSettings>
 #include <phonon/MediaObject>

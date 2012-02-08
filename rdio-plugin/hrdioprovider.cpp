@@ -28,7 +28,9 @@
 #include <QDesktopServices>
 #include <QPalette>
 #include <QApplication>
+#include <QMessageBox>
 #include "lastfmext.h"
+#include "hnettloger.h"
 
 HRdioLoginWidget::HRdioLoginWidget(HRdioProvider *rep, QWidget *parent): HRdioGraphicsView(parent),
   s_rep(rep)
@@ -235,6 +237,8 @@ void HRdioLoginWidget::doLogin_rdio() {
         rb->setEnabled(1);
         ra->setText("");
         ra->setFocus();
+        connect(ra,SIGNAL(textChanged(QString)),this,SLOT(showTabHint_rdio()));
+
         return;
     }
     {
@@ -483,9 +487,8 @@ bool HRdioProvider::restore() {
 }
 
 HRdioProvider::HRdioProvider() :
-    ti(0), s_login(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0), s_calmDown(0)
+    ti(0), s_login(0), s_badSet(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0), s_calmDown(0)
 {
-    qDebug()<<"HRDIO";
     s_login=new HRdioLoginWidget(this);
 }
 
@@ -507,7 +510,12 @@ void HRdioProvider::oauth(QByteArray rdioToken, QByteArray rdioSecret, QByteArra
     //    map1.insert("types", "\"Track\"");
     QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/1/",map1,s_oauthToken,s_oauthSecret);
     if(p.values().size()<1) {
-        qDebug()<<"ERR! Invalid response from rdio api!";
+        HL("Invalid response from rdio api!");
+        if(s_badSet) {
+        } else {
+            s_badSet=1;
+            QMessageBox::information(0,"Rdio Error!", "Hathor is having a hard time talking to Rdio.\nIf your Rdio tracks aren't loading, try restarting Hathor.");
+        }
         return;
     }
 
@@ -635,6 +643,7 @@ QString HRdioProvider::search(QString search,QString types,QString albumF,QStrin
     map1.insert("format", QUrl::toPercentEncoding("xml"));
     QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/1/",map1,s_oauthToken,s_oauthSecret);
     if(p.values().size()<1) {
+
         qDebug()<<"ERR! Invalid response from rdio api!";
         return "";
     }

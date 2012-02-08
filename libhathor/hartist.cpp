@@ -9,7 +9,6 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QHttp>
-#include <QEventLoop>
 #include <QSettings>
 #include <lastfm/ws.h>
 #include <QDomDocument>
@@ -32,7 +31,7 @@ void HArtist::sendPic(PictureSize p, QObject *obj, QString member) {
 }
 
 void HArtist::sendPic_2(PictureSize p,QString pic) {
-    if(!s_cachedPixmap[p]) s_cachedPixmap[p]=new HCachedPixmap(QUrl(pic));
+    if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
         s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
     }
@@ -158,72 +157,13 @@ void HArtist::sendShouts(QObject *obj, QString member) {
 
 void HArtist::sendSimilarScores(QObject *o, QString m) { s_similarData.sendProperty("similarScores",o,m); }
 
-int HArtist::getExtraPicCount() {
-    if(s_extraPictureData.got_urls) {
-        return s_extraPictureData.pic_urls.size();
-    }
-    s_extraPictureData.getData(s_name);
-    return getExtraPicCount();
-}
-
-int HArtist::getExtraPicCachedCount() {
-    if(s_extraPictureData.got_urls) {
-        return s_extraPictureData.pics.size();
-    }
-    return 0;   //by definition
-}
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-static QPixmap download(QUrl url, bool tryAgain=1) {
-    if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_large.png";
-    QString t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
-    if(!QFile::exists(t)) {
-        QDir r=QDir::root();
-        r.mkpath(t);
-    }
-
-    QString x=url.toString();
-    QString y=x;
-    y.remove(0,y.lastIndexOf('.'));
-    t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
-
-    if(!QFile::exists(t)) {
-        QHttp http;
-        QEventLoop loop;
-        QFile file;
-        QObject::connect(&http, SIGNAL(done(bool)), &loop, SLOT(quit()));
-
-        file.setFileName(t);
-        file.open(QIODevice::WriteOnly);
-
-        http.setHost(url.host(), url.port(80));
-        http.get(url.toEncoded(QUrl::RemoveScheme | QUrl::RemoveAuthority),
-                 &file);
-        loop.exec();
-        file.close();
-    }
-    QPixmap apix;
-    apix.load(t);
-    if(!apix.width()&&tryAgain) { QFile::remove(t); download(url,0); }
-    return apix;
+void HArtist::sendExtraPics(QObject* o, QString s, int count) {
+    s_extraPictureData.sendPics(o,s,count);
 }
 
-QPixmap HArtist::getExtraPic(int which) {
-    if(s_extraPictureData.got_urls) {
-        if(which==s_extraPictureData.pics.size()) {
-            s_extraPictureData.fetchAnother();
-        } else if(which>s_extraPictureData.pics.size()) {
-            qDebug()<<which<<s_extraPictureData.pics.size()<<":(";
-            QPixmap fail=download(QUrl("http://www.nioutaik.fr/images/galerie/fail.jpeg"));
-            return fail;    //that's what you get for not reading the api docs...
-        }
-        return s_extraPictureData.pics[which];
-    }
-    s_extraPictureData.getData(s_name);
-    return getExtraPic(which);
-}
-
-HArtist::HArtist(QString name) : s_name(name), s_infoData(name), s_extraTagData(name), s_albumData(name), s_trackData(name), s_similarData(name)
+HArtist::HArtist(QString name) : s_name(name), s_infoData(name), s_extraTagData(name), s_albumData(name), s_trackData(name), s_similarData(name), s_extraPictureData(name)
 {
     for(int i=0;i<4;i++) s_cachedPixmap[i]=0;
 }
@@ -449,33 +389,54 @@ bool ArtistSimilarData::process(const QString &data) {
     return 1;
 }
 
-void HArtist::ExtraPictureData::getData(QString artist) {
-    H_BEGIN_RUN_ONCE_MINIMAL
-    got_urls=1;
+ExtraPictureData::ExtraPictureData(QString artist) : s_errored(0), got_urls(0),getting(0), s_artist(artist), sett("Nettek","Hathor_artistExtraImages") {}
 
-    QSettings sett("Netek","Hathor_artistExtraImages");
-    if(sett.value("cache for "+artist,0).toInt()==2) {
-        pic_urls=sett.value("pic_urls for "+artist).toStringList();
-        H_END_RUN_ONCE_MINIMAL
+void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
+    if(got_urls) {
+        Q_ASSERT(o);
+        for(int i=0;i<c&&i<pic_urls.size();i++) {
+            if(i>=pics.size()) {
+                pics.push_back(HCachedPixmap::get(pic_urls[i]));
+            }
+            pics[i]->send(o,m);
+        }
+        return;
+    } else {
+        if(o) {
+            s_queue.push_back(HEPTriplet(o,m,c));
+        }
+        if(getting) return;
+    }
+
+    getting=1;
+
+    if(sett.value("cache for "+s_artist,0).toInt()==2) {
+        pic_urls=sett.value("pic_urls for "+s_artist).toStringList();
+        procQueue();
         return;
     }
 
     QMap<QString, QString> params;
     params["method"] = "artist.getImages";
     params["username"] = lastfm::ws::Username;
-    params["artist"] = artist;
+    params["artist"] = s_artist;
+    qDebug()<<s_artist;
     QNetworkReply* reply = lastfmext_post( params );
+    connect(reply,SIGNAL(finished()),this,SLOT(processPicUrls()));
+}
 
-    QEventLoop loop;
-    QTimer::singleShot(2850,&loop,SLOT(quit()));
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
+void ExtraPictureData::processPicUrls() {
+    QNetworkReply* reply= dynamic_cast<QNetworkReply*>(sender());
+    Q_ASSERT(reply);
+    if(!reply) return;
 
     if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        H_END_RUN_ONCE_MINIMAL
-        got_urls=0;
-        QEventLoop loop; QTimer::singleShot(2850,&loop,SLOT(quit())); loop.exec();
-        getData(artist);
+        qDebug()<<"COULD NOT GET PICS"<<reply->readAll();
+        getting=0;
+        if(!s_errored) {
+            s_errored=1;
+            sendPics(0,"",0);
+        }
         return;
     }
 
@@ -503,11 +464,29 @@ void HArtist::ExtraPictureData::getData(QString artist) {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
-    sett.setValue("cache for "+artist,2);
-    sett.setValue("pic_urls for "+artist,pic_urls);
-    H_END_RUN_ONCE_MINIMAL
+    sett.setValue("cache for "+s_artist,2);
+    sett.setValue("pic_urls for "+s_artist,pic_urls);
+
+    got_urls=1;
+    getting=0;
+    procQueue();
 }
 
+void ExtraPictureData::procQueue() {
+    while(s_queue.size()) {
+        int c=s_queue.first().third;
+        QString m=s_queue.first().second;
+        QObject* o=s_queue.first().first;
+        s_queue.pop_front();
+
+        for(int i=0;i<c&&i<pic_urls.size();i++) {
+            if(i>=pics.size()) {
+                pics.push_back(HCachedPixmap::get(pic_urls[i]));
+            }
+            pics[i]->send(o,m);
+        }
+    }
+}
 
 void ArtistShoutData::sendData(QString artist) {
     QMutexLocker lock(&mutex);  // DO NOT USE QMetaObject::invokeMethod
@@ -577,16 +556,4 @@ void ArtistShoutData::sendData_processQueue() {
         QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(QList<HShout*>,shouts));
     }
     shoutQueue.clear();
-}
-
-void HArtist::ExtraPictureData::fetchAnother() {
-    if(pic_urls.size()>pics.size()) {
-        pics.push_back(QPixmap());
-        pics.back() = (download(pic_urls[pics.size()-1]));   //caches
-        if(pics.back().isNull()) pics.back()=download(pic_urls[pics.size()-1]);   //jic
-        if(!pics.back().height()) {
-            pics.back()=QPixmap(126,200);
-            pics.back().fill(Qt::red);
-        }
-    }
 }

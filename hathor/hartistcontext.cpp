@@ -68,7 +68,7 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    ui->label_you->setPixmap(HUser::get(lastfm::ws::Username).getPic(HUser::Medium).scaledToWidth(70,Qt::SmoothTransformation));
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
 
     connect(ui->textEdit,SIGNAL(textChanged()),this,SLOT(evalShout()));
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(sendShout()));
@@ -93,7 +93,7 @@ void HArtistContext::continueLoading() {
 
 
 void HArtistContext::showEvent(QShowEvent * e) {
-    HL("[NOTE] HAC/Show: "+s_rep.getName());
+    HL("HArtistContext::showEvent: "+s_rep.getName());
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
     s_loadedAlbums.clear();
@@ -229,11 +229,11 @@ void HArtistContext::sendShout() {
     params["message"] = ui->textEdit->toPlainText();
 
     QNetworkReply* reply = lastfmext_post( params );
-    QEventLoop loop;
-    QTimer::singleShot(2850,&loop,SLOT(quit()));
-    loop.connect( reply, SIGNAL(finished()), SLOT(quit()) );
-    loop.exec();
+    QTimer::singleShot(5000,reply,SLOT(deleteLater()));
+    connect(reply,SIGNAL(finished()),this,SLOT(onShoutSent()));
+}
 
+void HArtistContext::onShoutSent() {
     ui->textEdit->setText("");
     ui->label_wordCount->setText("Sent!");
 }
@@ -250,9 +250,10 @@ void HArtistContext::setPic(QPixmap p) {
 
     if(s_showTime.msecsTo(QTime::currentTime())>110) {
         QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
-        pa1->setStartValue(QSize(ui->label_artistPic->pixmap()->width()-deltaWidth,ui->label_artistPic->pixmap()->height()-deltaHeight));
+        pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
+                                 qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
         pa1->setEndValue(QSize(ui->label_artistPic->pixmap()->width(),ui->label_artistPic->pixmap()->height()));
-        pa1->setDuration(300);
+        pa1->setDuration(500);
         pa1->start(QPropertyAnimation::DeleteWhenStopped);
     } else {
         ui->label_artistPic->adjustSize();
@@ -277,6 +278,10 @@ void HArtistContext::setBio(QString bio) {
     } else {
         ui->label_description->setMaximumHeight((ui->label_description->heightForWidth(ui->label_description->width()-deltaWidth)-ui->label_description->height())*2);
     }
+}
+
+void HArtistContext::setMePic(QPixmap pic) {
+    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
 }
 
 void HArtistContext::setListenerCount(int a) {
@@ -306,10 +311,11 @@ void HArtistContext::setAlbums(HAlbum* album) {
         HAlbumBox* ab=HAlbumBox::getBox(*album);
         ui->widget_albums->layout()->addWidget(ab);
         ui->widget_albums->layout()->setAlignment(ab,Qt::AlignTop);
-        if(s_showTime.msecsTo(QTime::currentTime())>110||!album->isCached()) {
+        qDebug()<<s_showTime.msecsTo(QTime::currentTime());
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
             pa->setStartValue(0);
-            pa->setEndValue(ab->heightForWidth(300));
+            pa->setEndValue(174);
             pa->setDuration(500);
             pa->start(QAbstractAnimation::DeleteWhenStopped);
         } else {
@@ -344,7 +350,7 @@ void HArtistContext::setTracks(HTrack* track) {
     {
         HTrackBox* ab=HTrackBox::getBox(*track);
         ui->widget_tracks->layout()->addWidget(ab);
-        if(s_showTime.msecsTo(QTime::currentTime())>110||!track->isCached()) {
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
             pa->setStartValue(0);
             pa->setEndValue(32);
@@ -372,7 +378,6 @@ void HArtistContext::setTags(QList<HTag *> tags) {
     int i;
     s_tagsToLoad=qMax(s_tagLoadCount?s_tagLoadCount*2:4,s_tagsToLoad);
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<s_tagsToLoad;i++) {
-        tags[i]->getContent();    //CACHE
         HTagBox* ab=HTagBox::getBox(*tags[i]);
         QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
         pa->setStartValue(0);
@@ -399,7 +404,7 @@ void HArtistContext::setSimilar(HArtist* similar) {
     s_loadedSimilar.push_back(similar);
     {
         HArtistBox* ab=HArtistBox::getBox(*similar);
-        if(s_showTime.msecsTo(QTime::currentTime())>110||!similar->isCached()) {
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
             ab->setFixedHeight(0);
             ab->adjustSize();
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
@@ -429,11 +434,9 @@ void HArtistContext::setShouts(QList<HShout*> shouts) {
     int i;
     int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
     for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        shouts[i]->getShouter().getPic(HUser::Medium);    //CACHE
         HShoutBox* ab=new HShoutBox(*shouts[i],this);
         ui->widget_comments->layout()->addWidget(ab);
         ui->widget_albums->layout()->setAlignment(ab,Qt::AlignTop);
-
     }
     if(i-s_shoutLoadCount!=toLoad) {
         ui->label_moreShoutbox->hide();

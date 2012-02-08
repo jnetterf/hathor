@@ -17,6 +17,9 @@
 #include "hplayercontext.h"
 #include "kfadewidgeteffect.h"
 
+QList<ArtistLabel*> ArtistLabel::_u_;
+ArtistLabel* ArtistLabel::_cur_=0;
+
 QList<ArtistAvatar*> ArtistAvatar::_trap;
 QList<QPropertyAnimation*> ArtistAvatar::_anims;
 QList<ArtistAvatar*> ArtistAvatar::_u_;

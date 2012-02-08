@@ -22,22 +22,22 @@ class SlideshowItem : public QObject, public QGraphicsPixmapItem {
     QTime wt,xt,yt,zt;
 public slots:
     void setEchoOpacity(qreal opacity){
-        if(wt.msecsTo(QTime::currentTime())<50) return;
+        if(wt.msecsTo(QTime::currentTime())<40) return;
         wt=QTime::currentTime();
         QGraphicsPixmapItem::setOpacity(opacity);
     }
     void setEchoScale(qreal scale){
-        if(xt.msecsTo(QTime::currentTime())<50) return;
+        if(xt.msecsTo(QTime::currentTime())<30) return;
         xt=QTime::currentTime();
         QGraphicsPixmapItem::setScale(scale);
     }
     void setEchoX(qreal x) {
-        if(yt.msecsTo(QTime::currentTime())<50) return;
+        if(yt.msecsTo(QTime::currentTime())<30) return;
         yt=QTime::currentTime();
         setPos(x,y());
     }
     void setEchoY(qreal y) {
-        if(zt.msecsTo(QTime::currentTime())<50) return;
+        if(zt.msecsTo(QTime::currentTime())<30) return;
         zt=QTime::currentTime();
         setPos(x(),y);
     }
@@ -55,7 +55,7 @@ class HSlideshow : public QGraphicsView
 {
     Q_OBJECT
     static QHash<QString, HSlideshow*> s_u;
-    HTrack& s_track;
+    HArtist& s_artist;
     QGraphicsScene sc;
     int s_i;
     int s_z;
@@ -63,13 +63,16 @@ class HSlideshow : public QGraphicsView
     QSize minimumSizeHint() const {
         return sizeHint();
     }
-    explicit HSlideshow(HTrack& track,QWidget* parent=0);
+    explicit HSlideshow(HArtist& artist,QWidget* parent=0);
+
+    QList<QPixmap> s_cache;
 public:
-    static HSlideshow* getSlideshow(HTrack&);
+    static HSlideshow* getSlideshow(HArtist&);
 public slots:
-    void newPic();
+    void nextPic();
     void pause() { s_done=1; }
-    void resume() { if(!s_done) { s_done=0; QTimer::singleShot(0,this,SLOT(newPic())); } }
+    void resume() { if(!s_done) { s_done=0; QTimer::singleShot(0,this,SLOT(nextPic())); } }
+    void addPic(QPixmap p);
 };
 
 #endif // HSLIDESHOW_H
