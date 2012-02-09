@@ -79,6 +79,7 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 
     connect(ui->button_play,SIGNAL(clicked()),this,SLOT(play()));
     adjustSize();
+    readjustPriorities();
 }
 
 void HArtistContext::continueLoading() {
@@ -89,6 +90,7 @@ void HArtistContext::continueLoading() {
     s_rep.sendListenerCount(this,"setListenerCount");
     s_rep.sendUserPlayCount(this,"setUserPlayCount");
     loadShouts();
+    readjustPriorities();
 }
 
 
@@ -116,7 +118,13 @@ void HArtistContext::showEvent(QShowEvent * e) {
     loadTags(s_tagLoadCount);
 
     resizeEvent(0);
+    readjustPriorities();
     QWidget::showEvent(e);
+}
+
+void HArtistContext::hideEvent(QHideEvent *e) {
+    readjustPriorities();
+    QWidget::hideEvent(e);
 }
 
 void HArtistContext::resizeEvent(QResizeEvent *e) {
@@ -137,31 +145,33 @@ HArtistContext::~HArtistContext()
 void HArtistContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
-    s_rep.sendPic(HArtist::Mega,this,"setPic");
-    s_rep.sendBio(this,"setBio");
+    s_priority[0].push_back(s_rep.sendPic(HArtist::Mega,this,"setPic"));
+    s_priority[0].push_back(s_rep.sendBio(this,"setBio"));
     ui->label_moreDescription->hide();
+    readjustPriorities();
 }
 
 void HArtistContext::loadAlbums(int s)
 {
     ui->label_moreAlbums->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s==-1) s_rep.sendAlbums(this,"setAlbums",s_albumsToLoad);
+    if(s==-1) s_priority[1].push_back(s_rep.sendAlbums(this,"setAlbums",s_albumsToLoad));
     else {
         s_albumLoadCount=0;
         s_albumsToLoad=3;
-        s_rep.sendAlbums(this,"setAlbums",s);
+        s_priority[1].push_back(s_rep.sendAlbums(this,"setAlbums",s));
     }
 }
 
 void HArtistContext::loadTracks(int s)
 {
     ui->label_moreTracks->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s==-1) s_rep.sendTracks(this,"setTracks",s_tracksToLoad);
+    if(s==-1) s_priority[2].push_back(s_rep.sendTracks(this,"setTracks",s_tracksToLoad));
     else {
         s_trackLoadCount=0;
         s_tracksToLoad=10;
-        s_rep.sendTracks(this,"setTracks",s);
+        s_priority[2].push_back(s_rep.sendTracks(this,"setTracks",s));
     }
+    readjustPriorities();
 }
 
 
@@ -171,26 +181,29 @@ void HArtistContext::loadTags(int s)
         s_tagLoadCount=0;
     }
     ui->label_moreTags->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s_tagLoadCount) s_rep.sendMoreTags(this,"setTags");
-    else s_rep.sendTags(this,"setTags");
+    if(s_tagLoadCount) s_priority[2].push_back(s_rep.sendMoreTags(this,"setTags"));
+    else s_priority[2].push_back(s_rep.sendTags(this,"setTags"));
+    readjustPriorities();
 }
 
 
 void HArtistContext::loadSimilar(int s)
 {
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s==-1) s_rep.sendSimilar(this,"setSimilar",s_similarToLoad);
+    if(s==-1) s_priority[1].push_back(s_rep.sendSimilar(this,"setSimilar",s_similarToLoad));
     else {
         s_similarLoadCount=0;
         s_similarToLoad=4;
-        s_rep.sendSimilar(this,"setSimilar",s);
+        s_priority[1].push_back(s_rep.sendSimilar(this,"setSimilar",s));
     }
+    readjustPriorities();
 }
 
 void HArtistContext::loadShouts()
 {
-    ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendShouts(this,"setShouts");
+//    ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
+//    s_priority[3].push_back(s_rep.sendShouts(this,"setShouts"));
+//    readjustPriorities();
 }
 
 void HArtistContext::play() {
@@ -305,6 +318,7 @@ void HArtistContext::updateCounts() {
 }
 
 void HArtistContext::setAlbums(HAlbum* album) {
+    if(!isVisible()) return;
     if(s_loadedAlbums.contains(album)) return;
     s_loadedAlbums.push_back(album);
     {
@@ -344,6 +358,7 @@ void HArtistContext::setAlbums(HAlbum* album) {
 }
 
 void HArtistContext::setTracks(HTrack* track) {
+    if(!isVisible()) return;
     if(s_loadedTracks.contains(track)) return;
     s_loadedTracks.push_back(track);
 //    int i;
@@ -375,6 +390,7 @@ void HArtistContext::setTracks(HTrack* track) {
 }
 
 void HArtistContext::setTags(QList<HTag *> tags) {
+    if(!isVisible()) return;
     int i;
     s_tagsToLoad=qMax(s_tagLoadCount?s_tagLoadCount*2:4,s_tagsToLoad);
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<s_tagsToLoad;i++) {
@@ -400,6 +416,7 @@ void HArtistContext::setTags(QList<HTag *> tags) {
 }
 
 void HArtistContext::setSimilar(HArtist* similar) {
+    if(!isVisible()) return;
     if(s_loadedSimilar.contains(similar)) return;
     s_loadedSimilar.push_back(similar);
     {

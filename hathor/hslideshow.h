@@ -71,7 +71,7 @@ public:
 public slots:
     void nextPic();
     void pause() { s_done=1; }
-    void resume() { if(!s_done) { s_done=0; QTimer::singleShot(0,this,SLOT(nextPic())); } }
+    void resume();
     void addPic(QPixmap p);
 };
 

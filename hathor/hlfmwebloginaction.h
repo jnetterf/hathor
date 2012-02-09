@@ -61,7 +61,7 @@ class HLfmWebManager : public QObject
     static HLfmWebManager* s_singleton;
     friend class HLoginWidget;
 
-    HLfmWebManager(QString username,QString password) : s_action(new HLfmWebLoginAction(s_browser,username,password)) {
+    HLfmWebManager(QString username,QString password) : s_browser(0,false), s_action(new HLfmWebLoginAction(s_browser,username,password)) {
         s_singleton=this;
         connect(s_action,SIGNAL(done()),this,SLOT(cleanUp()));
     }

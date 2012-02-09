@@ -99,6 +99,7 @@ void HSearchContext::getMoreAlbums(QString s) {
 }
 
 void HSearchContext::getMoreAlbums_2() {
+    if(!isVisible()) return;
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     Q_ASSERT(reply);
     if(!reply) return;
@@ -162,6 +163,7 @@ void HSearchContext::getMoreArtists(QString s) {
 }
 
 void HSearchContext::getMoreArtists_2() {
+    if(!isVisible()) return;
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     Q_ASSERT(reply);
     if(!reply) return;
@@ -229,6 +231,7 @@ void HSearchContext::getMoreTags(QString s) {
 }
 
 void HSearchContext::getMoreTags_2() {
+    if(!isVisible()) return;
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     Q_ASSERT(reply);
     if(!reply) return;
@@ -289,6 +292,7 @@ void HSearchContext::getMoreTracks(QString s) {
 }
 
 void HSearchContext::getMoreTracks_2() {
+    if(!isVisible()) return;
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     Q_ASSERT(reply);
     if(!reply) return;

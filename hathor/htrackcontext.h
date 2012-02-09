@@ -32,6 +32,8 @@ class HTrackContext : public QWidget
     QTime s_showTime;
     QList<HTrack*> s_loadedSimilar;
     void showEvent(QShowEvent *e);
+    void hideEvent(QHideEvent *e);
+    QList<int**> s_priorities[4];
 public:
     static HTrackContext* getContext(HTrack& rep);
     ~HTrackContext();
@@ -78,6 +80,22 @@ public slots:
     void setSpeed(double);
 
     void toggleLoved();
+
+    void readjustPriorities() {
+        const static int a[4] = {90,80,70,60};
+        for(int i=4;i>=0;--i) {
+            for(int j=0;j<s_priorities[i].size();j++) {
+                if(s_priorities[i][j]) {
+                    if(!*s_priorities[i][j]) *s_priorities[i][j]=new int;
+                    if(isVisible()) {
+                        **s_priorities[i][j]=a[j];
+                    } else {
+                        **s_priorities[i][j]=0;
+                    }
+                }
+            }
+        }
+    }
 
 private:
     Ui::HTrackContext *ui;

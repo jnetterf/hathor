@@ -6,6 +6,7 @@ QHash<QString, HSlideshow*> HSlideshow::s_u;
 HSlideshow* HSlideshow::getSlideshow(HArtist &t) {
     QString dumbName=t.getName();
     if(s_u.contains(dumbName)) {
+        if(s_u[dumbName]->s_done) s_u[dumbName]->resume();
         return s_u[dumbName];
     } else {
         return s_u[dumbName]=new HSlideshow(t);
@@ -75,9 +76,14 @@ void HSlideshow::nextPic() {
 
     QTimer::singleShot(15000,this,SLOT(nextPic()));
     QTimer::singleShot(30020,gpi,SLOT(deleteLater()));
+    ++s_i;
 }
 
 void HSlideshow::addPic(QPixmap p) {
     s_cache.push_back(p);
     if(s_cache.size()==1) nextPic();
+}
+
+void HSlideshow::resume() {
+    if(s_done) { s_done=0; QTimer::singleShot(0,this,SLOT(nextPic())); }
 }

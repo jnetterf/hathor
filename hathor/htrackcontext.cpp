@@ -43,10 +43,11 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_showTime=QTime::currentTime();
 
     ui->setupUi(this);
-    s_rep.sendSummary(this,"setContent");
-    s_rep.sendPlayCount(this,"setPlayCount");
-    s_rep.sendListenerCount(this,"setListenerCount");
-    s_rep.sendUserPlayCount(this,"setUserPlayCount");
+    s_priorities[0].push_back(s_rep.sendSummary(this,"setContent"));
+    s_priorities[1].push_back(s_rep.sendPlayCount(this,"setPlayCount"));
+    s_priorities[1].push_back(s_rep.sendListenerCount(this,"setListenerCount"));
+    s_priorities[1].push_back(s_rep.sendUserPlayCount(this,"setUserPlayCount"));
+
     ui->label_track->setText(s_rep.getTrackName());
 
     connect(ui->label_moreDescription,SIGNAL(linkActivated(QString)),this,SLOT(showMoreBio()));
@@ -89,21 +90,22 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 //    moreMenu->addAction("Replace queue with ten songs",this,SLOT(playMoreSimilarReplacing()));
 //    ui->button_more->setMenu(moreMenu);
 
-    s_rep.sendBpm(this,"setBpm");
-    s_rep.sendValence(this,"setValence");
-    s_rep.sendAggression(this,"setAggression");
-    s_rep.sendAvgLoudness(this,"setAvgLoudness");
-    s_rep.sendPercussiveness(this,"setPercussiveness");
-    s_rep.sendKey(this,"setKey");
-    s_rep.sendEnergy(this,"setEnergy");
-    s_rep.sendPunch(this,"setPunch");
-    s_rep.sendSoundCreativity(this,"setSoundCreativity");
-    s_rep.sendChordalClarity(this,"setChordalClarity");
-    s_rep.sendTempoInstability(this,"setTempoInstability");
-    s_rep.sendRhythmicIntricacy(this,"setRhythmicIntricacy");
-    s_rep.sendSpeed(this,"setSpeed");
+    s_priorities[3].push_back(s_rep.sendBpm(this,"setBpm"));
+    s_priorities[3].push_back(s_rep.sendValence(this,"setValence"));
+    s_priorities[3].push_back(s_rep.sendAggression(this,"setAggression"));
+    s_priorities[3].push_back(s_rep.sendAvgLoudness(this,"setAvgLoudness"));
+    s_priorities[3].push_back(s_rep.sendPercussiveness(this,"setPercussiveness"));
+    s_priorities[3].push_back(s_rep.sendKey(this,"setKey"));
+    s_priorities[3].push_back(s_rep.sendEnergy(this,"setEnergy"));
+    s_priorities[3].push_back(s_rep.sendPunch(this,"setPunch"));
+    s_priorities[3].push_back(s_rep.sendSoundCreativity(this,"setSoundCreativity"));
+    s_priorities[3].push_back(s_rep.sendChordalClarity(this,"setChordalClarity"));
+    s_priorities[3].push_back(s_rep.sendTempoInstability(this,"setTempoInstability"));
+    s_priorities[3].push_back(s_rep.sendRhythmicIntricacy(this,"setRhythmicIntricacy"));
+    s_priorities[3].push_back(s_rep.sendSpeed(this,"setSpeed"));
 
-    s_rep.sendLoved(this,"setLoved");
+    s_priorities[0].push_back(s_rep.sendLoved(this,"setLoved"));
+    readjustPriorities();
 }
 
 HTrackContext::~HTrackContext()
@@ -140,13 +142,20 @@ void HTrackContext::showEvent(QShowEvent *e) {
     loadAlbum();
     loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
 
+    readjustPriorities();
     QWidget::showEvent(e);
+}
+
+void HTrackContext::hideEvent(QHideEvent *e) {
+    readjustPriorities();
+    QWidget::hideEvent(e);
 }
 
 void HTrackContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
-    s_rep.sendContent(this,"setContent");
+    s_priorities[1].push_back(s_rep.sendContent(this,"setContent"));
+    readjustPriorities();
 }
 
 void HTrackContext::setMePic(QPixmap pic) {
@@ -155,6 +164,7 @@ void HTrackContext::setMePic(QPixmap pic) {
 
 void HTrackContext::loadArtist()
 {
+    if(!isVisible()) return;
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
         HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
@@ -174,31 +184,35 @@ void HTrackContext::loadArtist()
 void HTrackContext::loadAlbum()
 {
     ui->label_moreAlbums->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendAlbums(this,"setAlbums");
+    s_priorities[0].push_back(s_rep.sendAlbums(this,"setAlbums"));
+    readjustPriorities();
 }
 
 void HTrackContext::loadTags()
 {
     ui->label_moreTags->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s_tagLoadCount) s_rep.sendMoreTags(this,"setTags");
-    else s_rep.sendTags(this,"setTags");
+    if(s_tagLoadCount) s_priorities[3].push_back(s_rep.sendMoreTags(this,"setTags"));
+    else s_priorities[3].push_back(s_rep.sendTags(this,"setTags"));
+    readjustPriorities();
 }
 
 void HTrackContext::loadShouts()
 {
     ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendShouts(this,"setShouts");
+//    s_priorities[3].push_back(s_rep.sendShouts(this,"setShouts"));
+//    readjustPriorities();
 }
 
 void HTrackContext::loadSimilar(int s)
 {   
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if(s==-1) s_rep.sendSimilar(this,"setSimilar",s_similarToLoad);
+    if(s==-1) s_priorities[1].push_back(s_rep.sendSimilar(this,"setSimilar",s_similarToLoad));
     else {
         s_similarLoadCount=0;
         s_similarToLoad=4;
-        s_rep.sendSimilar(this,"setSimilar",s);
+        s_priorities[1].push_back(s_rep.sendSimilar(this,"setSimilar",s));
     }
+    readjustPriorities();
 }
 
 //void HTrackContext::play() {
@@ -257,6 +271,7 @@ void HTrackContext::setUserPlayCount(int t) {
 }
 
 void HTrackContext::setAlbums(QList<HAlbum *> t) {
+    if(!isVisible()) return;
     ui->label_moreAlbums->hide();
     if(t.size())
     {
@@ -275,6 +290,7 @@ void HTrackContext::setAlbums(QList<HAlbum *> t) {
 }
 
 void HTrackContext::setTags(QList<HTag *> tags) {
+    if(!isVisible()) return;
     int i;
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {
@@ -323,6 +339,7 @@ void HTrackContext::setShouts(QList<HShout *> shouts) {
 }
 
 void HTrackContext::setSimilar(HTrack* similar) {
+    if(!isVisible()) return;
     if(!similar) {
         ui->label_moreTracks->hide();
         return;
@@ -337,7 +354,7 @@ void HTrackContext::setSimilar(HTrack* similar) {
     s_loadedSimilar.push_back(similar);
     {
         HTrackBox* ab=HTrackBox::getBox(*similar);
-        if(s_showTime.msecsTo(QTime::currentTime())>110||!similar->isCached()) {
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
             ab->setFixedHeight(0);
             ab->adjustSize();
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");

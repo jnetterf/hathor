@@ -487,7 +487,7 @@ bool HRdioProvider::restore() {
 }
 
 HRdioProvider::HRdioProvider() :
-    ti(0), s_login(0), s_badSet(0), s_state(Stopped), s_browser(), s_auth(0), s_ready(0), s_calmDown(0)
+    ti(0), s_login(0), s_badSet(0), s_state(Stopped), s_browser(0,true), s_auth(0), s_ready(0), s_calmDown(0)
 {
     s_login=new HRdioLoginWidget(this);
 }

@@ -31,7 +31,27 @@ class HArtistContext : public QWidget
     static QHash<QString,HArtistContext*> s_map;
 
     void showEvent(QShowEvent *);
+    void hideEvent(QHideEvent *);
     QTime s_showTime;
+
+    QList<int**> s_priority[4];
+
+    void readjustPriorities() {
+        const static int a[4] = {90,80,70,60};
+        for(int i=4;i>=0;--i) {
+            for(int j=0;j<s_priority[i].size();j++) {
+                if(s_priority[i][j]) {
+                    if(!*s_priority[i][j]) *s_priority[i][j]=new int;
+                    if(isVisible()) {
+                        **s_priority[i][j]=a[j];
+                    } else {
+                        **s_priority[i][j]=0;
+                    }
+                }
+            }
+        }
+    }
+
 public:
     static HArtistContext* getContext(HArtist& rep);
     ~HArtistContext();

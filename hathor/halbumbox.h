@@ -22,11 +22,30 @@ class HAlbumBox : public HGrowingWidget
     QString s_tagString;
     bool s_gotTags;
 
+    QList<int**> s_priority[4];
+
 public:
     static HAlbumBox* getBox(HAlbum& album);
     ~HAlbumBox();
 
-    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); QWidget::showEvent(e); }
+    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); readjustPriorities(); QWidget::showEvent(e); }
+    void hideEvent(QHideEvent *e) { readjustPriorities(); QWidget::hideEvent(e); }
+
+    void readjustPriorities() {
+        const static int a[4] = {65,50,40,30};
+        for(int i=4;i>=0;--i) {
+            for(int j=0;j<s_priority[i].size();j++) {
+                if(s_priority[i][j]) {
+                    if(!*s_priority[i][j]) *s_priority[i][j]=new int;
+                    if(isVisible()) {
+                        **s_priority[i][j]=a[j];
+                    } else {
+                        **s_priority[i][j]=0;
+                    }
+                }
+            }
+        }
+    }
 
 public slots:
     void requestContext() { emit contextRequested(s_album); }

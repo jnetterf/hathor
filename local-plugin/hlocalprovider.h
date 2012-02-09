@@ -10,7 +10,6 @@ hlocalprovider.h
 #ifndef HLOCALPROVIDER_H
 #define HLOCALPROVIDER_H
 
-#include "hbrowser.h"
 #include "habstractmusicinterface.h"
 #include "hlocalintro.h"
 #include <phonon/MediaObject>

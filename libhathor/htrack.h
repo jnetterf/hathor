@@ -30,16 +30,98 @@ public slots:
     void sendData_processQueue();
 };
 
-struct HTrackTriplet {
-    QObject* first;
-    QString second;
-    int third;
-    HTrackTriplet(QObject* co,QString cm,int cc) : first(co), second(cm), third(cc) {}
-};
-
 class LIBHATHORSHARED_EXPORT HTrack : public HObject
 {
     Q_OBJECT
+public:
+    /*!
+     * Use this function to gain access to a track and its information.
+     */
+    static HTrack& get(const QString& artist, const QString& trackName);
+
+    const QString& getArtistName() const { return s_artist; }
+    const QString& getTrackName() const { return s_track; }
+    HArtist& getArtist() const;
+
+public slots:
+    /*!
+     * Asynchronously sends a QStringList of 3-4 tag names (for example: "rock", "pop",...).
+     *
+     * This function follows the send pattern found throughout Hathor. See Hathor's README for more information.
+     * This function will activate a signal or slot containing accepting exactly one parameter: a QStringList
+     * This parameter will contain a small list of tags.
+     *
+     * \param[in] object the object this property should be sent to.
+     * \param[in] slot the slot (or signal) WITHOUT DECORATION - i.e., "aSlot" not SLOT(aSlot(...)) - within object this property should be sent to.
+     * \param[in] guest the object which owns the priority: set this if you are requesting this property on behalf on another object.
+     * \return a double-pointer to an integer where you can set the priority of this action. 0 <= priority <= 100. you can change where this points to.
+     * \return sometimes, when two properties are loaded together, the same double-pointer can affect more than one object. therefore, you should assign
+     * \return low-priorities before high-priorities.
+     * \sa sendMoreTagNames sendTags sendMoreTags
+     */
+    int** sendTagNames(QObject* object,QString slot,QObject* guest=0); /* QStringList */
+    int** sendMoreTagNames(QObject*,QString,QObject* guest=0); /* QStringList */
+    int** sendTags(QObject*,QString); /* QList<HTag*> */
+    int** sendMoreTags(QObject*,QString); /* QList<HTag*> */
+
+    int** sendShouts(QObject*,QString); /* QList<HShout*> */
+
+    int** sendListenerCount(QObject*,QString); /* int */
+    int** sendPlayCount(QObject*,QString); /* int */
+    int** sendUserPlayCount(QObject*,QString); /* int */
+    int** sendSummary(QObject*,QString); /* QString */
+    int** sendContent(QObject*,QString); /* QString */
+    int** sendLoved(QObject*,QString); /* bool */
+
+    int** sendAlbumNames(QObject*,QString,QObject* guest=0); /* QStringList */
+    int** sendAlbumArtistNames(QObject*,QString,QObject* guest=0); /* QStringList */
+    int** sendAlbums(QObject*,QString); /* QList<HAlbum*> */
+
+    int** sendSimilarTrackNames(QObject*,QString,QObject* guest=0); /* QStringList */
+    int** sendSimilarTrackArtistNames(QObject*,QString,QObject* guest=0); /* QStringList */
+    int** sendSimilar(QObject*,QString,int=-1); /* QList<HTrack*> */
+    int** sendSimilarScores(QObject*,QString); /* QList<double> */
+
+
+    /* the following are doubles, except where noted: */
+    int** sendBpm(QObject*,QString);
+    int** sendValence(QObject*,QString);
+    int** sendAggression(QObject*,QString);
+    int** sendAvgLoudness(QObject*,QString);
+    int** sendPeakLoudness(QObject*,QString);
+    int** sendPercussiveness(QObject*,QString);
+    int** sendNoininess(QObject*,QString);
+    int** sendGearshift(QObject*,QString);
+    int** sendKey(QObject*,QString); /* int */
+    int** sendHarmonicCreativity(QObject*,QString);
+    int** sendSmoothness(QObject*,QString);
+    int** sendDanceability(QObject*,QString);
+    int** sendEnergy(QObject*,QString);
+    int** sendPunch(QObject*,QString);
+    int** sendSoundCreativity(QObject*,QString);
+    int** sendTuning(QObject*,QString);
+    int** sendChordalClarity(QObject*,QString);
+    int** sendTempoInstability(QObject*,QString);
+    int** sendRhythmicIntricacy(QObject*,QString);
+    int** sendSpeed(QObject*,QString);
+
+private slots:
+    void sendTags_2(QStringList);
+    void sendMoreTags_2(QStringList);
+    void sendAlbums_2(QStringList);
+    void sendAlbums_3(QStringList);
+    void sendSimilar_2(QStringList);
+    void sendSimilar_3(QStringList);
+private:
+    friend class HCachedInfo;
+
+    struct HTrackTriplet {
+        QObject* first;
+        QString second;
+        int third;
+        HTrackTriplet(QObject* co,QString cm,int cc) : first(co), second(cm), third(cc) {}
+    };
+
     QString s_artist;
     QString s_track;
 
@@ -58,76 +140,6 @@ class LIBHATHORSHARED_EXPORT HTrack : public HObject
     QStringList s_trackArtistNameCache;
     bool s_trackNameCache_GOT;
 
-public:
-    static HTrack& get(QString artist, QString trackName);
-
-    enum PictureSize {
-        Small=0,
-        Medium=1,
-        Large=2,
-        Mega=3
-    };
-
-    QString getArtistName() { return s_artist; }
-    QString getTrackName() { return s_track; }
-    HArtist& getArtist();
-
-    bool isCached() { return s_infoData.isCached(); }
-
-public slots:
-    void sendTagNames(QObject*,QString); /* QStringList */
-    void sendMoreTagNames(QObject*,QString); /* QStringList */
-    void sendTags(QObject*,QString); /* QList<HTag*> */
-    void sendTags_2(QStringList); /* for internal use */
-    void sendMoreTags(QObject*,QString); /* QList<HTag*> */
-    void sendMoreTags_2(QStringList); /* for internal use */
-
-    void sendShouts(QObject*,QString); /* QList<HShout*> */
-
-    void sendListenerCount(QObject*,QString); /* int */
-    void sendPlayCount(QObject*,QString); /* int */
-    void sendUserPlayCount(QObject*,QString); /* int */
-    void sendSummary(QObject*,QString); /* QString */
-    void sendContent(QObject*,QString); /* QString */
-    void sendLoved(QObject*,QString); /* bool */
-
-    void sendAlbumNames(QObject*,QString); /* QStringList */
-    void sendAlbumArtistNames(QObject*,QString); /* QStringList */
-    void sendAlbums(QObject*,QString); /* QList<HAlbum*> */
-    void sendAlbums_2(QStringList); /* for internal use */
-    void sendAlbums_3(QStringList); /* for internal use */
-
-    void sendSimilarTrackNames(QObject*,QString); /* QStringList */
-    void sendSimilarTrackArtistNames(QObject*,QString); /* QStringList */
-    void sendSimilar(QObject*,QString,int=-1); /* QList<HTrack*> */
-    void sendSimilar_2(QStringList); /* for internal use */
-    void sendSimilar_3(QStringList); /* for internal use */
-    void sendSimilarScores(QObject*,QString); /* QList<double> */
-
-
-    /* the following are doubles, except where noted: */
-    void sendBpm(QObject*,QString);
-    void sendValence(QObject*,QString);
-    void sendAggression(QObject*,QString);
-    void sendAvgLoudness(QObject*,QString);
-    void sendPeakLoudness(QObject*,QString);
-    void sendPercussiveness(QObject*,QString);
-    void sendNoininess(QObject*,QString);
-    void sendGearshift(QObject*,QString);
-    void sendKey(QObject*,QString); /* int */
-    void sendHarmonicCreativity(QObject*,QString);
-    void sendSmoothness(QObject*,QString);
-    void sendDanceability(QObject*,QString);
-    void sendEnergy(QObject*,QString);
-    void sendPunch(QObject*,QString);
-    void sendSoundCreativity(QObject*,QString);
-    void sendTuning(QObject*,QString);
-    void sendChordalClarity(QObject*,QString);
-    void sendTempoInstability(QObject*,QString);
-    void sendRhythmicIntricacy(QObject*,QString);
-    void sendSpeed(QObject*,QString);
-
-private:
     static QHash<QString, HTrack*> _map;
     HTrack(QString artist, QString track);  // use HTrack::get(name)
 
@@ -152,6 +164,11 @@ private:
     } s_audioFeatureData;
 
     TrackShoutData s_shoutData;
+public:
+    /*!
+      For debugging.
+     */
+    bool isCached() { return s_infoData.isCached(); }
 
 private:
     //Degenerate copy and assignment

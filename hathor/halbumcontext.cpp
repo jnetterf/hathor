@@ -37,12 +37,12 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     s_showTime=QTime::currentTime();
     ui->setupUi(this);
     ui->label_album->setText(s_rep.getAlbumName());
-    s_rep.sendPic(HAlbum::Large,this,"setPic");
-    s_rep.sendSummary(this,"setSummary");
+    s_priority[0].push_back(s_rep.sendPic(HAlbum::Large,this,"setPic"));
+    s_priority[0].push_back(s_rep.sendSummary(this,"setSummary"));
 
-    s_rep.sendPlayCount(this,"setPlayCount");
-    s_rep.sendListenerCount(this,"setListenerCount");
-    s_rep.sendUserPlayCount(this,"setUserPlayCount");
+    s_priority[0].push_back(s_rep.sendPlayCount(this,"setPlayCount"));
+    s_priority[0].push_back(s_rep.sendListenerCount(this,"setListenerCount"));
+    s_priority[0].push_back(s_rep.sendUserPlayCount(this,"setUserPlayCount"));
 
     connect(ui->label_moreDescription,SIGNAL(linkActivated(QString)),this,SLOT(showMoreBio()));
 
@@ -62,7 +62,7 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");    // FIX ME
 
     ui->label_albumPic->adjustSize();
     ui->frame_art->adjustSize();
@@ -79,6 +79,7 @@ HAlbumContext::~HAlbumContext()
 void HAlbumContext::showEvent(QShowEvent * e)
 {
     HL("HAlbumContext::showEvent: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
+    readjustPriorities();
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 
@@ -104,6 +105,11 @@ void HAlbumContext::showEvent(QShowEvent * e)
     QWidget::showEvent(e);
 }
 
+void HAlbumContext::hideEvent(QHideEvent *e) {
+    readjustPriorities();
+    QWidget::hideEvent(e);
+}
+
 void HAlbumContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
@@ -119,7 +125,7 @@ void HAlbumContext::showMoreBio()
     ui->label_albumPic->adjustSize();
     ui->frame_header->adjustSize();
     ui->label_description->adjustSize();
-    s_rep.sendContent(this,"setSummary");
+    s_priority[0].push_back(s_rep.sendContent(this,"setSummary"));
     ui->label_description->adjustSize();
 
     ui->label_moreDescription->hide();
@@ -127,6 +133,7 @@ void HAlbumContext::showMoreBio()
 
 void HAlbumContext::loadArtist()
 {
+    if(!isVisible()) return;
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
         HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
@@ -146,16 +153,15 @@ void HAlbumContext::loadArtist()
 void HAlbumContext::loadTracks()
 {
     ui->label_moreTracks->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendTracks(this,"loadTracks_2");
+    s_priority[0].push_back(s_rep.sendTracks(this,"loadTracks_2"));
 }
 
-void HAlbumContext::loadTracks_2(QList<HTrack *>tracks)
+void HAlbumContext::loadTracks_2(HTrack* track)
 {
-    int i;
-    int toLoad=s_trackLoadCount?s_trackLoadCount*2:10;
-    for(i=s_trackLoadCount;i<tracks.size()&&i-s_trackLoadCount<toLoad;i++) {
-        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
-        if(s_showTime.msecsTo(QTime::currentTime())>110||!tracks[i]->isCached()) {
+    if(!isVisible()) return;
+    if(track) {
+        HTrackBox* ab=HTrackBox::getBox(*track);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
             pa->setStartValue(0);
             pa->setEndValue(32);
@@ -163,29 +169,22 @@ void HAlbumContext::loadTracks_2(QList<HTrack *>tracks)
             pa->start(QAbstractAnimation::DeleteWhenStopped);
         }
         ui->widget_tracks->layout()->addWidget(ab);
-    }
-    if(i-s_trackLoadCount!=toLoad) {
-        ui->label_moreTracks->hide();
     } else {
-        ui->label_moreTracks->setText(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-            "p, li { white-space: pre-wrap; }"
-            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+        ui->label_moreTracks->hide();
     }
-    s_trackLoadCount=i;
+    s_trackLoadCount++;
 }
 
 void HAlbumContext::loadTags()
 {
     ui->label_moreTags->setText("<p align=\"right\"><i>Loading...</i></p>");
-    if (s_tagLoadCount) s_rep.sendMoreTags(this,"addTags");
-    else s_rep.sendTags(this, "addTags");
+    if (s_tagLoadCount) s_priority[1].push_back(s_rep.sendMoreTags(this,"addTags"));
+    else s_priority[1].push_back(s_rep.sendTags(this, "addTags"));
 }
 
 void HAlbumContext::loadShouts()
 {
+    // FIX ME
     ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
     s_rep.sendShouts(this,"setShouts");
 }
@@ -275,6 +274,7 @@ void HAlbumContext::setShouts(QList<HShout *> shouts) {
 }
 
 void HAlbumContext::addTags(QList<HTag*> tags) {
+    if(!isVisible()) return;
     int i;
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {

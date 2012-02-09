@@ -34,8 +34,8 @@ HArtist& HAlbum::getArtist() {
     return HArtist::get(s_artist);
 }
 
-void HAlbum::sendTrackNames(QObject *obj, const char *member) {
-    s_albumInfo.sendProperty("trackNames",obj,member);
+int** HAlbum::sendTrackNames(QObject *obj, const char *member, QObject *guest) {
+    return s_albumInfo.sendProperty("trackNames",obj,member,guest);
 }
 
 //QStringList HAlbum::getTrackNames() {
@@ -46,50 +46,46 @@ void HAlbum::sendTrackNames(QObject *obj, const char *member) {
 //    return getTrackNames();
 //}
 
-void HAlbum::sendTracks(QObject *obj, const char *member) {
+int** HAlbum::sendTracks(QObject *obj, const char *member) {
     s_trackQueue.push_back(qMakePair(obj,QString(member)));
-    sendTrackNames(this,"sendTracks_2");
+    return sendTrackNames(this,"sendTracks_2",obj);
 }
 
 void HAlbum::sendTracks_2(QStringList tracks) {
-    QMutexLocker locker(&queueMutex);
-    QList<HTrack*> ret;
-    for(int i=0;i<tracks.size();i++) {
-        qDebug()<<"SEND TRACK"<<s_artist<<tracks[i];
-        ret.push_back(&HTrack::get(s_artist,tracks[i]));
-    }
-
     while(s_trackQueue.size()) {
         QPair< QObject*, QString > p=s_trackQueue.takeFirst();
-        QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(QList<HTrack*>,ret));
+        for(int i=0;i<tracks.size();i++) {
+            QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HTrack*,&HTrack::get(s_artist,tracks[i])));
+        }
+        QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HTrack*,0));
     }
 }
 
-void HAlbum::sendPlayCount(QObject *obj, const char *member) { s_albumInfo.sendProperty("playCount",obj,member); }
-void HAlbum::sendListenerCount(QObject *obj, const char *member) { s_albumInfo.sendProperty("listenerCount",obj,member); }
-void HAlbum::sendUserPlayCount(QObject *obj, const char *member) { s_albumInfo.sendProperty("userPlayCount",obj,member); }
-void HAlbum::sendPicNames(PictureSize size, QObject *obj, const char *member) { s_albumInfo.sendProperty("pics::"+QString::number(size),obj,member); }
-void HAlbum::sendTagNames(QObject *obj, const char *member) { s_albumInfo.sendProperty("tagNames",obj,member); }
-void HAlbum::sendMoreTagNames(QObject *obj, const char *member) { s_extraTagData.sendProperty("tagNames",obj,member); }
-void HAlbum::sendSummary(QObject *obj, const char *member) { s_albumInfo.sendProperty("summary",obj,member); }
-void HAlbum::sendContent(QObject *obj, const char *member) { s_albumInfo.sendProperty("content",obj,member); }
+int** HAlbum::sendPlayCount(QObject *obj, const char *member) { return s_albumInfo.sendProperty("playCount",obj,member); }
+int** HAlbum::sendListenerCount(QObject *obj, const char *member) { return s_albumInfo.sendProperty("listenerCount",obj,member); }
+int** HAlbum::sendUserPlayCount(QObject *obj, const char *member) { return s_albumInfo.sendProperty("userPlayCount",obj,member); }
+int** HAlbum::sendPicNames(PictureSize size, QObject *obj, const char *member, QObject* guest) { return s_albumInfo.sendProperty("pics::"+QString::number(size),obj,member,guest); }
+int** HAlbum::sendTagNames(QObject *obj, const char *member) { return s_albumInfo.sendProperty("tagNames",obj,member); }
+int** HAlbum::sendMoreTagNames(QObject *obj, const char *member,QObject* guest) { return s_extraTagData.sendProperty("tagNames",obj,member,guest); }
+int** HAlbum::sendSummary(QObject *obj, const char *member) { return s_albumInfo.sendProperty("summary",obj,member); }
+int** HAlbum::sendContent(QObject *obj, const char *member) { return s_albumInfo.sendProperty("content",obj,member); }
 
-void HAlbum::sendPic(PictureSize p, QObject *obj, const char *member) {
+int** HAlbum::sendPic(PictureSize p, QObject *obj, const char *member) {
     s_picQueue[p].push_back(qMakePair(obj,QString(member)));
-    sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data());
+    return sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data(),obj);
 }
 
 void HAlbum::sendPic_2(PictureSize p,QString pic) {
     if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
-        s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
+        *s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second)=*s_albumInfo.getPriorityForProperty(s_picQueue[p][i].first,"pics::"+QString::number(p));
     }
     s_picQueue[p].clear();
 }
 
-void HAlbum::sendTags(QObject *obj, const char *member) {
+int** HAlbum::sendTags(QObject *obj, const char *member) {
     s_tagQueue.push_back(qMakePair(obj,QString(member)));
-    sendTagNames(this,"sendTags_2");
+    return sendTagNames(this,"sendTags_2");
 }
 
 void HAlbum::sendTags_2(QStringList t) {
@@ -106,9 +102,9 @@ void HAlbum::sendTags_2(QStringList t) {
 }
 
 
-void HAlbum::sendMoreTags(QObject *obj, const char *member) {
+int** HAlbum::sendMoreTags(QObject *obj, const char *member) {
     s_moreTagQueue.push_back(qMakePair(obj,QString(member)));
-    sendMoreTagNames(this,"sendMoreTags_2");
+    return sendMoreTagNames(this,"sendMoreTags_2",obj);
 }
 
 void HAlbum::sendMoreTags_2(QStringList t) {
@@ -123,9 +119,10 @@ void HAlbum::sendMoreTags_2(QStringList t) {
 }
 
 
-void HAlbum::sendShouts(QObject *obj, const char *member) {
-    s_shoutData.shoutQueue.push_back(qMakePair(obj,QString(member)));
-    s_shoutData.sendData(s_artist,s_album);
+int** HAlbum::sendShouts(QObject *obj, const char *member) {
+    return 0;
+//    s_shoutData.shoutQueue.push_back(qMakePair(obj,QString(member)));
+//    s_shoutData.sendData(s_artist,s_album);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

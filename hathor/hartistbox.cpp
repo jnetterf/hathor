@@ -22,10 +22,10 @@ HArtistBox::HArtistBox(HArtist &rep, QWidget *parent) :
     ui->label_artistName->setText("<A href=\"more\">"+rep.getName()+"</A>");
     connect(ui->label_artistName,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
     connect(this,SIGNAL(contextRequested(HArtist&)),HMainWindow::singleton(),SLOT(showContext(HArtist&)));
-    rep.sendPic(HArtist::Mega,this,"setPic");
-    s_rep.sendTagNames(this,"setTagNames");
-
-    s_rep.sendBioShort(this,"setBioShort");
+    s_priority[0].push_back(rep.sendPic(HArtist::Mega,this,"setPic"));
+    s_priority[1].push_back(s_rep.sendTagNames(this,"setTagNames"));
+    s_priority[1].push_back(s_rep.sendBioShort(this,"setBioShort"));
+    readjustPriorities();
 }
 
 HArtistBox::~HArtistBox()

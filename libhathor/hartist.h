@@ -14,36 +14,6 @@
 
 struct HTag;
 
-class LIBHATHORSHARED_EXPORT ArtistInfo : public HCachedInfo {
-    friend class HArtist;
-    ArtistInfo(QString artist);
-    bool process(const QString& data);
-};
-
-class LIBHATHORSHARED_EXPORT ArtistExtraTagData : public HCachedInfo {
-    friend class HArtist;
-    ArtistExtraTagData(QString artist);
-    bool process(const QString& data);
-};
-
-class LIBHATHORSHARED_EXPORT ArtistAlbumData : public HCachedInfo {
-    friend class HArtist;
-    ArtistAlbumData(QString artist);
-    bool process(const QString& data);
-};
-
-class LIBHATHORSHARED_EXPORT ArtistTrackData : public HCachedInfo {
-    friend class HArtist;
-    ArtistTrackData(QString artist);
-    bool process(const QString& data);
-};
-
-class LIBHATHORSHARED_EXPORT ArtistSimilarData : public HCachedInfo {
-    friend class HArtist;
-    ArtistSimilarData(QString artist);
-    bool process(const QString& data);
-};
-
 struct LIBHATHORSHARED_EXPORT ArtistShoutData : public QObject {
     Q_OBJECT
     friend class HArtist;
@@ -119,44 +89,67 @@ public:
 
 public slots:
     QString getName() { return s_name; }
-    void sendPic(PictureSize p,QObject* o,QString m); /* QPixmap */
+    int** sendPic(PictureSize p,QObject* o,QString m); /* QPixmap */
+    int** sendPicNames(PictureSize p,QObject* o,QString m,QObject* g=0); /* QString */
+    int** sendTagNames(QObject* o,QString m,QObject* g=0); /* QStringList */
+    int** sendTags(QObject* o,QString m); /* QList<HTag*> */
+    int** sendMoreTagNames(QObject* o,QString m,QObject* g=0); /* QStringList */
+    int** sendMoreTags(QObject* obj, const char* member); /*QList<HTag*>*/
+    int** sendListenerCount(QObject* o,QString m); /*int*/
+    int** sendPlayCount(QObject* o,QString m); /*int*/
+    int** sendUserPlayCount(QObject* o,QString m); /*int*/
+    int** sendBio(QObject* o,QString m); /*QString*/
+    int** sendBioShort(QObject* o,QString m); /*QString*/
+    int** sendAlbumsNames(QObject* o,QString m,QObject* g=0); /* QStringList */
+    int** sendAlbums(QObject* o,QString m, int count=-1); /* multiple HAlbum* */
+    int** sendTrackNames(QObject* o,QString m,QObject* g=0); /* QString */
+    int** sendTracks(QObject* o,QString m, int count=-1); /* multiple HTrack* */
+    int** sendSimilarNames(QObject* o,QString m,QObject* g=0); /* QStringList */
+    int** sendSimilar(QObject* o,QString m, int count=-1); /* multiple HArtist* */
+    int** sendShouts(QObject* o,QString m); /* QList<HShout*> */
+    int** sendSimilarScores(QObject* o,QString m); /* QList<double> */
+    void sendExtraPics(QObject* o,QString m, int count);    /* TO DO */
+
+private:
+    friend class HCachedInfo;
+private slots:
     void sendPic_2_0(QString pic) { sendPic_2((PictureSize)0,pic); }
     void sendPic_2_1(QString pic) { sendPic_2((PictureSize)1,pic); }
     void sendPic_2_2(QString pic) { sendPic_2((PictureSize)2,pic); }
     void sendPic_2_3(QString pic) { sendPic_2((PictureSize)3,pic); }
-    void sendPicNames(PictureSize p,QObject* o,QString m); /* QString */
-    void sendTagNames(QObject* o,QString m); /* QStringList */
-    void sendTags(QObject* o,QString m); /* QList<HTag*> */
-    void sendMoreTagNames(QObject* o,QString m); /* QStringList */
-    void sendMoreTags(QObject* obj, const char* member); /*QList<HTag*>*/
     void sendMoreTags_2(QStringList); /*for internal use*/
-    void sendListenerCount(QObject* o,QString m); /*int*/
-    void sendPlayCount(QObject* o,QString m); /*int*/
-    void sendUserPlayCount(QObject* o,QString m); /*int*/
-    void sendBio(QObject* o,QString m); /*QString*/
-    void sendBioShort(QObject* o,QString m); /*QString*/
-    void sendAlbumsNames(QObject* o,QString m); /* QStringList */
-    void sendAlbums(QObject* o,QString m, int count=-1); /* multiple HAlbum* */
-    void sendTrackNames(QObject* o,QString m); /* QString */
-    void sendTracks(QObject* o,QString m, int count=-1); /* multiple HTrack* */
-    void sendSimilarNames(QObject* o,QString m); /* QStringList */
-    void sendSimilar(QObject* o,QString m, int count=-1); /* multiple HArtist* */
-    void sendShouts(QObject* o,QString m); /* QList<HShout*> */
-    void sendSimilarScores(QObject* o,QString m); /* QList<double> */
-
-    void sendExtraPics(QObject* o,QString m, int count);
-
 private:
     static QHash<QString, HArtist*> _map;
     HArtist(QString name);  // use HArtist::get(name)
 
     QString s_name;
 
-    ArtistInfo s_infoData;
-    ArtistExtraTagData s_extraTagData;
-    ArtistAlbumData s_albumData;
-    ArtistTrackData s_trackData;
-    ArtistSimilarData s_similarData;
+    struct LIBHATHORSHARED_EXPORT ArtistInfo : public HCachedInfo {
+        ArtistInfo(QString artist);
+        bool process(const QString& data);
+    } s_infoData;
+
+    struct LIBHATHORSHARED_EXPORT ArtistExtraTagData : public HCachedInfo {
+        ArtistExtraTagData(QString artist);
+        bool process(const QString& data);
+    } s_extraTagData;
+
+    struct LIBHATHORSHARED_EXPORT ArtistAlbumData : public HCachedInfo {
+        ArtistAlbumData(QString artist);
+        bool process(const QString& data);
+    } s_albumData;
+
+    struct LIBHATHORSHARED_EXPORT ArtistTrackData : public HCachedInfo {
+        ArtistTrackData(QString artist);
+        bool process(const QString& data);
+    } s_trackData;
+
+    struct LIBHATHORSHARED_EXPORT ArtistSimilarData : public HCachedInfo {
+        ArtistSimilarData(QString artist);
+        bool process(const QString& data);
+    } s_similarData;
+
+
     ArtistShoutData s_shoutData;
     ExtraPictureData s_extraPictureData;
 

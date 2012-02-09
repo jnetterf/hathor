@@ -25,9 +25,9 @@ HArtist& HArtist::get(QString name) {
     return get(name);
 }
 
-void HArtist::sendPic(PictureSize p, QObject *obj, QString member) {
+int** HArtist::sendPic(PictureSize p, QObject *obj, QString member) {
     s_picQueue[p].push_back(qMakePair(obj,member));
-    sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data());
+    return sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data(),obj);
 }
 
 void HArtist::sendPic_2(PictureSize p,QString pic) {
@@ -38,11 +38,11 @@ void HArtist::sendPic_2(PictureSize p,QString pic) {
     s_picQueue[p].clear();
 }
 
-void HArtist::sendTagNames(QObject *o, QString m) { s_infoData.sendProperty("tagNames",o,m); }
+int** HArtist::sendTagNames(QObject *o, QString m, QObject *g) { return s_infoData.sendProperty("tagNames",o,m,g); }
 
-void HArtist::sendTags(QObject *obj, QString member) {
+int** HArtist::sendTags(QObject *obj, QString member) {
     s_tagQueue.push_back(qMakePair(obj,member));
-    sendTagNames(this,"sendTags_2");
+    return sendTagNames(this,"sendTags_2",obj);
 }
 
 void HArtist::sendTags_2(QStringList t) {
@@ -58,12 +58,12 @@ void HArtist::sendTags_2(QStringList t) {
     s_tagQueue.clear();
 }
 
-void HArtist::sendPicNames(PictureSize size, QObject *obj, QString member) { s_infoData.sendProperty("pics::"+QString::number(size),obj,member); }
-void HArtist::sendMoreTagNames(QObject *o, QString m) { s_extraTagData.sendProperty("tagNames",o,m);}
+int** HArtist::sendPicNames(PictureSize size, QObject *obj, QString member,QObject* g) { return s_infoData.sendProperty("pics::"+QString::number(size),obj,member,g); }
+int** HArtist::sendMoreTagNames(QObject *o, QString m,QObject* g) { return s_extraTagData.sendProperty("tagNames",o,m,g);}
 
-void HArtist::sendMoreTags(QObject *obj, const char *member) {
+int** HArtist::sendMoreTags(QObject *obj, const char *member) {
     s_moreTagQueue.push_back(qMakePair(obj,QString(member)));
-    sendMoreTagNames(this,"sendMoreTags_2");
+    return sendMoreTagNames(this,"sendMoreTags_2",obj);
 }
 
 void HArtist::sendMoreTags_2(QStringList t) {
@@ -78,16 +78,16 @@ void HArtist::sendMoreTags_2(QStringList t) {
     s_moreTagQueue.clear();
 }
 
-void HArtist::sendListenerCount(QObject *o, QString m) { s_infoData.sendProperty("listeners",o,m); }
-void HArtist::sendPlayCount(QObject *o, QString m) { s_infoData.sendProperty("playCount",o,m); }
-void HArtist::sendUserPlayCount(QObject *o, QString m) { s_infoData.sendProperty("userPlayCount",o,m); }
-void HArtist::sendBio(QObject *o, QString m) { s_infoData.sendProperty("bio",o,m); }
-void HArtist::sendBioShort(QObject *o, QString m) { s_infoData.sendProperty("bioShort",o,m); }
-void HArtist::sendAlbumsNames(QObject *o, QString m) { s_albumData.sendProperty("albums",o,m); }
+int** HArtist::sendListenerCount(QObject *o, QString m) { return s_infoData.sendProperty("listeners",o,m); }
+int** HArtist::sendPlayCount(QObject *o, QString m) { return s_infoData.sendProperty("playCount",o,m); }
+int** HArtist::sendUserPlayCount(QObject *o, QString m) { return s_infoData.sendProperty("userPlayCount",o,m); }
+int** HArtist::sendBio(QObject *o, QString m) { return s_infoData.sendProperty("bio",o,m); }
+int** HArtist::sendBioShort(QObject *o, QString m) { return s_infoData.sendProperty("bioShort",o,m); }
+int** HArtist::sendAlbumsNames(QObject *o, QString m,QObject* g) { return s_albumData.sendProperty("albums",o,m,g); }
 
-void HArtist::sendAlbums(QObject *obj, QString member,int count) {
+int** HArtist::sendAlbums(QObject *obj, QString member,int count) {
     s_albumQueue.push_back(HTriple(obj,QString(member),count));
-    sendAlbumsNames(this,"sendAlbums_2");
+    return sendAlbumsNames(this,"sendAlbums_2",obj);
 }
 
 void HArtist::sendAlbums_2(QStringList t) {
@@ -106,11 +106,11 @@ void HArtist::sendAlbums_2(QStringList t) {
     s_albumQueue.clear();
 }
 
-void HArtist::sendTrackNames(QObject *o, QString m) { s_trackData.sendProperty("tracks",o,m); }
+int** HArtist::sendTrackNames(QObject *o, QString m, QObject* g) { return s_trackData.sendProperty("tracks",o,m,g); }
 
-void HArtist::sendTracks(QObject *obj, QString member, int count) {
+int** HArtist::sendTracks(QObject *obj, QString member, int count) {
     s_trackQueue.push_back(HTriple(obj,QString(member),count));
-    sendTrackNames(this,"sendTracks_2");
+    return sendTrackNames(this,"sendTracks_2",obj);
 }
 
 void HArtist::sendTracks_2(QStringList t) {
@@ -128,11 +128,11 @@ void HArtist::sendTracks_2(QStringList t) {
     s_trackQueue.clear();
 }
 
-void HArtist::sendSimilarNames(QObject *o, QString m) { s_similarData.sendProperty("similar",o,m); }
+int** HArtist::sendSimilarNames(QObject *o, QString m, QObject* g) { return s_similarData.sendProperty("similar",o,m,g); }
 
-void HArtist::sendSimilar(QObject *obj, QString member, int count) {
+int** HArtist::sendSimilar(QObject *obj, QString member, int count) {
     s_similarQueue.push_back(HTriple(obj,QString(member),count));
-    sendSimilarNames(this,"sendSimilar_2");
+    return sendSimilarNames(this,"sendSimilar_2",obj);
 }
 
 void HArtist::sendSimilar_2(QStringList t) {
@@ -142,6 +142,7 @@ void HArtist::sendSimilar_2(QStringList t) {
         for(int j=0;j<s_similarQueue.size();j++) {
             if((i<s_similarQueue[j].third)||(s_similarQueue[j].third==-1)) {
                 ok=1;
+                qDebug()<<">>"<<t[i];
                 QMetaObject::invokeMethod(s_similarQueue[j].first,s_similarQueue[j].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HArtist*,&HArtist::get(t[i])));
             }
         }
@@ -150,25 +151,26 @@ void HArtist::sendSimilar_2(QStringList t) {
     s_similarQueue.clear();
 }
 
-void HArtist::sendShouts(QObject *obj, QString member) {
-    s_shoutData.shoutQueue.push_back(qMakePair(obj,member));
-    s_shoutData.sendData(s_name);
+int** HArtist::sendShouts(QObject *obj, QString member) {
+//    s_shoutData.shoutQueue.push_back(qMakePair(obj,member));
+//    s_shoutData.sendData(s_name);
+    return 0;
 }
 
-void HArtist::sendSimilarScores(QObject *o, QString m) { s_similarData.sendProperty("similarScores",o,m); }
-
-//////////////////////////////////////////////////////////////////////////////////////////////
+int** HArtist::sendSimilarScores(QObject *o, QString m) { return s_similarData.sendProperty("similarScores",o,m); }
 
 void HArtist::sendExtraPics(QObject* o, QString s, int count) {
-    s_extraPictureData.sendPics(o,s,count);
+    return s_extraPictureData.sendPics(o,s,count);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 
 HArtist::HArtist(QString name) : s_name(name), s_infoData(name), s_extraTagData(name), s_albumData(name), s_trackData(name), s_similarData(name), s_extraPictureData(name)
 {
     for(int i=0;i<4;i++) s_cachedPixmap[i]=0;
 }
 
-ArtistInfo::ArtistInfo(QString artist) {
+HArtist::ArtistInfo::ArtistInfo(QString artist) {
     QMap<QString, QString> params;
     params["method"] = "artist.getInfo";
     params["username"] = lastfm::ws::Username;
@@ -188,7 +190,7 @@ ArtistInfo::ArtistInfo(QString artist) {
     addProperty<int>("playCount",b);
     addProperty<int>("userPlayCount",b);
 }
-bool ArtistInfo::process(const QString &data) {
+bool HArtist::ArtistInfo::process(const QString &data) {
     try {
         QStringList tags;
         QDomDocument doc;
@@ -234,7 +236,7 @@ bool ArtistInfo::process(const QString &data) {
     return 1;
 }
 
-ArtistAlbumData::ArtistAlbumData(QString artist) {
+HArtist::ArtistAlbumData::ArtistAlbumData(QString artist) {
     QMap<QString, QString> params;
     params["method"] = "artist.getTopAlbums";
     params["username"] = lastfm::ws::Username;
@@ -245,7 +247,7 @@ ArtistAlbumData::ArtistAlbumData(QString artist) {
     addProperty<QStringList>("albums",b);
 }
 
-bool ArtistAlbumData::process(const QString &data) {
+bool HArtist::ArtistAlbumData::process(const QString &data) {
     try {
         QDomDocument doc;
         doc.setContent( data );
@@ -273,7 +275,7 @@ bool ArtistAlbumData::process(const QString &data) {
     return 1;
 }
 
-ArtistExtraTagData::ArtistExtraTagData(QString artist) {
+HArtist::ArtistExtraTagData::ArtistExtraTagData(QString artist) {
     QMap<QString, QString> params;
     params["method"] = "artist.getTopTags";
     params["artist"] = artist;
@@ -283,7 +285,7 @@ ArtistExtraTagData::ArtistExtraTagData(QString artist) {
     addProperty<QStringList>("tagNames",b);
 }
 
-bool ArtistExtraTagData::process(const QString &data) {
+bool HArtist::ArtistExtraTagData::process(const QString &data) {
     try {
         QDomDocument doc;
         doc.setContent( data );
@@ -309,7 +311,7 @@ bool ArtistExtraTagData::process(const QString &data) {
     return 1;
 }
 
-ArtistTrackData::ArtistTrackData(QString artist) {
+HArtist::ArtistTrackData::ArtistTrackData(QString artist) {
     QMap<QString, QString> params;
     params["method"] = "artist.getTopTracks";
     params["username"] = lastfm::ws::Username;
@@ -320,7 +322,7 @@ ArtistTrackData::ArtistTrackData(QString artist) {
     addProperty<QStringList>("tracks",b);
 }
 
-bool ArtistTrackData::process(const QString &data) {
+bool HArtist::ArtistTrackData::process(const QString &data) {
     try {
         QDomDocument doc;
         doc.setContent( data );
@@ -347,7 +349,7 @@ bool ArtistTrackData::process(const QString &data) {
     return 1;
 }
 
-ArtistSimilarData::ArtistSimilarData(QString artist) {
+HArtist::ArtistSimilarData::ArtistSimilarData(QString artist) {
     QMap<QString, QString> params;
     params["method"] = "artist.getSimilar";
     params["username"] = lastfm::ws::Username;
@@ -359,7 +361,7 @@ ArtistSimilarData::ArtistSimilarData(QString artist) {
     addProperty<QList<double> >("similarScores",b);
 }
 
-bool ArtistSimilarData::process(const QString &data) {
+bool HArtist::ArtistSimilarData::process(const QString &data) {
     try {
         QDomDocument doc;
         doc.setContent( data );
@@ -379,8 +381,10 @@ bool ArtistSimilarData::process(const QString &data) {
             }
         }
 
-        setProperty("similar",similar);
-        setProperty("similarScores",score);
+        if(similar.size()) {
+            setProperty("similar",similar);
+            setProperty("similarScores",score);
+        }
 
     } catch (std::runtime_error& e) {
         qWarning() << e.what();

@@ -73,29 +73,32 @@ public:
     bool isCached() { return s_albumInfo.isCached(); }
 
 public slots:
-    void sendTracks(QObject* obj, const char* member);  /*QList<HTrack*>*/
-    void sendTracks_2(QStringList);  /*for internal use*/
-    void sendTrackNames(QObject* obj, const char* member); /*QStringList*/
-    void sendPlayCount(QObject* obj, const char* member); /*int*/
-    void sendListenerCount(QObject* obj, const char* member); /*int*/
-    void sendUserPlayCount(QObject* obj, const char* member); /*int*/
+    int** sendTracks(QObject* obj, const char* member);  /*many HTrack* ending in 0 */
+    int** sendTrackNames(QObject* obj, const char* member,QObject* guest=0); /*QStringList*/
+    int** sendPlayCount(QObject* obj, const char* member); /*int*/
+    int** sendListenerCount(QObject* obj, const char* member); /*int*/
+    int** sendUserPlayCount(QObject* obj, const char* member); /*int*/
 
-    void sendPicNames(HAlbum::PictureSize size,QObject* obj, const char* member); /*QString*/
-    void sendPic(HAlbum::PictureSize size,QObject* obj, const char* member); /*QPixmap*/
+    int** sendPicNames(HAlbum::PictureSize size,QObject* obj, const char* member,QObject* guest=0); /*QString*/
+    int** sendPic(HAlbum::PictureSize size,QObject* obj, const char* member); /*QPixmap*/
+    int** sendTagNames(QObject* obj, const char* member); /*QStringList*/
+    int** sendTags(QObject* obj, const char* member); /*QList<HTag*>*/
+    int** sendMoreTagNames(QObject* obj, const char* member, QObject *guest);/*QStringList*/
+    int** sendMoreTags(QObject* obj, const char* member); /*QList<HTag*>*/
+    int** sendSummary(QObject* obj, const char* member); /*QString*/
+    int** sendContent(QObject* obj, const char* member); /*QList<HTag*>*/
+    int** sendShouts(QObject* obj, const char* member); /*QList<HShout*>*/
+
+
+
+    void sendTracks_2(QStringList);  /*for internal use*/
+    void sendTags_2(QStringList); /*for internal use*/
     void sendPic_2_0(QString pic) { sendPic_2((PictureSize)0,pic); }
     void sendPic_2_1(QString pic) { sendPic_2((PictureSize)1,pic); }
     void sendPic_2_2(QString pic) { sendPic_2((PictureSize)2,pic); }
     void sendPic_2_3(QString pic) { sendPic_2((PictureSize)3,pic); }
     void sendPic_2(HAlbum::PictureSize p,QString pic); /*for internal use*/
-    void sendTagNames(QObject* obj, const char* member); /*QStringList*/
-    void sendTags(QObject* obj, const char* member); /*QList<HTag*>*/
-    void sendTags_2(QStringList); /*for internal use*/
-    void sendMoreTagNames(QObject* obj, const char* member);/*QStringList*/
-    void sendMoreTags(QObject* obj, const char* member); /*QList<HTag*>*/
     void sendMoreTags_2(QStringList); /*for internal use*/
-    void sendSummary(QObject* obj, const char* member); /*QString*/
-    void sendContent(QObject* obj, const char* member); /*QList<HTag*>*/
-    void sendShouts(QObject* obj, const char* member); /*QList<HShout*>*/
 public:
 //    QPixmap getPic(PictureSize size);
 //    QStringList getTagNames();

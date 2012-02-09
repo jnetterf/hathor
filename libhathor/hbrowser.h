@@ -51,7 +51,7 @@ class LIBHATHORSHARED_EXPORT HBrowser : public QWidget
 
     QStringList getInputs();
 public:
-    HBrowser(QWidget *parent = 0);
+    HBrowser(QWidget *parent, bool havePlugins);
     ~HBrowser();
 
     void setHtml(const QString& html,const QUrl&baseUrl=QUrl()) { s_webView->setHtml(html,baseUrl); }

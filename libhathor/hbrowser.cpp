@@ -19,21 +19,20 @@ HBrowser.cpp
 
 HRunOnceNotifier* HBrowser::s_notifier=0;
 
-HBrowser::HBrowser(QWidget *parent)
+HBrowser::HBrowser(QWidget *parent, bool havePlugins)
     : QWidget(parent), s_webView(new QWebView(this))
 {
     setWindowTitle("Hathor");
     setLayout(new QGridLayout);
     layout()->addWidget(s_webView);
     s_webView->setPage(new HWebPage);
-    s_webView->settings()->setAttribute(QWebSettings::PluginsEnabled,true);
+    s_webView->settings()->setAttribute(QWebSettings::PluginsEnabled,havePlugins);
     connect(s_webView->page(),SIGNAL(loadFinished(bool)),this,SLOT(loadFinishedLogic(bool)));
     connect(s_webView,SIGNAL(urlChanged(QUrl)),this,SLOT(urlChangedLogic(QUrl)));
 }
 
 HBrowser::~HBrowser()
 {
-
 }
 
 QString HBrowser::html() const

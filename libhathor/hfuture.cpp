@@ -18,6 +18,7 @@ bool HCachedInfo::_opened=0;
 int HCachedInfo::ss_connections=0;
 int HCachedPixmap::ss_connections=0;
 QList< QPair<QObject*, QString> > HCachedInfo::ss_futureConnetions;
+QList< QPair<QObject*, QString> > HCachedPixmap::ss_futureConnetions;
 
 QHash<QUrl,HCachedPixmap*> HCachedPixmap::s_map;
 
@@ -42,6 +43,7 @@ void HCachedPixmap::download() {
     t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
     if(!QFile::exists(t)) {
         if(ss_connections>3) {
+            ss_futureConnetions.push_back(qMakePair((QObject*)this,QString("download")));
             QTimer::singleShot(400,this,SLOT(download()));
             return;
         }
@@ -62,6 +64,25 @@ void HCachedPixmap::processDownload(bool err) {
         file.close();
     }
     --ss_connections;
+
+    if(ss_connections<4&&ss_futureConnetions.size()) {
+        int ti=0, tp=0;
+        for(int i=0;i<ss_futureConnetions.size();i++) {
+            if(dynamic_cast<HCachedPixmap*>(ss_futureConnetions[i].first)->getTruePriority()>tp) {
+                tp=dynamic_cast<HCachedPixmap*>(ss_futureConnetions[i].first)->getTruePriority();
+                ti=i;
+            } else if(1>tp) {
+                tp=1;
+                ti=i;
+            }
+        }
+        QPair<QObject*, QString> t=ss_futureConnetions.takeAt(ti);
+        ++ss_connections;
+        QMetaObject::invokeMethod(t.first,t.second.toUtf8().data(),Qt::QueuedConnection);
+    }
+
+
+
     QMutexLocker locker(&m); Q_UNUSED(locker);  //DO NOT USE QMetaObject::invokeMethod()
     pix.load(t);
     if(!pix.width()&&tryAgain) { QFile::remove(t); download(); }
@@ -69,14 +90,10 @@ void HCachedPixmap::processDownload(bool err) {
 }
 
 void HCachedPixmap::processDownload_2() {
-//    QMutexLocker locker(&m); Q_UNUSED(locker);
     while(queue.size()) {
-        m.lock();
         QPair<QObject*, QString> p=queue.takeFirst();
-        m.unlock();
         QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Q_ARG(QPixmap,pix));
     }
-    queue.clear();
 }
 
 template<> const char* name<int>() { return "int"; }
@@ -215,7 +232,14 @@ void HCachedInfo::sendData_process() {
 
     --ss_connections;
     if(ss_connections<4&&ss_futureConnetions.size()) {
-        QPair<QObject*, QString> t=ss_futureConnetions.takeLast();
+        int ti=0, tp=-1;
+        for(int i=0;i<ss_futureConnetions.size();i++) {
+            if(dynamic_cast<HCachedInfo*>(ss_futureConnetions[i].first)->getTruePriority()>tp) {
+                tp=dynamic_cast<HCachedInfo*>(ss_futureConnetions[i].first)->getTruePriority();
+                ti=i;
+            }
+        }
+        QPair<QObject*, QString> t=ss_futureConnetions.takeAt(ti);
         ++ss_connections;
         QMetaObject::invokeMethod(t.first,t.second.toUtf8().data(),Qt::QueuedConnection);
     }

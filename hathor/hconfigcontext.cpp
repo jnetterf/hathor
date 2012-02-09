@@ -11,6 +11,7 @@ HConfigContext* HConfigContext::s_singleton=0;
 
 HConfigContext::HConfigContext(QWidget *parent) :
     QWidget(parent),
+    s_browser(0,false),
     ui(new Ui::HConfigContext)
 {
     ui->setupUi(this);

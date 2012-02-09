@@ -25,7 +25,7 @@ bool operator<(const lastfm::Artist& a,const lastfm::Artist& b) {
     return (a.name().localeAwareCompare(b)<0);
 }
 
-HBackground::HBackground(QGraphicsScene *sc) : s_mco(0), s_mode(Top), s_style(Album), s_stopRequest(0), s_showingStuff(0), s_gotTop(0), s_gotRec(0) {
+HBackground::HBackground(QGraphicsScene *sc) : s_mco(0), s_mode(Top), s_style(Album), s_gotTop(0), s_gotRec(0), s_stopRequest(0), s_showingStuff(0) {
     this->_sc=sc;
     QTimer::singleShot(0,this,SLOT(showStuff()));
 }
@@ -94,11 +94,11 @@ void HBackground::showStuff() {
 void HBackground::showStuff_makeList() {
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     if(reply) {
-        if(s_mode==Album) {
+        if(s_mode==Top) {
             list=lastfm::Artist::list( reply );
             s_toplist=list;
             s_gotTop=1;
-        } else if(s_mode==List) {
+        } else if(s_mode==Suggestions) {
 
             QList<lastfm::Artist> list2=s_toplist;
             list.clear();
@@ -142,9 +142,24 @@ void HBackground::showStuff_makeList() {
             Cy+=50;
         }
         s_showingStuff=0;
+        if(s_stopRequest) {
+            doStopRequest();
+            return;
+        }
     } else if(s_style==Play) {
+        s_showingStuff=0;
+        if(s_stopRequest) {
+            s_showingStuff=0;
+            doStopRequest();
+            return;
+        }
     } else if(s_style==Album) {
-
+        s_showingStuff=0;
+        if(s_stopRequest) {
+            s_showingStuff=0;
+            doStopRequest();
+            return;
+        }
         curtime=QTime::currentTime();
         l=0;
         maxY=-305;
@@ -161,18 +176,12 @@ void HBackground::continueShowStuff() {
     }
 
     if(s_style==Album) {
-        if(s_stopRequest) {
+        if(s_drawingI>=list.size()) {
             s_showingStuff=0;
-            doStopRequest();
+            return;
         } else {
-            if(s_drawingI>=list.size()) {
-                s_showingStuff=0;
-                return;
-            } else {
-                HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::Large))->send(this,"showStuff_addPic");
-            }
+            HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::Large))->send(this,"showStuff_addPic");
         }
-
     }
 }
 
@@ -190,12 +199,6 @@ void HBackground::showStuff_addPic(QPixmap pix) {
     if(!pix.height()) {
         pix=QPixmap(126,200);
         pix.fill(Qt::red);
-    }
-
-    if(s_stopRequest) {
-        s_showingStuff=0;
-        doStopRequest();
-        return;
     }
 
     if(!w){_nv.push_back(0);_nX.push_back(l);}

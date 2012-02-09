@@ -25,13 +25,13 @@ HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
     connect(ui->label_title,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
     connect(this,SIGNAL(contextRequested(HAlbum&)),HMainWindow::singleton(),SLOT(showContext(HAlbum&)));
 
-    album.sendPic(HAlbum::Large,this,"setPixmap");
-    album.sendTagNames(this,"setTagNames");
+    s_priority[0].push_back(album.sendPic(HAlbum::Large,this,"setPixmap"));
+    s_priority[1].push_back(album.sendTagNames(this,"setTagNames"));
     ui->label_title->setText("<B><A href=\"more\">"+album.getAlbumName()+"</A></B>");
     ui->label_artist->setText("by <B>"+album.getArtistName()+"</B>");
-    album.sendPlayCount(this,"setPlayCount");
-    album.sendListenerCount(this,"setListenerCount");
-    album.sendUserPlayCount(this,"setUserPlayCount");
+    s_priority[1].push_back(album.sendPlayCount(this,"setPlayCount"));
+    s_priority[1].push_back(album.sendListenerCount(this,"setListenerCount"));
+    s_priority[1].push_back(album.sendUserPlayCount(this,"setUserPlayCount"));
 }
 
 HAlbumBox::~HAlbumBox()

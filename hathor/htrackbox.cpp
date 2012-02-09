@@ -27,10 +27,11 @@ HTrackBox::HTrackBox(HTrack &ref, QWidget *parent) :
     connect(ui->label_trackName,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
     connect(this,SIGNAL(contextRequested(HTrack&)),HMainWindow::singleton(),SLOT(showContext(HTrack&)));
 
-    s_ref.sendPlayCount(this,"setPlayCount");
-    s_ref.sendUserPlayCount(this,"setUserPlayCount");
-    s_ref.sendLoved(this,"setLoved");
-    s_ref.sendTagNames(this,"setTags");
+    s_priority[0].push_back(s_ref.sendPlayCount(this,"setPlayCount"));
+    s_priority[0].push_back(s_ref.sendUserPlayCount(this,"setUserPlayCount"));
+    s_priority[0].push_back(s_ref.sendLoved(this,"setLoved"));
+    s_priority[1].push_back(s_ref.sendTagNames(this,"setTags"));
+    readjustPriorities();
 }
 
 HTrackBox::~HTrackBox()

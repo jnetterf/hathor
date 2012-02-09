@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'hlocalintro.ui'
 **
-** Created: Wed Feb 8 00:00:14 2012
+** Created: Wed Feb 8 23:36:11 2012
 **      by: Qt User Interface Compiler version 4.8.0
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!

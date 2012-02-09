@@ -22,7 +22,7 @@ HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track)
 {
 }
 
-HTrack& HTrack::get(QString artist, QString track) {
+HTrack& HTrack::get(const QString &artist, const QString &track) {
     if(_map.value(artist+"__"+track,0)) { return *_map.value(artist+"__"+track);
     }
 
@@ -30,17 +30,17 @@ HTrack& HTrack::get(QString artist, QString track) {
     return get(artist,track);
 }
 
-HArtist& HTrack::getArtist() {
+HArtist& HTrack::getArtist() const {
     return HArtist::get(getArtistName());
 }
 
-void HTrack::sendPlayCount(QObject * o, QString m) { s_infoData.sendProperty("playCount",o,m); }
-void HTrack::sendListenerCount(QObject * o, QString m) { s_infoData.sendProperty("listeners",o,m); }
-void HTrack::sendUserPlayCount(QObject * o, QString m) { s_infoData.sendProperty("userPlayCount",o,m); }
-void HTrack::sendTagNames(QObject * o, QString m) { s_infoData.sendProperty("tagNames",o,m); }
-void HTrack::sendTags(QObject * o, QString m) {
+int** HTrack::sendPlayCount(QObject * o, QString m) { return s_infoData.sendProperty("playCount",o,m); }
+int** HTrack::sendListenerCount(QObject * o, QString m) { return s_infoData.sendProperty("listeners",o,m); }
+int** HTrack::sendUserPlayCount(QObject * o, QString m) { return s_infoData.sendProperty("userPlayCount",o,m); }
+int** HTrack::sendTagNames(QObject * o, QString m,QObject* g) { return s_infoData.sendProperty("tagNames",o,m,g); }
+int** HTrack::sendTags(QObject * o, QString m) {
     s_tagQueue.push_back(qMakePair(o,m));
-    sendTagNames(this,"sendTags_2");
+    return sendTagNames(this,"sendTags_2",o);
 }
 
 void HTrack::sendTags_2(QStringList t) {
@@ -56,11 +56,11 @@ void HTrack::sendTags_2(QStringList t) {
     s_tagQueue.clear();
 }
 
-void HTrack::sendMoreTagNames(QObject * o, QString m) { s_extraTagData.sendProperty("tagNames",o,m); }
+int** HTrack::sendMoreTagNames(QObject * o, QString m,QObject* g) { return s_extraTagData.sendProperty("tagNames",o,m,g); }
 
-void HTrack::sendMoreTags(QObject * o, QString m) {
+int** HTrack::sendMoreTags(QObject * o, QString m) {
     s_extraTagQueue.push_back(qMakePair(o,m));
-    sendMoreTagNames(this,"sendMoreTags_2");
+    return sendMoreTagNames(this,"sendMoreTags_2",o);
 }
 
 
@@ -77,21 +77,21 @@ void HTrack::sendMoreTags_2(QStringList t) {
     s_extraTagQueue.clear();
 }
 
-void HTrack::sendShouts(QObject * o, QString m) {
-    s_shoutData.shoutQueue.push_back(qMakePair(o,QString(m)));
-    s_shoutData.sendData(s_artist,s_track);
+int** HTrack::sendShouts(QObject * o, QString m) {
+//    s_shoutData.shoutQueue.push_back(qMakePair(o,QString(m)));
+//    s_shoutData.sendData(s_artist,s_track);
+    return 0;
 }
 
-void HTrack::sendSummary(QObject * o, QString m) { s_infoData.sendProperty("summary",o,m); }
-void HTrack::sendContent(QObject * o, QString m) { s_infoData.sendProperty("content",o,m); }
-void HTrack::sendLoved(QObject * o, QString m) { s_infoData.sendProperty("loved",o,m); }
-void HTrack::sendAlbumNames(QObject * o, QString m) { s_infoData.sendProperty("albumAlbumNames",o,m); }
-void HTrack::sendAlbumArtistNames(QObject * o, QString m) { s_infoData.sendProperty("albumArtistNames",o,m); }
+int** HTrack::sendSummary(QObject * o, QString m) { return s_infoData.sendProperty("summary",o,m); }
+int** HTrack::sendContent(QObject * o, QString m) { return s_infoData.sendProperty("content",o,m); }
+int** HTrack::sendLoved(QObject * o, QString m) { return s_infoData.sendProperty("loved",o,m); }
+int** HTrack::sendAlbumNames(QObject * o, QString m,QObject* g) { return s_infoData.sendProperty("albumAlbumNames",o,m,g); }
+int** HTrack::sendAlbumArtistNames(QObject * o, QString m,QObject* g) { return s_infoData.sendProperty("albumArtistNames",o,m,g); }
 
-void HTrack::sendAlbums(QObject * o, QString m) {
+int** HTrack::sendAlbums(QObject * o, QString m) {
     s_albumQueue.push_back(qMakePair(o,m));
-    sendAlbumNames(this,"sendAlbums_2");
-    sendAlbumArtistNames(this,"sendAlbums_3");
+    return &(*sendAlbumNames(this,"sendAlbums_2",o)=*sendAlbumArtistNames(this,"sendAlbums_3",o));  // I <3 this line
 }
 
 void HTrack::sendAlbums_2(QStringList t) {
@@ -116,13 +116,12 @@ void HTrack::sendAlbums_3(QStringList t) {
     }
 }
 
-void HTrack::sendSimilarTrackNames(QObject *o, QString m) { s_similarData.sendProperty("similarNames",o,m); }
-void HTrack::sendSimilarTrackArtistNames(QObject *o, QString m) { s_similarData.sendProperty("similarArtistNames",o,m); }
+int** HTrack::sendSimilarTrackNames(QObject *o, QString m,QObject* g) { return s_similarData.sendProperty("similarNames",o,m,g); }
+int** HTrack::sendSimilarTrackArtistNames(QObject *o, QString m, QObject* g) { return s_similarData.sendProperty("similarArtistNames",o,m,g); }
 
-void HTrack::sendSimilar(QObject * o, QString m, int s) {
+int** HTrack::sendSimilar(QObject * o, QString m, int s) {
     s_similarQueue.push_back(HTrackTriplet(o,m,s));
-    sendSimilarTrackNames(this,"sendSimilar_2");
-    sendSimilarTrackArtistNames(this,"sendSimilar_3");
+    return &(*sendSimilarTrackNames(this,"sendSimilar_2")=*sendSimilarTrackArtistNames(this,"sendSimilar_3"));
 }
 
 void HTrack::sendSimilar_2(QStringList t) {
@@ -154,28 +153,28 @@ void HTrack::sendSimilar_3(QStringList t) {
     }
 }
 
-void HTrack::sendSimilarScores(QObject * o, QString m) { s_similarData.sendProperty("similarScores",o,m); }
+int** HTrack::sendSimilarScores(QObject * o, QString m) { return s_similarData.sendProperty("similarScores",o,m); }
 
-void HTrack::sendBpm(QObject*o,QString m) { s_audioFeatureData.sendProperty("bpm",o,m); }
-void HTrack::sendValence(QObject*o,QString m) { s_audioFeatureData.sendProperty("valence",o,m); }
-void HTrack::sendAggression(QObject*o,QString m) { s_audioFeatureData.sendProperty("aggression",o,m); }
-void HTrack::sendAvgLoudness(QObject*o,QString m) { s_audioFeatureData.sendProperty("avg_loudness",o,m); }
-void HTrack::sendPeakLoudness(QObject*o,QString m) { s_audioFeatureData.sendProperty("peak_loudness",o,m); }
-void HTrack::sendPercussiveness(QObject*o,QString m) { s_audioFeatureData.sendProperty("percussiveness",o,m); }
-void HTrack::sendNoininess(QObject*o,QString m) { s_audioFeatureData.sendProperty("noisiness",o,m); }
-void HTrack::sendGearshift(QObject*o,QString m) { s_audioFeatureData.sendProperty("gearshift",o,m); }
-void HTrack::sendKey(QObject*o,QString m) { s_audioFeatureData.sendProperty("key",o,m); } /* int */
-void HTrack::sendHarmonicCreativity(QObject*o,QString m) { s_audioFeatureData.sendProperty("harmonic_creativity",o,m); }
-void HTrack::sendSmoothness(QObject*o,QString m) { s_audioFeatureData.sendProperty("smoothness",o,m); }
-void HTrack::sendDanceability(QObject*o,QString m) { s_audioFeatureData.sendProperty("danceability",o,m); }
-void HTrack::sendEnergy(QObject*o,QString m) { s_audioFeatureData.sendProperty("energy",o,m); }
-void HTrack::sendSoundCreativity(QObject*o,QString m) { s_audioFeatureData.sendProperty("sound_creativity",o,m); }
-void HTrack::sendPunch(QObject*o,QString m) { s_audioFeatureData.sendProperty("punch",o,m); }
-void HTrack::sendTuning(QObject*o,QString m) { s_audioFeatureData.sendProperty("tuning",o,m); }
-void HTrack::sendChordalClarity(QObject*o,QString m) { s_audioFeatureData.sendProperty("chordal_clarity",o,m); }
-void HTrack::sendTempoInstability(QObject*o,QString m) { s_audioFeatureData.sendProperty("tempo_instability",o,m); }
-void HTrack::sendRhythmicIntricacy(QObject*o,QString m) { s_audioFeatureData.sendProperty("rhythmic_intricacy",o,m); }
-void HTrack::sendSpeed(QObject*o,QString m) { s_audioFeatureData.sendProperty("speed",o,m); }
+int** HTrack::sendBpm(QObject*o,QString m) { return s_audioFeatureData.sendProperty("bpm",o,m); }
+int** HTrack::sendValence(QObject*o,QString m) { return s_audioFeatureData.sendProperty("valence",o,m); }
+int** HTrack::sendAggression(QObject*o,QString m) { return s_audioFeatureData.sendProperty("aggression",o,m); }
+int** HTrack::sendAvgLoudness(QObject*o,QString m) { return s_audioFeatureData.sendProperty("avg_loudness",o,m); }
+int** HTrack::sendPeakLoudness(QObject*o,QString m) { return s_audioFeatureData.sendProperty("peak_loudness",o,m); }
+int** HTrack::sendPercussiveness(QObject*o,QString m) { return s_audioFeatureData.sendProperty("percussiveness",o,m); }
+int** HTrack::sendNoininess(QObject*o,QString m) { return s_audioFeatureData.sendProperty("noisiness",o,m); }
+int** HTrack::sendGearshift(QObject*o,QString m) { return s_audioFeatureData.sendProperty("gearshift",o,m); }
+int** HTrack::sendKey(QObject*o,QString m) { return s_audioFeatureData.sendProperty("key",o,m); } /* int */
+int** HTrack::sendHarmonicCreativity(QObject*o,QString m) { return s_audioFeatureData.sendProperty("harmonic_creativity",o,m); }
+int** HTrack::sendSmoothness(QObject*o,QString m) { return s_audioFeatureData.sendProperty("smoothness",o,m); }
+int** HTrack::sendDanceability(QObject*o,QString m) { return s_audioFeatureData.sendProperty("danceability",o,m); }
+int** HTrack::sendEnergy(QObject*o,QString m) { return s_audioFeatureData.sendProperty("energy",o,m); }
+int** HTrack::sendSoundCreativity(QObject*o,QString m) { return s_audioFeatureData.sendProperty("sound_creativity",o,m); }
+int** HTrack::sendPunch(QObject*o,QString m) { return s_audioFeatureData.sendProperty("punch",o,m); }
+int** HTrack::sendTuning(QObject*o,QString m) { return s_audioFeatureData.sendProperty("tuning",o,m); }
+int** HTrack::sendChordalClarity(QObject*o,QString m) { return s_audioFeatureData.sendProperty("chordal_clarity",o,m); }
+int** HTrack::sendTempoInstability(QObject*o,QString m) { return s_audioFeatureData.sendProperty("tempo_instability",o,m); }
+int** HTrack::sendRhythmicIntricacy(QObject*o,QString m) { return s_audioFeatureData.sendProperty("rhythmic_intricacy",o,m); }
+int** HTrack::sendSpeed(QObject*o,QString m) { return s_audioFeatureData.sendProperty("speed",o,m); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 

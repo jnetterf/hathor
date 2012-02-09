@@ -32,7 +32,6 @@ void HPlayerContext::showTrack(HTrack &t) {
     s_magic=HTrackContext::getContext(t);
     ui->widget_trackContext->layout()->addWidget(s_magic);
 
-    qDebug()<<t.getTrackName()<<":::";
     if(s_slideshow) s_slideshow->pause();
     s_slideshow=HSlideshow::getSlideshow(t.getArtist());
     s_magic->setSlideshow(s_slideshow);
