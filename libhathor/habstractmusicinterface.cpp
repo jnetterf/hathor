@@ -289,6 +289,7 @@ void HPlayer::loadPlugins_continue_continue() {
     QString fileName=subfiles[s_j];
     if(loaded.contains(fileName)) {
         qDebug()<<"WARNING::"<<fileName<<"already loaded. IGNORING!";
+        QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
     } else {
         QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
         QObject *plugin = loader.instance();
@@ -306,8 +307,11 @@ void HPlayer::loadPlugins_continue_continue() {
                 } else {
                     QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
                 }
-
+            } else {
+                QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
             }
+        } else {
+            QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
         }
     }
 
