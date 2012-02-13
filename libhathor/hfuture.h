@@ -140,34 +140,41 @@ public slots:
 
 class LIBHATHORSHARED_EXPORT HCachedPixmap : public QObject {
     Q_OBJECT
+    friend class HPixmapView;
 
     static QList< QPair<QObject*, QString> > ss_futureConnetions;
+    static int s_count;
 
     QList< QPair<QObject*, QString > > queue;
-    QPixmap pix;
+    QPixmap* pix;
     QHttp http;
     QFile file;
     QString t;
     QUrl url;
     QMutex m;
+    bool s_cleared;
     bool tryAgain;
     static int ss_connections;
+    bool s_proc;
 
     HCachedPixmap(const QUrl& url);
     static QHash<QUrl,HCachedPixmap*> s_map;
     QHash<QObject*, int*> s_priority;
 
+public:
     int getTruePriority() {
         int tp=0;
         for(int i=0;i<s_priority.size();i++) {
             if(s_priority.values()[i]) {
+                if(*s_priority.values()[i]==-1) {
+                    qDebug()<<"Some idiot forgot to set the priority for"<<s_priority.values()[i]<<". This idiot is"<<s_priority.keys()[i];
+                }
                 tp=qMax(*s_priority.values()[i],tp);
             }
         }
         return tp;
     }
 
-public:
     static HCachedPixmap* get(const QUrl& url) {
         if(!s_map.contains(url)) s_map[url]=new HCachedPixmap(url);
         return s_map[url];
@@ -175,8 +182,10 @@ public:
 
 public slots:
     int** send(QObject*o,QString m) {
-        queue.push_back(qMakePair(o,m)); if(!pix.isNull()) processDownload_2();
-        if(!s_priority.contains(o)) s_priority[o]=new int(0);
+        queue.push_back(qMakePair(o,m));
+        if(pix) QMetaObject::invokeMethod(this,"processDownload_2",Qt::QueuedConnection);   //DO NOT RECURSE
+        if(!pix||s_cleared||pix->isNull()) QMetaObject::invokeMethod(this,"download",Qt::QueuedConnection);   //DO NOT RECURSE
+        if(!s_priority.contains(o)) s_priority[o]=new int(-1);
         return &s_priority[o];
     }
     void download();

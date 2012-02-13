@@ -11,8 +11,10 @@ HUserBox::HUserBox(HUser &rep, QWidget *parent) :
     ui->label_username->setText(rep.getUsername());
 }
 
-void HUserBox::setPic(QPixmap pic) {
-    ui->label_pic->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+void HUserBox::setPic(QPixmap& pic) {
+    if(isHidden()) return;
+    if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
+    ui->label_pic->setPixmap(pic);
 }
 
 HUserBox::~HUserBox()

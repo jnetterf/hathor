@@ -22,6 +22,8 @@ public:
     static HPlayerContext* singleton() { return _singleton=(_singleton?_singleton:new HPlayerContext); }
     ~HPlayerContext();
 
+    void showEvent(QShowEvent *e);
+
 public slots:
     void showTrack(HTrack& t);
     

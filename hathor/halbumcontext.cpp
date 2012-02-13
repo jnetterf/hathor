@@ -37,7 +37,6 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     s_showTime=QTime::currentTime();
     ui->setupUi(this);
     ui->label_album->setText(s_rep.getAlbumName());
-    s_priority[0].push_back(s_rep.sendPic(HAlbum::Large,this,"setPic"));
     s_priority[0].push_back(s_rep.sendSummary(this,"setSummary"));
 
     s_priority[0].push_back(s_rep.sendPlayCount(this,"setPlayCount"));
@@ -62,8 +61,6 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");    // FIX ME
-
     ui->label_albumPic->adjustSize();
     ui->frame_art->adjustSize();
     ui->frame_header->adjustSize();
@@ -79,7 +76,6 @@ HAlbumContext::~HAlbumContext()
 void HAlbumContext::showEvent(QShowEvent * e)
 {
     HL("HAlbumContext::showEvent: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
-    readjustPriorities();
     s_showTime=QTime::currentTime();
     //our boxes may have been stolen while we weren't looking >_<
 
@@ -102,10 +98,17 @@ void HAlbumContext::showEvent(QShowEvent * e)
     loadTracks();
     loadTags();
 
+    s_priority[0].push_back(s_rep.sendPic(HAlbum::Large,this,"setPic"));
+    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");    // FIX ME
+
+    readjustPriorities();
+
     QWidget::showEvent(e);
 }
 
 void HAlbumContext::hideEvent(QHideEvent *e) {
+    ui->label_you->setPixmap(0);
+    ui->label_albumPic->setPixmap(0);
     readjustPriorities();
     QWidget::hideEvent(e);
 }
@@ -232,8 +235,10 @@ void HAlbumContext::updateBoxes() {
     ui->label_userplaycount->setText("<B>"+QString::number(s_cachedUserPlayCount)+"</B> plays in your library");
 }
 
-void HAlbumContext::setPic(QPixmap p) {
+void HAlbumContext::setPic(QPixmap& p) {
+    if(isHidden()) return;
     ui->label_albumPic->setPixmap(p);
+    ui->label_albumPic->setMinimumSize(p.size());
 }
 
 void HAlbumContext::setSummary(QString s) {
@@ -248,8 +253,9 @@ void HAlbumContext::setSummary(QString s) {
     }
 }
 
-void HAlbumContext::setMePic(QPixmap pic) {
-    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+void HAlbumContext::setMePic(QPixmap& pic) {
+    if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
+    ui->label_you->setPixmap(pic);
 }
 
 void HAlbumContext::setShouts(QList<HShout *> shouts) {

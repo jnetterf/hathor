@@ -20,7 +20,8 @@ struct LIBHATHORSHARED_EXPORT ArtistShoutData : public QObject {
 private:
     QMutex mutex, mutex_2;
     QString artist;
-    QList<HShout*> shouts;  QList< QPair<QObject*,QString> > shoutQueue;
+    QList<HShout*> shouts;
+    QList< QPair<QObject*,QString> > shoutQueue;
     bool got;
     HRunOnceNotifier* getting;
     ArtistShoutData() : got(0), getting(0) {}
@@ -55,6 +56,14 @@ private:
 public slots:
     void processPicUrls();
     void procQueue();
+    void removeFromQueue(QObject* a) {
+        for(int i=0;i<s_queue.size();i++) {
+            if(s_queue[i].first==a) {
+                s_queue.removeAt(i);
+                --i;
+            }
+        }
+    }
 };
 
 class LIBHATHORSHARED_EXPORT HArtist : public HObject
@@ -89,7 +98,7 @@ public:
 
 public slots:
     QString getName() { return s_name; }
-    int** sendPic(PictureSize p,QObject* o,QString m); /* QPixmap */
+    int** sendPic(PictureSize p,QObject* o,QString m); /* QPixmap& */
     int** sendPicNames(PictureSize p,QObject* o,QString m,QObject* g=0); /* QString */
     int** sendTagNames(QObject* o,QString m,QObject* g=0); /* QStringList */
     int** sendTags(QObject* o,QString m); /* QList<HTag*> */
@@ -109,6 +118,48 @@ public slots:
     int** sendShouts(QObject* o,QString m); /* QList<HShout*> */
     int** sendSimilarScores(QObject* o,QString m); /* QList<double> */
     void sendExtraPics(QObject* o,QString m, int count);    /* TO DO */
+
+    void removeFromQueue(QObject* a) {
+        for(int i=0;i<s_tagQueue.size();i++) {
+            if(s_tagQueue[i].first==a) {
+                s_tagQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_moreTagQueue.size();i++) {
+            if(s_moreTagQueue[i].first==a) {
+                s_moreTagQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_albumQueue.size();i++) {
+            if(s_albumQueue[i].first==a) {
+                s_albumQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_trackQueue.size();i++) {
+            if(s_trackQueue[i].first==a) {
+                s_trackQueue.removeAt(i);
+                --i;
+            }
+        }
+
+        for(int i=0;i<s_similarQueue.size();i++) {
+            if(s_similarQueue[i].first==a) {
+                s_similarQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int j=0;j<4;j++) {
+            for(int i=0;i<s_picQueue[j].size();i++) {
+                if(s_picQueue[j][i].first==a) {
+                    s_picQueue[j].removeAt(i);
+                    --i;
+                }
+            }
+        }
+    }
 
 private:
     friend class HCachedInfo;

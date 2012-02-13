@@ -47,9 +47,9 @@ public slots:
     void setUserPlayCount(int);
     void updateBoxes();
 
-    void setPic(QPixmap);
+    void setPic(QPixmap &);
     void setSummary(QString);
-    void setMePic(QPixmap p);
+    void setMePic(QPixmap &p);
     void setShouts(QList<HShout*>);
     void addTags(QList<HTag*> tags);
 

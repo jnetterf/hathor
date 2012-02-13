@@ -48,7 +48,7 @@ public:
     qreal echoX() { return x(); }
     qreal echoY() { return y(); }
 
-    SlideshowItem( QPixmap pmap ) : QGraphicsPixmapItem(pmap) {}
+    SlideshowItem( QPixmap& pmap ) : QGraphicsPixmapItem(pmap) {}
 };
 
 class HSlideshow : public QGraphicsView
@@ -60,10 +60,23 @@ class HSlideshow : public QGraphicsView
     int s_i;
     int s_z;
     bool s_done;
+    bool s_sending;
     QSize minimumSizeHint() const {
         return sizeHint();
     }
     explicit HSlideshow(HArtist& artist,QWidget* parent=0);
+
+    void hideEvent(QHideEvent * e) {
+        pause();
+        s_cache.clear();
+        QGraphicsView::hideEvent(e);
+    }
+    void showEvent(QShowEvent *event) {
+        s_i=0;
+        if(!s_cache.size()) s_artist.sendExtraPics(this,"addPic",15);
+        resume();
+        QGraphicsView::showEvent(event);
+    }
 
     QList<QPixmap> s_cache;
 public:
@@ -72,7 +85,7 @@ public slots:
     void nextPic();
     void pause() { s_done=1; }
     void resume();
-    void addPic(QPixmap p);
+    void addPic(QPixmap &p);
 };
 
 #endif // HSLIDESHOW_H

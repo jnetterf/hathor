@@ -26,6 +26,8 @@ public:
     static HSearchContext* singleton() { return s_singleton=(s_singleton?s_singleton:new HSearchContext); } //could change!!! so don't connect to setSearchTerm
     static void detach() { s_singleton=0; }
 
+    void showEvent(QShowEvent *e);
+
     ~HSearchContext();
 
 public slots:

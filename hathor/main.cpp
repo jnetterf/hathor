@@ -8,6 +8,7 @@
 #include <QIcon>
 #include <QFile>
 #include <QTime>
+#include <QPixmapCache>
 
 #include "htrack.h"
 

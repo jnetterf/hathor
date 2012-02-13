@@ -42,8 +42,10 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     adjustSize();
 }
 
-void HShoutBox::setPic(QPixmap pic) {
-    ui->label_pic->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+void HShoutBox::setPic(QPixmap& pic) {
+    if(isHidden()) return;
+    if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
+    ui->label_pic->setPixmap(pic);
 }
 
 HShoutBox::~HShoutBox()

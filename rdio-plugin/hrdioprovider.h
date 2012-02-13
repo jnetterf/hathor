@@ -5,6 +5,7 @@
 #include "hbrowser.h"
 #include "hauthaction.h"
 #include "hobject.h"
+#include "hplugin.h"
 #include <QObject>
 #include "habstractmusicinterface.h"
 #include <QTime>
@@ -316,6 +317,28 @@ public slots:
 
 signals:
     void positionChanged(double newPos);
+};
+
+class HRdioPlugin : public QObject, public HPlugin
+{
+    Q_OBJECT
+    Q_INTERFACES(HPlugin)
+    friend class HLocalIntro;
+    friend class HLocalProvider;
+    HRdioProvider* s_provider;
+public:
+    HRdioPlugin() : s_provider(new HRdioProvider) {}
+    virtual HAbstractTrackProvider* trackProvider() { return s_provider; }
+    virtual QWidget* initWidget() {
+        return s_provider->initWidget();
+    }
+    virtual QString name() { return s_provider->name(); }
+    virtual QSet<QString> abilities() { return QSet<QString>(); }
+    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { Q_ASSERT(0); return 0; }
+    virtual int getScore(const QString &, HObject *, QObject *, QString, QObject *) { return -1; }
+    bool isLocal(const QString &, HObject *, QObject *, QString , QObject *) { return 0; }
+
+    virtual QWidget* configurationWidget() { return 0; }
 };
 
 #endif // HRDIOINTERFACE_H

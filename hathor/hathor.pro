@@ -24,7 +24,8 @@ HEADERS += \
     hplaywidget.h \
     hconfigcontext.h \
     hlfmwebloginaction.h \
-    hmaincontextoptions.h
+    hmaincontextoptions.h \
+    hpixmapview.h
 
 SOURCES += \
     hloginwidget.cpp \
@@ -51,7 +52,8 @@ SOURCES += \
     hplaywidget.cpp \
     hconfigcontext.cpp \
     hlfmwebloginaction.cpp \
-    hmaincontextoptions.cpp
+    hmaincontextoptions.cpp \
+    hpixmapview.cpp
 
 !win32:LIBS += -llastfm -L./libhathor -L../libhathor -lhathor -ltag
 debug:win32:LIBS += -llastfm0 ./debug/hathor.lib -ltag

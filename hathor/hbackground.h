@@ -39,6 +39,8 @@ class HBackground : public QObject {
     QList<ArtistAvatar*> x_;
     QList<ArtistAvatar*> l_[20];
 
+    QList<int**> s_priorities;
+
     QTime curtime;
     int l;
     int maxY;
@@ -61,7 +63,7 @@ public slots:
     void showStuff();
     void showStuff_makeList();
     void continueShowStuff();
-    void showStuff_addPic(QPixmap);
+    void showStuff_addPic(QPixmap &);
 
     void doStopRequest();
     void onSuggMode();
@@ -71,6 +73,9 @@ public slots:
     void onAlbumMode();
     void onListMode();
     void onPlayMode();
+
+    void closeMode();
+    void openMode();
 private:
     QGraphicsScene* _sc;
 signals:

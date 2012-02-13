@@ -42,7 +42,7 @@ bool ArtistAvatarList::iterateHide(int it) {
     return 1;
 }
 
-HMainContext::HMainContext(QWidget *parent):HGraphicsView(parent) {
+HMainContext::HMainContext(QWidget *parent) : HGraphicsView(parent), background(0) {
     setBackgroundRole(QPalette::Base);
     sc = new MagicScene;
     setMouseTracking(1);

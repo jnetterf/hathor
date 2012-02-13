@@ -123,12 +123,14 @@ void HMainWindow::setContext(QWidget *ac) {
 void HMainWindow::back() {
     KFadeWidgetEffect* kwe=new KFadeWidgetEffect(ui->widget);
     if(s_curContext) s_curContext->hide();
+    ui->gridLayout->removeWidget(s_contextStack.back());
     s_contextStack.pop_back();
 
     if(s_contextStack.size()==1) {
         ArtistAvatar::untrap();
     }
 
+    ui->gridLayout->addWidget(s_contextStack.back());
     s_contextStack.back()->show();
     s_curContext=s_contextStack.back();
 

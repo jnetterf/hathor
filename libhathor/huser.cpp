@@ -45,7 +45,8 @@ void HUser::sendPic(PictureSize p, QObject* obj, QString member) {
 void HUser::sendPic_2(PictureSize p,QString pic) {
     if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
-        s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
+        *s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second)=*s_infoData.getPriorityForProperty(s_picQueue[p][i].first,"pic_"+QString::number(p));
+
     }
     s_picQueue[p].clear();
 }

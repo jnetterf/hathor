@@ -19,7 +19,7 @@ public:
     ~HShoutBox();
 
 public slots:
-    void setPic(QPixmap p);
+    void setPic(QPixmap &p);
 
 private:
     Ui::HShoutBox *ui;

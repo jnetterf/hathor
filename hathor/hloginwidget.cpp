@@ -10,6 +10,7 @@
 #include <lastfm/XmlQuery>
 #include <QGraphicsColorizeEffect>
 #include <QDesktopServices>
+#include <QPixmap>
 #include <QPalette>
 #include "lastfmext.h"
 #include "hsearchcontext.h"
@@ -43,7 +44,7 @@ void HLoginWidget::continueLoading() {
         emit showMainContext();
         deleteLater();
         //******
-        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
+//        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
         HL("[INIT] LFM/RESTORE");
         return;
     }
@@ -226,8 +227,7 @@ void HLoginWidget::doLogin2() {
             pa->start(QAbstractAnimation::DeleteWhenStopped);
         }
 
-        // RDIO
-
+        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
 
         QTimer::singleShot(210,this,SLOT(finish()));
 

@@ -25,14 +25,17 @@ HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
     connect(ui->label_title,SIGNAL(linkActivated(QString)),this,SLOT(requestContext()));
     connect(this,SIGNAL(contextRequested(HAlbum&)),HMainWindow::singleton(),SLOT(showContext(HAlbum&)));
 
-    s_priority[0].push_back(album.sendPic(HAlbum::Large,this,"setPixmap"));
     s_priority[1].push_back(album.sendTagNames(this,"setTagNames"));
     ui->label_title->setText("<B><A href=\"more\">"+album.getAlbumName()+"</A></B>");
     ui->label_artist->setText("by <B>"+album.getArtistName()+"</B>");
     s_priority[1].push_back(album.sendPlayCount(this,"setPlayCount"));
     s_priority[1].push_back(album.sendListenerCount(this,"setListenerCount"));
     s_priority[1].push_back(album.sendUserPlayCount(this,"setUserPlayCount"));
+    readjustPriorities();
 }
+
+void HAlbumBox::showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); s_priority[0].push_back(s_album.sendPic(HAlbum::Large,this,"setPixmap")); readjustPriorities(); QWidget::showEvent(e); }
+void HAlbumBox::hideEvent(QHideEvent *e) { readjustPriorities(); ui->label_icon->setPixmap(0); QWidget::hideEvent(e); }
 
 HAlbumBox::~HAlbumBox()
 {
@@ -69,12 +72,13 @@ void HAlbumBox::updateCounts() {
 }
 
 
-void HAlbumBox::setPixmap(QPixmap p) {
+void HAlbumBox::setPixmap(QPixmap& p) {
+    if(p.width()!=174) p=p.scaledToWidth(174,Qt::SmoothTransformation);
     KFadeWidgetEffect* kwe=0;
     if(s_showTime.msecsTo(QTime::currentTime())>110) {
         kwe=new KFadeWidgetEffect(ui->label_icon);
     }
-    ui->label_icon->setPixmap(p.scaledToWidth(174,Qt::SmoothTransformation));
+    ui->label_icon->setPixmap(p);
     ui->label_icon->adjustSize();
     adjustSize();
     if(kwe) kwe->start();

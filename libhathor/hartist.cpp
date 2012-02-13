@@ -26,6 +26,7 @@ HArtist& HArtist::get(QString name) {
 }
 
 int** HArtist::sendPic(PictureSize p, QObject *obj, QString member) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_picQueue[p].push_back(qMakePair(obj,member));
     return sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data(),obj);
 }
@@ -33,7 +34,7 @@ int** HArtist::sendPic(PictureSize p, QObject *obj, QString member) {
 void HArtist::sendPic_2(PictureSize p,QString pic) {
     if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
-        s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
+        *s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second)=*s_infoData.getPriorityForProperty(s_picQueue[p][i].first,"pics::"+QString::number(p));
     }
     s_picQueue[p].clear();
 }
@@ -41,6 +42,7 @@ void HArtist::sendPic_2(PictureSize p,QString pic) {
 int** HArtist::sendTagNames(QObject *o, QString m, QObject *g) { return s_infoData.sendProperty("tagNames",o,m,g); }
 
 int** HArtist::sendTags(QObject *obj, QString member) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_tagQueue.push_back(qMakePair(obj,member));
     return sendTagNames(this,"sendTags_2",obj);
 }
@@ -62,6 +64,7 @@ int** HArtist::sendPicNames(PictureSize size, QObject *obj, QString member,QObje
 int** HArtist::sendMoreTagNames(QObject *o, QString m,QObject* g) { return s_extraTagData.sendProperty("tagNames",o,m,g);}
 
 int** HArtist::sendMoreTags(QObject *obj, const char *member) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_moreTagQueue.push_back(qMakePair(obj,QString(member)));
     return sendMoreTagNames(this,"sendMoreTags_2",obj);
 }
@@ -86,6 +89,7 @@ int** HArtist::sendBioShort(QObject *o, QString m) { return s_infoData.sendPrope
 int** HArtist::sendAlbumsNames(QObject *o, QString m,QObject* g) { return s_albumData.sendProperty("albums",o,m,g); }
 
 int** HArtist::sendAlbums(QObject *obj, QString member,int count) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_albumQueue.push_back(HTriple(obj,QString(member),count));
     return sendAlbumsNames(this,"sendAlbums_2",obj);
 }
@@ -109,6 +113,7 @@ void HArtist::sendAlbums_2(QStringList t) {
 int** HArtist::sendTrackNames(QObject *o, QString m, QObject* g) { return s_trackData.sendProperty("tracks",o,m,g); }
 
 int** HArtist::sendTracks(QObject *obj, QString member, int count) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_trackQueue.push_back(HTriple(obj,QString(member),count));
     return sendTrackNames(this,"sendTracks_2",obj);
 }
@@ -131,6 +136,7 @@ void HArtist::sendTracks_2(QStringList t) {
 int** HArtist::sendSimilarNames(QObject *o, QString m, QObject* g) { return s_similarData.sendProperty("similar",o,m,g); }
 
 int** HArtist::sendSimilar(QObject *obj, QString member, int count) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_similarQueue.push_back(HTriple(obj,QString(member),count));
     return sendSimilarNames(this,"sendSimilar_2",obj);
 }
@@ -142,7 +148,6 @@ void HArtist::sendSimilar_2(QStringList t) {
         for(int j=0;j<s_similarQueue.size();j++) {
             if((i<s_similarQueue[j].third)||(s_similarQueue[j].third==-1)) {
                 ok=1;
-                qDebug()<<">>"<<t[i];
                 QMetaObject::invokeMethod(s_similarQueue[j].first,s_similarQueue[j].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HArtist*,&HArtist::get(t[i])));
             }
         }
@@ -396,14 +401,11 @@ bool HArtist::ArtistSimilarData::process(const QString &data) {
 ExtraPictureData::ExtraPictureData(QString artist) : s_errored(0), got_urls(0),getting(0), s_artist(artist), sett("Nettek","Hathor_artistExtraImages") {}
 
 void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
+    connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     if(got_urls) {
         Q_ASSERT(o);
-        for(int i=0;i<c&&i<pic_urls.size();i++) {
-            if(i>=pics.size()) {
-                pics.push_back(HCachedPixmap::get(pic_urls[i]));
-            }
-            pics[i]->send(o,m);
-        }
+        s_queue.push_back(HEPTriplet(o,m,c));
+        procQueue();
         return;
     } else {
         if(o) {
@@ -416,6 +418,8 @@ void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
 
     if(sett.value("cache for "+s_artist,0).toInt()==2) {
         pic_urls=sett.value("pic_urls for "+s_artist).toStringList();
+        got_urls=1;
+        getting=0;
         procQueue();
         return;
     }

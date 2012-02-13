@@ -44,7 +44,7 @@ signals:
 class LIBHATHORSHARED_EXPORT HAbstractTrackProvider {
     friend class HPlayer;
     friend class HPlayer_PotentialTrack;
-    virtual int globalScore() = 0;  //In general (from 0 to 100), how good is this provider? Local is 100, a provider which takes 22 minutes to respond is 0.
+    virtual int globalScore() = 0;  //In general (from 0 to 100), how good is this provider? Local is 99.
     virtual void sendScore(HTrack& track,QObject* obj,QString slot)=0;
         //score goes from 100=DEFINATE match to 0=NO match - Rdio should be 100 and Youtube should be 20. 0 means it cannot be played
         //When the score is determined, send it along with a pointer to this to obj->slot using QMetaObject::invokeMethod(..., Q_ARG(int,...), Q_ARG(HAbstractTrackProvider*,...)

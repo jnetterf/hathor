@@ -98,6 +98,10 @@ void HSearchContext::getMoreAlbums(QString s) {
     connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
+void HSearchContext::showEvent(QShowEvent *e) {
+    setSearchTerm(s_term);
+}
+
 void HSearchContext::getMoreAlbums_2() {
     if(!isVisible()) return;
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());

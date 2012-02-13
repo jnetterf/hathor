@@ -12,6 +12,7 @@ hlocalprovider.h
 
 #include "habstractmusicinterface.h"
 #include "hlocalintro.h"
+#include "hplugin.h"
 #include <phonon/MediaObject>
 
 class HLocalProvider : public QObject, public HAbstractTrackProvider
@@ -57,6 +58,27 @@ private:
 public:
     static HLocalProvider* singleton() { Q_ASSERT(s_singleton); return s_singleton; }
     QString search(QString query, QString artistF, QString trackF);
+};
+
+class HLocalPlugin : public QObject, public HPlugin
+{
+    Q_OBJECT
+    Q_INTERFACES(HPlugin)
+    friend class HLocalIntro;
+    friend class HLocalProvider;
+    HLocalProvider* s_provider;
+public:
+    HLocalPlugin() : s_provider(new HLocalProvider) {}
+    virtual HAbstractTrackProvider* trackProvider() { return s_provider; }
+    virtual QWidget* initWidget() {
+        return s_provider->initWidget();
+    }
+    virtual QString name() { return s_provider->name(); }
+    virtual QSet<QString> abilities() { return QSet<QString>(); }
+    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { Q_ASSERT(0); return 0; }
+    virtual int getScore(const QString &, HObject *, QObject *, QString, QObject *) { return -1; }
+    bool isLocal(const QString &, HObject *, QObject *, QString , QObject *) { return 1; }
+    virtual QWidget* configurationWidget() { return 0; }
 };
 
 #endif // HLOCALINTERFACE_H

@@ -28,8 +28,8 @@ public:
     static HAlbumBox* getBox(HAlbum& album);
     ~HAlbumBox();
 
-    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); readjustPriorities(); QWidget::showEvent(e); }
-    void hideEvent(QHideEvent *e) { readjustPriorities(); QWidget::hideEvent(e); }
+    void showEvent(QShowEvent *e);
+    void hideEvent(QHideEvent *e);
 
     void readjustPriorities() {
         const static int a[4] = {65,50,40,30};
@@ -54,7 +54,7 @@ public slots:
     void setUserPlayCount(int count);
     void updateCounts();
 
-    void setPixmap(QPixmap);
+    void setPixmap(QPixmap&);
     void setTagNames(QStringList);
 
 signals:

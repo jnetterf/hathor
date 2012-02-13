@@ -141,6 +141,7 @@ void HTrackContext::showEvent(QShowEvent *e) {
     loadTags();
     loadAlbum();
     loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
+    if(s_slideshow) s_slideshow->show();
 
     readjustPriorities();
     QWidget::showEvent(e);
@@ -148,6 +149,7 @@ void HTrackContext::showEvent(QShowEvent *e) {
 
 void HTrackContext::hideEvent(QHideEvent *e) {
     readjustPriorities();
+    if(s_slideshow) s_slideshow->hide();
     QWidget::hideEvent(e);
 }
 
@@ -158,8 +160,10 @@ void HTrackContext::showMoreBio()
     readjustPriorities();
 }
 
-void HTrackContext::setMePic(QPixmap pic) {
-    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+void HTrackContext::setMePic(QPixmap& pic) {
+    if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
+    ui->label_you->setPixmap(pic);
+    ui->label_you->setMinimumHeight(pic.height());
 }
 
 void HTrackContext::loadArtist()
@@ -250,6 +254,19 @@ void HTrackContext::setContent(QString t) {
 
     if(s_contentSet) ui->label_moreDescription->hide();
     s_contentSet=1;
+
+    if(t.size()) {
+        if(s_showTime.msecsTo(QTime::currentTime())>110)
+        {
+            QPropertyAnimation* pa=new QPropertyAnimation(ui->label_description,"maximumHeight");
+            pa->setStartValue(ui->label_description->height());
+            pa->setEndValue(ui->label_description->sizeHint().height());
+            pa->setDuration((ui->label_description->sizeHint().height()-ui->label_description->height())*2);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        } else {
+            ui->label_description->setMaximumHeight((ui->label_description->sizeHint().height()));
+        }
+    }
 }
 
 void HTrackContext::setPlayCount(int t) {
@@ -404,15 +421,15 @@ void HTrackContext::setSimilar(HTrack* similar) {
 }
 
 void HTrackContext::setSlideshow(QWidget *w) {
-    if(!w) {
+    if(!w&&s_slideshow) {
         s_slideshow->hide();
         s_slideshow=0;
         return;
     }
+    if(!w) return;
     s_slideshow=w;
     ui->content->addWidget(w);
     ui->content->setAlignment(w,Qt::AlignCenter);
-    ui->scrollArea_3->hide();
     w->adjustSize();
     ui->frame_header->adjustSize();
     w->show();

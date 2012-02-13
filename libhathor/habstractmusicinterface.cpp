@@ -7,6 +7,7 @@
 #include <QPluginLoader>
 #include <QNetworkReply>
 #include <QWidget>
+#include "hplugin.h"
 
 HPlayer* HPlayer::s_singleton=0;
 HScrobbler* HScrobbler::s_singleton;
@@ -74,8 +75,11 @@ void HPlayer_PotentialTrack::play() {
     s_rem=-1;
     connect(p_ti,SIGNAL(finished()),this,SIGNAL(finished()));
     connect(p_ti,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
-    if(!s_readyToPause) p_ti->play();
-    emit startedPlaying(p_ti->getTrack());
+    if(!s_readyToPause) {
+        p_ti->play();
+        qDebug()<<"PT::PLAY!!!!";
+        emit startedPlaying(p_ti->getTrack());
+    }
 }
 
 void HPlayer_PotentialTrack::resume() {
@@ -295,12 +299,17 @@ void HPlayer::loadPlugins_continue_continue() {
         QObject *plugin = loader.instance();
         if (plugin) {
             loaded.push_back(fileName);
-            HAbstractTrackProvider* p=qobject_cast<HAbstractTrackProvider*>(plugin);
-
-            if(p) {
+            HPlugin* pl=qobject_cast<HPlugin*>(plugin);
+            qDebug()<<plugin<<pl;
+            if(pl) {
                 HL("[INIT] HPL/Loading plugin "+fileName);
-                QWidget* lw=p->initWidget();
-                installProvider(p);
+                HAbstractTrackProvider* p=pl->trackProvider();
+                qDebug()<<p<<"!";
+                if(p) {
+                    installProvider(p);
+                }
+
+                QWidget* lw=pl->initWidget();
                 if(lw) {
                     l->addWidget(lw);
                     connect(lw,SIGNAL(destroyed()),this,SLOT(loadPlugins_continue_continue()));
@@ -311,6 +320,7 @@ void HPlayer::loadPlugins_continue_continue() {
                 QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
             }
         } else {
+            qDebug()<<loader.errorString();
             QTimer::singleShot(0,this,SLOT(loadPlugins_continue_continue()));
         }
     }

@@ -36,11 +36,12 @@ class HTrackContext : public QWidget
     QList<int**> s_priorities[4];
 public:
     static HTrackContext* getContext(HTrack& rep);
+    HTrack& getTrack() { return s_rep; }
     ~HTrackContext();
 
 public slots:
     void showMoreBio();
-    void setMePic(QPixmap p);
+    void setMePic(QPixmap &p);
     void loadArtist();
     void loadAlbum();
 //    void loadTracks();

@@ -20,8 +20,8 @@ class HArtistBox : public HGrowingWidget
     QTime s_showTime;
 
     QList<int**> s_priority[4];
-    void showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); QWidget::showEvent(e); readjustPriorities(); }
-    void hideEvent(QHideEvent *e) { QWidget::hideEvent(e); readjustPriorities(); }
+    void showEvent(QShowEvent *e);
+    void hideEvent(QHideEvent *e);
 public:
     static HArtistBox* getBox(HArtist& rep);
     ~HArtistBox();
@@ -45,7 +45,7 @@ public:
 public slots:
 //    void continueLoading();
     void requestContext() { emit contextRequested(s_rep); }
-    void setPic(QPixmap p);
+    void setPic(QPixmap &p);
     void setTagNames(QStringList tsl);
     void setBioShort(QString sh);
 signals:

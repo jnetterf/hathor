@@ -23,17 +23,28 @@ HPlayerContext::~HPlayerContext()
     delete ui;
 }
 
+void HPlayerContext::showEvent(QShowEvent *e) {
+    if(s_magic) {
+        showTrack(s_magic->getTrack());
+    }
+    QWidget::showEvent(e);
+}
+
 void HPlayerContext::showTrack(HTrack &t) {
+    qDebug()<<"ST::"<<t.getTrackName();
     if(s_magic) {
         ui->widget_trackContext->layout()->removeWidget(s_magic);
         s_magic->setSlideshow(0);
         s_magic=0;
     }
     s_magic=HTrackContext::getContext(t);
+    if(!isVisible()) return;
+    s_magic->setParent(0);
     ui->widget_trackContext->layout()->addWidget(s_magic);
 
-    if(s_slideshow) s_slideshow->pause();
+    s_magic->show();
     s_slideshow=HSlideshow::getSlideshow(t.getArtist());
     s_magic->setSlideshow(s_slideshow);
     s_slideshow->adjustSize();
+    qDebug()<<"ST::END";
 }

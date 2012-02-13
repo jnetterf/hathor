@@ -69,8 +69,9 @@ void HConfigContext::getShouts() {
     ui->label_moreShoutbox->hide();
 }
 
-void HConfigContext::setMePic(QPixmap pic) {
-    ui->label_you->setPixmap(pic.scaledToWidth(70,Qt::SmoothTransformation));
+void HConfigContext::setMePic(QPixmap& pic) {
+    if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
+    ui->label_you->setPixmap(pic);
 }
 
 void HConfigContext::validateShout() {

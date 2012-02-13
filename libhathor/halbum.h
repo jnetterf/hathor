@@ -80,7 +80,7 @@ public slots:
     int** sendUserPlayCount(QObject* obj, const char* member); /*int*/
 
     int** sendPicNames(HAlbum::PictureSize size,QObject* obj, const char* member,QObject* guest=0); /*QString*/
-    int** sendPic(HAlbum::PictureSize size,QObject* obj, const char* member); /*QPixmap*/
+    int** sendPic(HAlbum::PictureSize size,QObject* obj, const char* member); /*QPixmap&*/
     int** sendTagNames(QObject* obj, const char* member); /*QStringList*/
     int** sendTags(QObject* obj, const char* member); /*QList<HTag*>*/
     int** sendMoreTagNames(QObject* obj, const char* member, QObject *guest);/*QStringList*/

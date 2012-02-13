@@ -34,12 +34,8 @@ void HBackground::showStuff() {
     s_showingStuff=1;
     _sc->setBackgroundBrush(QBrush(QColor("black")));
     ArtistAvatar::_ready=1;
-    //    for(int i=_sc->items().size()-1;i>=0;i--)_sc->removeItem(_sc->items()[i]);
 
-    while(s_cache.size()) {
-        _sc->removeItem(s_cache.first());
-        delete s_cache.takeFirst();
-    }
+    closeMode();
 
     if(!s_mco) {
         s_mco=new HMainContextOptions;
@@ -66,7 +62,8 @@ void HBackground::showStuff() {
             p1["method"] = "user.getTopArtists";
             p1["user"] = lastfm::AuthenticatedUser().name();
             p1["period"]="3month";
-            p1["limit"]="200";
+            /*if(s_style==List) */p1["limit"]="200";
+//            else p1["limit"]="50";
             QNetworkReply* reply = lastfm::ws::get( p1 );
 
             connect(reply,SIGNAL(finished()),this,SLOT(showStuff_makeList()));
@@ -78,7 +75,8 @@ void HBackground::showStuff() {
         } else {
             QMap<QString, QString> p1;
             p1["method"] = "user.getRecommendedArtists";
-            p1["limit"]="200";
+            /*if(s_style==List) */p1["limit"]="200";
+//            else p1["limit"]="50";
             QNetworkReply* reply = lastfmext_post(p1);
             connect(reply,SIGNAL(finished()),this,SLOT(showStuff_makeList()));
         }
@@ -180,12 +178,17 @@ void HBackground::continueShowStuff() {
             s_showingStuff=0;
             return;
         } else {
-            HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::Large))->send(this,"showStuff_addPic");
+            s_priorities.push_back(HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::Large))->send(this,"showStuff_addPic"));
+            **s_priorities.back()=1;
         }
     }
 }
 
-void HBackground::showStuff_addPic(QPixmap pix) {
+void HBackground::showStuff_addPic(QPixmap& pix) {
+    if(_sc->views()[0]->isHidden()) {
+        s_showingStuff=0;
+        return;
+    }
     if(s_stopRequest) {
         s_showingStuff=0;
         doStopRequest();
@@ -281,59 +284,48 @@ void HBackground::doStopRequest() {
 }
 
 void HBackground::onSuggMode() {
-    qDebug()<<"OSM"<<s_showingStuff;
     s_mode=Suggestions;
-    if(s_showingStuff) {
-        s_stopRequest=1;
-        return;
-    } else {
-        showStuff();
-    }
+    openMode();
 }
 
 void HBackground::onLocalMode() {
     s_mode=Local;
-    if(s_showingStuff) {
-        s_stopRequest=1;
-        return;
-    } else {
-        showStuff();
-    }
+    openMode();
 }
 
 void HBackground::onTopMode() {
     s_mode=Top;
-    if(s_showingStuff) {
-        s_stopRequest=1;
-        return;
-    } else {
-        showStuff();
-    }
+    openMode();
 }
 
 
 void HBackground::onAlbumMode() {
     s_style=Album;
-    if(s_showingStuff) {
-        s_stopRequest=1;
-        return;
-    } else {
-        showStuff();
-    }
+    openMode();
 }
 
 void HBackground::onListMode() {
     s_style=List;
-    if(s_showingStuff) {
-        s_stopRequest=1;
-        return;
-    } else {
-        showStuff();
-    }
+    openMode();
 }
 
 void HBackground::onPlayMode() {
     s_style=Play;
+    openMode();
+}
+
+void HBackground::closeMode() {
+    while(s_priorities.size()) {
+        **s_priorities.takeFirst()=0;
+    }
+
+    while(s_cache.size()) {
+        _sc->removeItem(s_cache.first());
+        delete s_cache.takeFirst();
+    }
+}
+
+void HBackground::openMode() {
     if(s_showingStuff) {
         s_stopRequest=1;
         return;

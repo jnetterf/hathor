@@ -76,4 +76,4 @@ QString HLocalProvider::getKey(HTrack& track) {
     } else return "_NO_RESULT_";
 }
 
-Q_EXPORT_PLUGIN2(hlocal_provider, HLocalProvider)
+Q_EXPORT_PLUGIN2(hlocal_plugin, HLocalPlugin)

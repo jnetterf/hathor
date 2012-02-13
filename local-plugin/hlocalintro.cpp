@@ -82,7 +82,7 @@ void HLocalIntro::go() {
 
     ui->progressBar_scan->setRange(0,files.size());
     for(int i=0;i<files.size();i++) {
-//        if(s_theInverseHash.contains(files[i])) continue;
+        if(s_theInverseHash.contains(files[i])) continue;
         ui->progressBar_scan->setValue(i);
         TagLib::FileRef f(files[i].toStdString().c_str());
         if(!f.tag()) continue;

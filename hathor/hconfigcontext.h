@@ -22,7 +22,7 @@ public:
 
 public slots:
     void getShouts();
-    void setMePic(QPixmap p);
+    void setMePic(QPixmap &p);
     void validateShout();
     void shout();
     

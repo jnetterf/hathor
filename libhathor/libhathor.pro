@@ -23,7 +23,8 @@ SOURCES += habstractmusicinterface.cpp \
     huser.cpp \
     lastfmext.cpp \
     hfuture.cpp \
-    hnettloger.cpp
+    hnettloger.cpp \
+    hplugin.cpp
 
 HEADERS += habstractmusicinterface.h\
         libhathor_global.h \
@@ -39,7 +40,8 @@ HEADERS += habstractmusicinterface.h\
     huser.h \
     lastfmext.h \
     hfuture.h \
-    hnettloger.h
+    hnettloger.h \
+    hplugin.h
 
 CONFIG += oauth
 win32:LIBS += -llastfm0 -ltag

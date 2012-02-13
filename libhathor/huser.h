@@ -30,7 +30,7 @@ public:
 public slots:
     void sendRealName(QObject* o, QString m); /*QString*/
     void sendPicNames(PictureSize pic,QObject* o, QString m); /*QString*/
-    void sendPic(PictureSize pic,QObject* o, QString m); /*QPixmap */
+    void sendPic(PictureSize pic,QObject* o, QString m); /*QPixmap& */
 
     void sendPic_2_0(QString pic) { sendPic_2((PictureSize)0,pic); }
     void sendPic_2_1(QString pic) { sendPic_2((PictureSize)1,pic); }

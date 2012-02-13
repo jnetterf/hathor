@@ -433,7 +433,6 @@ bool HRdioProvider::login(QString username, QString password) {
     loop.exec();
 
     if(ok()) {
-        HPlayer::singleton()->installProvider(this);
         QSettings auth("Nettek","auth");
         auth.setValue("rdio.token",s_rdioToken);
         auth.setValue("rdio.secret",s_rdioSecret);
@@ -478,7 +477,6 @@ bool HRdioProvider::restore() {
 
     oauth(s_rdioToken,s_rdioSecret,s_oauthToken,s_oauthSecret);
     if(ok()) {
-        HPlayer::singleton()->installProvider(this);
         return (_singleton=this);
     } else {
 //        delete this;
@@ -772,4 +770,4 @@ void HSendScoreTriplet_Rdio::doMagic() {
     s_calmDown=0;
 }
 
-Q_EXPORT_PLUGIN2(hrdio_provider, HRdioProvider)
+Q_EXPORT_PLUGIN2(hrdio_plugin, HRdioPlugin)

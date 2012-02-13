@@ -86,7 +86,7 @@ public slots:
     }
     void requestInfo() {
         if(!s_vis) return;
-        s_rep.sendPic(HArtist::Large,this,"setPic");
+        **s_rep.sendPic(HArtist::Large,this,"setPic")=1;
         s_rep.sendTagNames(this,"setTags");
     }
 
@@ -104,7 +104,7 @@ public slots:
         pa->setEasingCurve(QEasingCurve::OutSine);
         pa->start(QAbstractAnimation::DeleteWhenStopped);
     }
-    void setPic(QPixmap p) {
+    void setPic(QPixmap& p) {
         if(!s_vis) return;
         if(s_px) {
             s_px->show();
@@ -113,7 +113,6 @@ public slots:
 
         s_px=new QGraphicsPixmapItem(p,this);
 
-//        QFontMetrics fm(QFont("candara",18,75));
         s_px->setX(923-p.width());
         s_px->setY(4);
         s_px->show();
@@ -408,7 +407,7 @@ private slots:
             _ready=0;
             _okCur=this;
             iterateHide();
-            QTimer::singleShot(1000,this,SLOT(emitShowContext()));
+            QTimer::singleShot(0,this,SLOT(emitShowContext()));
         }
     }
     void emitShowContext() {
@@ -513,6 +512,16 @@ class HMainContext : public HGraphicsView {
         for(int i=0;i<ArtistAvatar::_u_.size();i++) ArtistAvatar::_u_[i]->hideInfo();
         ArtistAvatar::_okCur=0;
         HGraphicsView::leaveEvent(e);
+    }
+
+    void hideEvent(QHideEvent *event) {
+        if(background) background->closeMode();
+        HGraphicsView::hideEvent(event);
+    }
+
+    void showEvent(QShowEvent *event) {
+        if(background) background->openMode();
+        HGraphicsView::showEvent(event);
     }
 
 public:

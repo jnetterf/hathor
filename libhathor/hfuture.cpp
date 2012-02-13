@@ -3,13 +3,17 @@
 #include "hnettloger.h"
 
 #include <QTimer>
+#include <QPointer>
+#include <QPointer>
 #include <QSettings>
+#include <QApplication>
 #include <QDomDocument>
 #include <QDesktopServices>
 #include <QFile>
 #include <QHttp>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QPixmapCache>
 
 QSettings HCachedInfo::_sett_("Nettek","Hathor");
 QHash<QString,QVariant> HCachedInfo::sett;
@@ -18,18 +22,21 @@ bool HCachedInfo::_opened=0;
 int HCachedInfo::ss_connections=0;
 int HCachedPixmap::ss_connections=0;
 QList< QPair<QObject*, QString> > HCachedInfo::ss_futureConnetions;
+int HCachedPixmap::s_count=0;
 QList< QPair<QObject*, QString> > HCachedPixmap::ss_futureConnetions;
 
 QHash<QUrl,HCachedPixmap*> HCachedPixmap::s_map;
 
 
-HCachedPixmap::HCachedPixmap(const QUrl &url) {
+HCachedPixmap::HCachedPixmap(const QUrl &url) : pix(0), s_cleared(0), s_proc(0) {
     this->url=url;
     download();
     tryAgain=1;
 }
 
 void HCachedPixmap::download() {
+    s_cleared=0;
+    s_proc=1;
     if(file.isOpen()) file.close();
     if(!url.isValid()) url="http://cdn.last.fm/flatness/catalogue/noimage/2/default_artist_mega.png";
     t=QDesktopServices::storageLocation(QDesktopServices::DataLocation)+"/hathorMP";
@@ -44,7 +51,6 @@ void HCachedPixmap::download() {
     if(!QFile::exists(t)) {
         if(ss_connections>3) {
             ss_futureConnetions.push_back(qMakePair((QObject*)this,QString("download")));
-            QTimer::singleShot(400,this,SLOT(download()));
             return;
         }
         ++ss_connections;
@@ -54,11 +60,15 @@ void HCachedPixmap::download() {
         http.setHost(url.host(), url.port(80));
         http.get(url.toEncoded(QUrl::RemoveScheme | QUrl::RemoveAuthority), &file);
         connect(&http,SIGNAL(done(bool)),this,SLOT(processDownload()));
-    } else processDownload();
-    tryAgain=0;
+    } else {
+        QMetaObject::invokeMethod(this,"processDownload",Qt::QueuedConnection);
+    }
 }
 
 void HCachedPixmap::processDownload(bool err) {
+    ++s_count;
+    s_proc=0;
+
     if(file.isOpen()) {
         file.flush();
         file.close();
@@ -84,15 +94,42 @@ void HCachedPixmap::processDownload(bool err) {
 
 
     QMutexLocker locker(&m); Q_UNUSED(locker);  //DO NOT USE QMetaObject::invokeMethod()
-    pix.load(t);
-    if(!pix.width()&&tryAgain) { QFile::remove(t); download(); }
+    pix=new QPixmap(t);
+    if((pix->isNull()||!pix->width())) { delete pix; pix=0; tryAgain=0; if(file.fileName().size()) file.remove(); download(); }
     else QTimer::singleShot(0,this,SLOT(processDownload_2()));
 }
 
 void HCachedPixmap::processDownload_2() {
-    while(queue.size()) {
-        QPair<QObject*, QString> p=queue.takeFirst();
-        QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Q_ARG(QPixmap,pix));
+    // Make sure all the objects are sent if they are going to be sent!
+    qApp->processEvents();
+
+    if(!queue.size()) return;
+    if(getTruePriority()) {
+        if(pix->isNull()) {
+            qDebug()<<"WHO ARE YOU TRYING TO TRICK?";
+        }
+        while(queue.size()) {
+            QPair<QObject*, QString> p=queue.takeFirst();
+            QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Q_ARG(QPixmap&,*pix));
+        }
+    } else {
+        qDebug()<<"Clearing unloved queue.";
+        queue.clear();
+    }
+    if(s_count>50&&s_map.size()) {
+        for(int i=0;i<s_map.size();i++) {
+            if((s_map.values()[i]!=this)&&!s_map.values()[i]->getTruePriority()&&!s_map.values()[i]->s_cleared&&!s_map.values()[i]->queue.size()&&!s_proc) {
+                qDebug()<<"DEL"<<s_map.values()[i]->url<<"W/ PRIORITY"<<s_map.values()[i]->getTruePriority();
+                s_count--;
+                s_map.values()[i]->s_cleared=1;
+                delete s_map.values()[i]->pix;
+                s_map.values()[i]->pix=0;
+                if(s_count<=50) break;
+            }
+        }
+    }
+    else if (s_count>50) {
+        qDebug()<<"Uh. oh.";
     }
 }
 

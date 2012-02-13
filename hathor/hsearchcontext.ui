@@ -48,7 +48,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>976</width>
+        <width>950</width>
         <height>568</height>
        </rect>
       </property>
@@ -57,17 +57,23 @@
 border-color: rgb(174, 174, 174);</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
        <item row="0" column="0">
         <widget class="QWidget" name="widget_3" native="true">
          <property name="minimumSize">
           <size>
-           <width>968</width>
+           <width>950</width>
            <height>0</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>968</width>
+           <width>950</width>
            <height>16777215</height>
           </size>
          </property>

@@ -79,6 +79,7 @@ void HAlbum::sendPic_2(PictureSize p,QString pic) {
     if(!s_cachedPixmap[p]) s_cachedPixmap[p]=HCachedPixmap::get(QUrl(pic));
     for(int i=0;i<s_picQueue[p].size();i++) {
         *s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second)=*s_albumInfo.getPriorityForProperty(s_picQueue[p][i].first,"pics::"+QString::number(p));
+//        qDebug()<<">>>"<<**s_cachedPixmap[p]->send(s_picQueue[p][i].first,s_picQueue[p][i].second);
     }
     s_picQueue[p].clear();
 }
@@ -162,10 +163,10 @@ bool AlbumInfo::process(const QString &d) {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     if ( m.nodeName() == "image") {
-                        if(m.attributes().namedItem("size").nodeValue()=="small") setProperty("pics::0", l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="medium") setProperty("pics::1", l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="large") setProperty("pics::2", l.toText().data() );
-                        else if(m.attributes().namedItem("size").nodeValue()=="mega") setProperty("pics::3", l.toText().data() );
+                        if(m.attributes().namedItem("size").nodeValue()=="small"&& l.toText().data().size()) setProperty("pics::0", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="medium"&& l.toText().data().size()) setProperty("pics::1", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="large"&& l.toText().data().size()) setProperty("pics::2", l.toText().data() );
+                        else if(m.attributes().namedItem("size").nodeValue()=="mega"&& l.toText().data().size()) setProperty("pics::3", l.toText().data() );
                     }
                     else if ( m.nodeName() == "listeners") setProperty("listenerCount",l.toText().data().toInt());
                     else if ( m.nodeName() == "playcount") setProperty("playCount",l.toText().data().toInt());
