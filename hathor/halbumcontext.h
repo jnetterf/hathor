@@ -55,7 +55,7 @@ public slots:
 
     void readjustPriorities() {
         const static int a[4] = {90,80,70,60};
-        for(int i=4;i>=0;--i) {
+        for(int i=3;i>=0;--i) {
             for(int j=0;j<s_priority[i].size();j++) {
                 if(s_priority[i][j]) {
                     if(!*s_priority[i][j]) *s_priority[i][j]=new int;

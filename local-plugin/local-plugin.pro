@@ -10,8 +10,8 @@ TARGET = local-plugin-for-hathor
 TEMPLATE = lib
 CONFIG += plugin oauth
 
-LIBS += -ltag -ltag-extras
-win32:LIBS += -llastfm0 -ltag -ltag-extras
+LIBS += -ltag
+win32:LIBS += -llastfm0 -ltag
 debug:win32:DESTDIR = ../hathor/debug/plugins
 release:win32:DESTDIR = ../hathor/release/plugins
 !win32:DESTDIR = ../hathor/plugins

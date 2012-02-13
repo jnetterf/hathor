@@ -3,8 +3,11 @@
 #include "hnettloger.h"
 
 #include "hshoutbox.h"
-#include "lastfm.h"
 #include "hlfmwebloginaction.h"
+#include <lastfm/ws.h>
+#include <lastfm/User>
+#include <lastfm/Artist>
+
 #include <QTimer>
 
 HConfigContext* HConfigContext::s_singleton=0;
