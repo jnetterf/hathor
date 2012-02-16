@@ -59,7 +59,7 @@ void HBackground::showStuff() {
             showStuff_makeList();
         } else {
             QMap<QString, QString> p1;
-            p1["method"] = "user.getTopArtists";
+            p1["method"] = "library.getArtists";
             p1["user"] = lastfm::AuthenticatedUser().name();
             p1["period"]="3month";
             /*if(s_style==List) */p1["limit"]="200";
@@ -315,6 +315,7 @@ void HBackground::onPlayMode() {
 }
 
 void HBackground::closeMode() {
+    ArtistAvatar::_trap.clear();
     while(s_priorities.size()) {
         **s_priorities.takeFirst()=0;
     }

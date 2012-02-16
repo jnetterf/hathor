@@ -16,7 +16,7 @@
 
 HMainWindow* HMainWindow::s_singleton=0;
 
-HMainWindow::HMainWindow() : ui(new Ui::HMainWindow), s_ge(0), s_getLoggingAllowed(0) {
+HMainWindow::HMainWindow() : ui(new Ui::HMainWindow), s_ge(0), s_getLoggingAllowed(0), s_mc(0) {
     QSettings vl("Nettek","log");
     vl.setValue("pluginDialog",false);
     Q_ASSERT(!s_singleton);
@@ -76,12 +76,12 @@ void HMainWindow::setupMainContext_2() {
     } else {
         ui->toolbar->setMessageSimple("<i><center>Loading...</center></i>");
     }
-    HMainContext* mc=new HMainContext;
-    connect(mc,SIGNAL(showContext(HArtist&)),this,SLOT(showContext(HArtist&)));
-    ui->widget->layout()->addWidget(mc);
-    mc->setup();
+    s_mc=new HMainContext;
+    connect(s_mc,SIGNAL(showContext(HArtist&)),this,SLOT(showContext(HArtist&)));
+    ui->widget->layout()->addWidget(s_mc);
+    s_mc->setup();
     if(ui->toolbar->message()=="<i><center>Loading...</center></i>"||ui->toolbar->message()=="<i><center>Loading...</center></i>") ui->toolbar->clearMessage();
-    s_contextStack.push_back(s_curContext=mc);
+    s_contextStack.push_back(s_curContext=s_mc);
 
     QSettings s_l("Nettek","logging");
     if(s_l.value("permission").isNull()||s_l.value("permission").toString()=="AskMeLater") {
@@ -102,9 +102,8 @@ void HMainWindow::showContext(HTrack& a) {
 }
 
 void HMainWindow::setContext(QWidget *ac) {
-    KFadeWidgetEffect* kwe=new KFadeWidgetEffect(ui->widget);
     if(s_curContext) {
-        if(dynamic_cast<HSearchContext*>(s_curContext)) {
+        if(dynamic_cast<HSearchContext*>(s_curContext.data())) {
             HSearchContext::detach();
         }
         s_curContext->hide();
@@ -116,7 +115,6 @@ void HMainWindow::setContext(QWidget *ac) {
     ui->toolbar->setHomeEnabled(1);
     s_curContext=ac;
     s_curContext->show();
-    QTimer::singleShot(140,kwe,SLOT(start()));
 }
 
 
@@ -136,7 +134,7 @@ void HMainWindow::back() {
 
     ui->toolbar->setBackEnabled(s_contextStack.size()!=1);
     ui->toolbar->setHomeEnabled(s_contextStack.size()!=1);
-    QTimer::singleShot(140,kwe,SLOT(start()));
+    QTimer::singleShot(20,kwe,SLOT(start()));
 }
 
 void HMainWindow::home() {
@@ -147,7 +145,7 @@ void HMainWindow::home() {
 }
 
 void HMainWindow::config() {
-    if(dynamic_cast<HConfigContext*>(s_curContext)) return;
+    if(dynamic_cast<HConfigContext*>(s_curContext.data())) return;
     setContext(HConfigContext::singleton());
 }
 

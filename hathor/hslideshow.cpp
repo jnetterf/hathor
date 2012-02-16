@@ -32,7 +32,7 @@ void HSlideshow::nextPic() {
         return;
     }
     if(!s_cache.size()) {
-        s_artist.sendExtraPics(this,"addPic",15);
+        s_artist.sendExtraPics(this,"addPic",7);
         s_sending=0;
         return;
     }
@@ -40,7 +40,7 @@ void HSlideshow::nextPic() {
         s_i=0;
     }
 
-    SlideshowItem* gpi=new SlideshowItem(s_cache[s_i]);
+    SlideshowItem* gpi=new SlideshowItem(*s_cache[s_i]);
     sc.addItem(gpi);
     gpi->setTransformationMode(Qt::SmoothTransformation);
     gpi->setZValue(++s_z);
@@ -83,7 +83,8 @@ void HSlideshow::nextPic() {
 }
 
 void HSlideshow::addPic(QPixmap& p) {
-    s_cache.push_back(p.scaledToWidth(900,Qt::SmoothTransformation));
+    p=p.scaledToWidth(900,Qt::SmoothTransformation);
+    s_cache.push_back(&p);
     if(s_cache.size()==1&&!s_sending) nextPic();
 }
 

@@ -239,8 +239,12 @@ public:
         _u_.push_back(this);
     }
 
-    ~ArtistAvatar() {
+    virtual ~ArtistAvatar() {
         _u_.removeOne(this);
+        _trap.removeOne(this);
+        _hidden_.removeOne(this);
+        if(_okCur==this) _okCur=0;
+        _ready=0;
     }
 
     void addLeft(ArtistAvatar* left) {
@@ -473,6 +477,7 @@ public:
 
     ArtistAvatarList _neighbours_[4];
     lastfm::Artist* _artist;
+
 signals:
     void showContext();
 };
@@ -515,6 +520,9 @@ class HMainContext : public HGraphicsView {
     }
 
     void hideEvent(QHideEvent *event) {
+        while(ArtistAvatar::_anims.size()) {
+            delete ArtistAvatar::_anims.takeFirst();
+        }
         if(background) background->closeMode();
         HGraphicsView::hideEvent(event);
     }

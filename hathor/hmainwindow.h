@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QList>
+#include <QPointer>
 #include <QFrame>
 #include <QBoxLayout>
 #include <QLabel>
@@ -39,17 +40,20 @@ signals:
     void done(QString);
 };
 
+class HMainContext;
+
 class HMainWindow : public QWidget
 {
     Q_OBJECT
     Ui::HMainWindow *ui;
-    QWidget* s_curContext;
+    QPointer<QWidget> s_curContext;
     QList<QWidget*> s_contextStack;
     static HMainWindow* s_singleton;
     HQuestion s_curQuestion;
     QList<HQuestion> s_question_Q;
     QGraphicsBlurEffect* s_ge;
     bool s_getLoggingAllowed;
+    HMainContext* s_mc;
 public:
     HMainWindow();
     static HMainWindow* singleton() { return s_singleton; }
@@ -82,6 +86,7 @@ public slots:
     void openUrl(QString);
 
     void setTitle(HTrack& a);
+
 };
 
 #endif // HMAINWINDOW_H

@@ -126,12 +126,6 @@ void HArtistContext::hideEvent(QHideEvent *e) {
     ui->label_artistPic->setPixmap(0);
     readjustPriorities();
     QWidget::hideEvent(e);
-//    s_map.remove(s_rep.getName());
-//    while(children().size()) {
-//        children().first()->setParent(0);
-//    }
-//    QTimer::singleShot(5000,this,SLOT(deleteLater()));
-//    deleteLater();
 }
 
 void HArtistContext::resizeEvent(QResizeEvent *e) {

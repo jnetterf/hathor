@@ -49,6 +49,9 @@ public:
     qreal echoY() { return y(); }
 
     SlideshowItem( QPixmap& pmap ) : QGraphicsPixmapItem(pmap) {}
+    virtual ~SlideshowItem() {
+        qDebug()<<"DEL SI";
+    }
 };
 
 class HSlideshow : public QGraphicsView
@@ -61,6 +64,7 @@ class HSlideshow : public QGraphicsView
     int s_z;
     bool s_done;
     bool s_sending;
+    QList<int**> s_pri;
     QSize minimumSizeHint() const {
         return sizeHint();
     }
@@ -69,16 +73,22 @@ class HSlideshow : public QGraphicsView
     void hideEvent(QHideEvent * e) {
         pause();
         s_cache.clear();
+        while(s_pri.size()) {
+            **s_pri.takeFirst()=0;
+        }
         QGraphicsView::hideEvent(e);
     }
     void showEvent(QShowEvent *event) {
         s_i=0;
-        if(!s_cache.size()) s_artist.sendExtraPics(this,"addPic",15);
+        if(!s_cache.size()) {
+            s_pri.push_back(s_artist.sendExtraPics(this,"addPic",15));
+            **s_pri.back()=1;
+        }
         resume();
         QGraphicsView::showEvent(event);
     }
 
-    QList<QPixmap> s_cache;
+    QList<QPixmap*> s_cache;
 public:
     static HSlideshow* getSlideshow(HArtist&);
 public slots:

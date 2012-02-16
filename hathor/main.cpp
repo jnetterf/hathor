@@ -37,6 +37,8 @@ int main(int argc, char** argv) {
     QApplication app(argc,argv);
     app.setWindowIcon(QIcon(":/icons/hathor-logo.png"));
 
+    QPixmapCache::setCacheLimit(150);   //i.e., 0
+
     qsrand(QTime::currentTime().msec());
 
     app.setStyle("plastique");
