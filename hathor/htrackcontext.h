@@ -27,7 +27,6 @@ class HTrackContext : public QWidget
     HPlayWidget* s_pw;
     QGraphicsBlurEffect* s_ge;
     explicit HTrackContext(HTrack& rep, QWidget *parent = 0);
-    static QHash<QString,HTrackContext*> s_map;
     QWidget* s_slideshow;
     QTime s_showTime;
     QList<HTrack*> s_loadedSimilar;

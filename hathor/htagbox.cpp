@@ -1,13 +1,8 @@
 #include "htagbox.h"
 #include "ui_htagbox.h"
 
-QHash<QString, HTagBox*> HTagBox::s_map;
-
 HTagBox* HTagBox::getBox(HTag &rep) {
-    QString dumbName=rep.getTagName();
-    if(s_map.contains(dumbName)) return s_map[dumbName];
-    s_map[dumbName] = new HTagBox(rep);
-    return s_map[dumbName];
+    return new HTagBox(rep);
 }
 
 HTagBox::HTagBox(HTag &rep, QWidget *parent) :

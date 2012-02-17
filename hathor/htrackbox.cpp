@@ -5,13 +5,8 @@
 
 #include <QTimer>
 
-QHash<QString, HTrackBox*> HTrackBox::s_map;
-
 HTrackBox* HTrackBox::getBox(HTrack &rep) {
-    QString dumbName=rep.getTrackName()+"__"+rep.getArtistName();
-    if(s_map.contains(dumbName)) return s_map[dumbName];
-    s_map[dumbName] = new HTrackBox(rep);
-    return s_map[dumbName];
+    return new HTrackBox(rep);
 }
 
 HTrackBox::HTrackBox(HTrack &ref, QWidget *parent) :
@@ -63,9 +58,14 @@ void HTrackBox::setTags(QStringList tsl) {
 }
 
 void HTrackBox::updateBoxes() {
-    KFadeWidgetEffect* kwe=new KFadeWidgetEffect(this);
+    KFadeWidgetEffect* kwe=0;
+    if(isVisible()) {
+        kwe=new KFadeWidgetEffect(this);
+    }
     ui->label_plays->setText("<B>"+QString::number(s_playCountCache)+"</B> plays/<B>"+QString::number(s_userPlayCountCache)+"</B> by you");
     ui->label_trackName->setText("<B><A href=\"more\">"+s_ref.getTrackName()+(s_lovedCache?" &#x2665; ":" ")+"by "+s_ref.getArtistName()+"</B></A>");
     ui->label_tags->setText(s_tags);
-    QTimer::singleShot(0,kwe,SLOT(start()));
+    if(kwe) {
+        QTimer::singleShot(0,kwe,SLOT(start()));
+    }
 }

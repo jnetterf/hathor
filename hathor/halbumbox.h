@@ -17,7 +17,6 @@ class HAlbumBox : public HGrowingWidget
     HAlbum& s_album;
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
     explicit HAlbumBox(HAlbum& album, QWidget *parent = 0);
-    static QHash<QString,HAlbumBox*> s_map;
     QTime s_showTime;
     QString s_tagString;
     bool s_gotTags;

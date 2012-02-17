@@ -227,11 +227,11 @@ void HBackground::showStuff_addPic(QPixmap& pix) {
         fp=new ArtistAvatar(_sc,list[i].name(),aal);
         x_[COLUMN]=fp;
     }
-    s_cache.push_back(fp);
 
     fp->setPixmap(pix);
     fp->setPos(197+_nX[COLUMN],-250+_nv[COLUMN]);
     _sc->addItem(fp);
+    s_cache.push_back(fp);
 
     QPropertyAnimation* anim=new QPropertyAnimation(fp, "echoOpacity");
     anim->setStartValue(0.0);
@@ -242,7 +242,9 @@ void HBackground::showStuff_addPic(QPixmap& pix) {
     _nv[COLUMN]+=pix.height();
     l+=pix.width();
     if(l>1000){if(w==0){x=i+1;}l=0;w+=100;}
-    Q_ASSERT(COLUMN<20);
+    if(COLUMN>=20) {
+
+    }
     l_[COLUMN].push_back(fp);
 
     maxY=qMax(maxY,_nv[COLUMN]-250);

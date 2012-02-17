@@ -1636,15 +1636,24 @@
                  </widget>
                 </item>
                 <item row="0" column="0" rowspan="2">
-                 <widget class="QLabel" name="label_you">
+                 <widget class="HPixmapView" name="label_you" native="true">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
-                  <property name="text">
-                   <string>You</string>
+                  <property name="minimumSize">
+                   <size>
+                    <width>70</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>16777215</width>
+                    <height>70</height>
+                   </size>
                   </property>
                  </widget>
                 </item>
@@ -1838,7 +1847,7 @@ p, li { white-space: pre-wrap; }
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>882</width>
+                     <width>878</width>
                      <height>116</height>
                     </rect>
                    </property>
@@ -2081,14 +2090,7 @@ p, li { white-space: pre-wrap; }
                     </property>
                     <layout class="QGridLayout" name="gridLayout_5">
                      <item row="0" column="0">
-                      <widget class="QLabel" name="label_artistPic">
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
+                      <widget class="HPixmapView" name="label_artistPic" native="true"/>
                      </item>
                     </layout>
                    </widget>
@@ -2147,6 +2149,12 @@ p, li { white-space: pre-wrap; }
    <class>HGrowingWidget</class>
    <extends>QWidget</extends>
    <header>hgrowingwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>HPixmapView</class>
+   <extends>QWidget</extends>
+   <header>hpixmapview.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

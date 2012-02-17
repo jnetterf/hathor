@@ -62,28 +62,26 @@ class HSlideshow : public QGraphicsView
     QGraphicsScene sc;
     int s_i;
     int s_z;
-    bool s_done;
     bool s_sending;
-    QList<int**> s_pri;
+    QList<int*> s_pri;
     QSize minimumSizeHint() const {
         return sizeHint();
     }
     explicit HSlideshow(HArtist& artist,QWidget* parent=0);
 
     void hideEvent(QHideEvent * e) {
-        pause();
         s_cache.clear();
         while(s_pri.size()) {
-            **s_pri.takeFirst()=0;
+            *s_pri.takeFirst()=0;
         }
         QGraphicsView::hideEvent(e);
     }
     void showEvent(QShowEvent *event) {
         s_i=0;
-        if(!s_cache.size()) {
-            s_pri.push_back(s_artist.sendExtraPics(this,"addPic",15));
-            **s_pri.back()=1;
-        }
+//        if(!s_cache.size()) {
+//            s_pri.push_back(s_artist.sendExtraPics(this,"addPic",15));
+//            *s_pri.back()=1;
+//        }
         resume();
         QGraphicsView::showEvent(event);
     }
@@ -93,7 +91,6 @@ public:
     static HSlideshow* getSlideshow(HArtist&);
 public slots:
     void nextPic();
-    void pause() { s_done=1; }
     void resume();
     void addPic(QPixmap &p);
 };

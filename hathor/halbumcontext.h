@@ -22,7 +22,6 @@ class HAlbumContext : public QWidget
     HPlayWidget* s_pw;
     QGraphicsBlurEffect* s_ge;
     explicit HAlbumContext(HAlbum& rep, QWidget *parent = 0);
-    static QHash<QString,HAlbumContext*> s_map;
     void showEvent(QShowEvent *);
     void hideEvent(QHideEvent *);
 

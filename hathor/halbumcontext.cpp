@@ -13,13 +13,8 @@
 #include <QMenu>
 #include "kfadewidgeteffect.h"
 
-QHash<QString, HAlbumContext*> HAlbumContext::s_map;
-
 HAlbumContext* HAlbumContext::getContext(HAlbum &rep) {
-    QString dumbName=rep.getAlbumName()+"__"+rep.getArtistName();
-    if(s_map.contains(dumbName)) return s_map[dumbName];
-    s_map[dumbName] = new HAlbumContext(rep);
-    return s_map[dumbName];
+    return new HAlbumContext(rep);
 }
 
 HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
@@ -66,6 +61,15 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     ui->frame_header->adjustSize();
 
     connect(ui->button_play,SIGNAL(clicked()),this,SLOT(play()));
+    s_albumLoadCount=0;
+    s_trackLoadCount=0;
+    s_tagLoadCount=0;
+
+    loadArtist();
+    loadTracks();
+    loadTags();
+
+    readjustPriorities();
 }
 
 HAlbumContext::~HAlbumContext()
@@ -75,40 +79,13 @@ HAlbumContext::~HAlbumContext()
 
 void HAlbumContext::showEvent(QShowEvent * e)
 {
-    HL("HAlbumContext::showEvent: "+s_rep.getAlbumName()+" "+s_rep.getArtistName());
-    s_showTime=QTime::currentTime();
-    //our boxes may have been stolen while we weren't looking >_<
-
-    while(ui->widget_artist->layout()->count()) {
-        ui->widget_artist->layout()->removeItem(ui->widget_artist->layout()->itemAt(0));
-    }
-    while(ui->widget_tags->layout()->count()) {
-        ui->widget_tags->layout()->removeItem(ui->widget_tags->layout()->itemAt(0));
-    }
-    while(ui->widget_tracks->layout()->count()) {
-        ui->widget_tracks->layout()->removeItem(ui->widget_tracks->layout()->itemAt(0));
-    }
-
-
-    s_albumLoadCount=0;
-    s_trackLoadCount=0;
-    s_tagLoadCount=0;
-
-    loadArtist();
-    loadTracks();
-    loadTags();
-
     s_priority[0].push_back(s_rep.sendPic(HAlbum::Large,this,"setPic"));
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");    // FIX ME
-
+    s_priority[3].push_back(HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic"));
     readjustPriorities();
-
     QWidget::showEvent(e);
 }
 
 void HAlbumContext::hideEvent(QHideEvent *e) {
-    ui->label_you->setPixmap(0);
-    ui->label_albumPic->setPixmap(0);
     readjustPriorities();
     QWidget::hideEvent(e);
 }
@@ -136,7 +113,6 @@ void HAlbumContext::showMoreBio()
 
 void HAlbumContext::loadArtist()
 {
-    if(!isVisible()) return;
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
         HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
@@ -161,7 +137,6 @@ void HAlbumContext::loadTracks()
 
 void HAlbumContext::loadTracks_2(HTrack* track)
 {
-    if(!isVisible()) return;
     if(track) {
         HTrackBox* ab=HTrackBox::getBox(*track);
         if(s_showTime.msecsTo(QTime::currentTime())>110) {
@@ -236,7 +211,6 @@ void HAlbumContext::updateBoxes() {
 }
 
 void HAlbumContext::setPic(QPixmap& p) {
-    if(isHidden()) return;
     ui->label_albumPic->setPixmap(p);
     ui->label_albumPic->setMinimumSize(p.size());
 }
@@ -280,7 +254,6 @@ void HAlbumContext::setShouts(QList<HShout *> shouts) {
 }
 
 void HAlbumContext::addTags(QList<HTag*> tags) {
-    if(!isVisible()) return;
     int i;
     int toLoad=s_tagLoadCount?s_tagLoadCount*2:4;
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<toLoad;i++) {

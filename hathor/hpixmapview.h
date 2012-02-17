@@ -15,7 +15,6 @@ public:
     QPixmap* pixmap() const { return s_p; }
 
     QSize sizeHint() const {
-//        if(parentWidget()) qDebug()<<parentWidget()->parentWidget();
         if(isVisible()&&s_p) return s_p->size();
         else return QWidget::sizeHint();
     }
@@ -26,13 +25,13 @@ public:
     }
 
     void hideEvent(QHideEvent *e) {
-        setPixmap(0);   //just in case you forget to.
+        setPixmap(0);   //in case you forgot!
         QWidget::hideEvent(e);
     }
 
 public slots:
-    void setPixmap(QPixmap& p) { s_p=&p; setMinimumSize(p.width(),p.height()); updateGeometry(); adjustSize(); update(); }
-    void setPixmap(QPixmap* p) { s_p=p; if(p) { setMinimumSize(p->width(),p->height()); updateGeometry(); adjustSize(); update(); } }
+    void setPixmap(QPixmap& p) { if(isHidden()) return; s_p=&p; setMinimumSize(p.width(),p.height()); updateGeometry(); adjustSize(); update(); }
+    void setPixmap(QPixmap* p) { if(isHidden()) return; s_p=p; if(p) { setMinimumSize(p->width(),p->height()); updateGeometry(); adjustSize(); update(); } }
 };
 
 #endif // HPIXMAPVIEW_H

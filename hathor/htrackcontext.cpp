@@ -15,13 +15,8 @@
 #include "hnettloger.h"
 #include <QGraphicsBlurEffect>
 
-QHash<QString, HTrackContext*> HTrackContext::s_map;
-
 HTrackContext* HTrackContext::getContext(HTrack &rep) {
-    QString dumbName=rep.getTrackName()+"__"+rep.getArtistName();
-    if(s_map.contains(dumbName)) return s_map[dumbName];
-    s_map[dumbName] = new HTrackContext(rep);
-    return s_map[dumbName];
+    return new HTrackContext(rep);
 }
 
 HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
@@ -74,8 +69,6 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
-
     ui->frame_header->adjustSize();
 
     // menus
@@ -105,34 +98,6 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_priorities[3].push_back(s_rep.sendSpeed(this,"setSpeed"));
 
     s_priorities[0].push_back(s_rep.sendLoved(this,"setLoved"));
-    readjustPriorities();
-}
-
-HTrackContext::~HTrackContext()
-{
-    delete ui;
-}
-
-void HTrackContext::showEvent(QShowEvent *e) {
-    HL("HTrackContext::showEvent: "+s_rep.getTrackName()+" "+s_rep.getArtistName());
-    s_showTime=QTime::currentTime();
-    //our boxes may have been stolen while we weren't looking >_<
-
-    while(ui->widget_artist->layout()->count()) {
-        ui->widget_artist->layout()->removeItem(ui->widget_artist->layout()->itemAt(0));
-    }
-    while(ui->widget_tags->layout()->count()) {
-        ui->widget_tags->layout()->removeItem(ui->widget_tags->layout()->itemAt(0));
-    }
-    while(ui->widget_albums->layout()->count()) {
-        ui->widget_albums->layout()->removeItem(ui->widget_albums->layout()->itemAt(0));
-    }
-    while(ui->widget_similar->layout()->count()) {
-        ui->widget_similar->layout()->removeItem(ui->widget_similar->layout()->itemAt(0));
-    }
-
-    s_loadedSimilar.clear();
-
     s_artistLoadCount=0;
     s_tagLoadCount=0;
     s_albumLoadCount=0;
@@ -144,6 +109,18 @@ void HTrackContext::showEvent(QShowEvent *e) {
     if(s_slideshow) s_slideshow->show();
 
     readjustPriorities();
+}
+
+HTrackContext::~HTrackContext()
+{
+    delete ui;
+}
+
+void HTrackContext::showEvent(QShowEvent *e) {
+    s_priorities[3].push_back(HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic"));
+    readjustPriorities();
+    if(s_slideshow) s_slideshow->show();
+
     QWidget::showEvent(e);
 }
 

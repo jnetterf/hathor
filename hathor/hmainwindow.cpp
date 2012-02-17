@@ -122,6 +122,7 @@ void HMainWindow::back() {
     KFadeWidgetEffect* kwe=new KFadeWidgetEffect(ui->widget);
     if(s_curContext) s_curContext->hide();
     ui->gridLayout->removeWidget(s_contextStack.back());
+    s_contextStack.back()->deleteLater();
     s_contextStack.pop_back();
 
     if(s_contextStack.size()==1) {

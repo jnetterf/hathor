@@ -19,7 +19,6 @@ HConfigContext::HConfigContext(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->widget_comments->setLayout(new QVBoxLayout);
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
     connect(&s_browser,SIGNAL(ready()),this,SLOT(getShouts()));
     connect(ui->textEdit_shout,SIGNAL(textChanged()),this,SLOT(validateShout()));
     connect(ui->pushButton_post,SIGNAL(clicked()),this,SLOT(shout()));

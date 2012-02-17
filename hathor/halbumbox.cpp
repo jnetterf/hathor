@@ -4,13 +4,8 @@
 #include "hmainwindow.h"
 #include "kfadewidgeteffect.h"
 
-QHash<QString, HAlbumBox*> HAlbumBox::s_map;
-
 HAlbumBox* HAlbumBox::getBox(HAlbum &rep) {
-    QString dumbName=rep.getArtistName()+"__"+rep.getAlbumName();
-    if(s_map.contains(dumbName)) return s_map[dumbName];
-    s_map[dumbName] = new HAlbumBox(rep);
-    return s_map[dumbName];
+    return new HAlbumBox(rep);
 }
 
 HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
@@ -35,7 +30,7 @@ HAlbumBox::HAlbumBox(HAlbum &album, QWidget *parent) :
 }
 
 void HAlbumBox::showEvent(QShowEvent *e) { s_showTime=QTime::currentTime(); s_priority[0].push_back(s_album.sendPic(HAlbum::Large,this,"setPixmap")); readjustPriorities(); QWidget::showEvent(e); }
-void HAlbumBox::hideEvent(QHideEvent *e) { readjustPriorities(); ui->label_icon->setPixmap(0); QWidget::hideEvent(e); }
+void HAlbumBox::hideEvent(QHideEvent *e) { readjustPriorities(); QWidget::hideEvent(e); }
 
 HAlbumBox::~HAlbumBox()
 {

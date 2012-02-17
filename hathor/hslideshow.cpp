@@ -12,7 +12,7 @@ HSlideshow* HSlideshow::getSlideshow(HArtist &t) {
     }
 }
 
-HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent), s_artist(artist), s_i(0), s_z(0), s_done(1), s_sending(0)
+HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent), s_artist(artist), s_i(0), s_z(0), s_sending(0)
 {
     setScene(&sc);
     setFixedWidth(900);
@@ -27,12 +27,13 @@ HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent)
 }
 
 void HSlideshow::nextPic() {
-    if(s_done) {
+    if(isHidden()) {
         s_sending=0;
         return;
     }
     if(!s_cache.size()) {
-        s_artist.sendExtraPics(this,"addPic",7);
+        s_pri.push_back(s_artist.sendExtraPics(this,"addPic",7));
+        *s_pri.back()=1;
         s_sending=0;
         return;
     }
@@ -89,5 +90,6 @@ void HSlideshow::addPic(QPixmap& p) {
 }
 
 void HSlideshow::resume() {
-    if(s_done) { s_done=0; if(!s_sending) QTimer::singleShot(200,this,SLOT(nextPic())); }
+    if(!s_sending) QTimer::singleShot(200,this,SLOT(nextPic()));
+    s_sending=1;
 }

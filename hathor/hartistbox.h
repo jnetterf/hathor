@@ -16,7 +16,6 @@ class HArtistBox : public HGrowingWidget
     HArtist& s_rep;
 
     explicit HArtistBox(HArtist& rep, QWidget *parent = 0);
-    static QHash<QString,HArtistBox*> s_map;
     QTime s_showTime;
 
     QList<int**> s_priority[4];

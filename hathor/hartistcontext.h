@@ -20,15 +20,15 @@ class HArtistContext : public QWidget
     int s_tagsToLoad;
     QGraphicsEffect* s_ge;
     HPlayWidget* s_pw;
-    int s_albumsToLoad, s_tracksToLoad, s_similarToLoad;
+    int s_albumsToLoad, s_tracksToLoad, s_similarToLoad, s_shoutsToLoad;
 
     void resizeEvent(QResizeEvent *);
     QList<HAlbum*> s_loadedAlbums;
     QList<HTrack*> s_loadedTracks;
     QList<HArtist*> s_loadedSimilar;
+    QList<HShout*> s_loadedShouts;
 
     explicit HArtistContext(HArtist& rep, QWidget *parent = 0);
-    static QHash<QString,HArtistContext*> s_map;
 
     void showEvent(QShowEvent *);
     void hideEvent(QHideEvent *);
@@ -63,7 +63,7 @@ public slots:
     void loadTracks(int s=-1);
     void loadTags(int s=-1);
     void loadSimilar(int s=-1);
-    void loadShouts();
+    void loadShouts(int s=-1);
 
     void play();
     void hidePlay();
@@ -84,7 +84,7 @@ public slots:
     void setTracks(HTrack*);
     void setTags(QList<HTag*>);
     void setSimilar(HArtist* similar);
-    void setShouts(QList<HShout*> shouts);
+    void setShouts(HShout* shout);
     
 private:
     Ui::HArtistContext *ui;

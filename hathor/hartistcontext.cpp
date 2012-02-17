@@ -13,12 +13,8 @@
 #include <QGraphicsBlurEffect>
 #include <QMenu>
 
-QHash<QString, HArtistContext*> HArtistContext::s_map;
-
 HArtistContext* HArtistContext::getContext(HArtist &rep) {
-    if(s_map.contains(rep.getName())) return s_map[rep.getName()];
-    s_map[rep.getName()] = new HArtistContext(rep);
-    return s_map[rep.getName()];
+    return new HArtistContext(rep);
 }
 
 HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
@@ -28,6 +24,10 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     s_trackLoadCount(0),
     s_tagLoadCount(0),
     s_similarLoadCount(0),
+    s_playCountCache(0),
+    s_listenerCountCache(0),
+    s_userPlayCountCache(0),
+    deltaWidth(0),
     s_shoutLoadCount(0),
     s_tagsToLoad(0),
     s_ge(0),
@@ -35,6 +35,7 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     s_albumsToLoad(3),
     s_tracksToLoad(10),
     s_similarToLoad(4),
+    s_shoutsToLoad(5),
     ui(new Ui::HArtistContext)
 {
     s_showTime=QTime::currentTime();
@@ -68,7 +69,6 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
 
-
     connect(ui->textEdit,SIGNAL(textChanged()),this,SLOT(evalShout()));
     connect(ui->pushButton,SIGNAL(clicked()),this,SLOT(sendShout()));
 
@@ -86,44 +86,30 @@ void HArtistContext::continueLoading() {
     s_priority[0].push_back(s_rep.sendPlayCount(this,"setPlayCount"));
     s_priority[0].push_back(s_rep.sendListenerCount(this,"setListenerCount"));
     s_priority[0].push_back(s_rep.sendUserPlayCount(this,"setUserPlayCount"));
-    loadShouts();
+
+    s_showTime=QTime::currentTime();
+    loadAlbums(s_albumLoadCount?s_albumLoadCount:s_albumsToLoad);
+    loadTracks(s_trackLoadCount?s_trackLoadCount:s_tracksToLoad);
+    loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
+    loadShouts(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
+    loadTags(s_tagLoadCount);
+
+    resizeEvent(0);
+    readjustPriorities();
+
+
     readjustPriorities();
 }
 
 
 void HArtistContext::showEvent(QShowEvent * e) {
-    HL("HArtistContext::showEvent: "+s_rep.getName());
-    s_showTime=QTime::currentTime();
-    //our boxes may have been stolen while we weren't looking >_<
-    s_loadedAlbums.clear();
-    s_loadedTracks.clear();
-    s_loadedSimilar.clear();
-
-    while(ui->widget_albums->layout()->count()) {
-        ui->widget_albums->layout()->removeItem(ui->widget_albums->layout()->itemAt(0));
-    }
-    while(ui->widget_similarArtists->layout()->count()) {
-        ui->widget_similarArtists->layout()->removeItem(ui->widget_similarArtists->layout()->itemAt(0));
-    }
-    while(ui->widget_tracks->layout()->count()) {
-        ui->widget_tracks->layout()->removeItem(ui->widget_tracks->layout()->itemAt(0));
-    }
-
-    loadAlbums(s_albumLoadCount?s_albumLoadCount:s_albumsToLoad);
-    loadTracks(s_trackLoadCount?s_trackLoadCount:s_tracksToLoad);
-    loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
-    loadTags(s_tagLoadCount);
-
-    HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic");
+    s_priority[3].push_back(HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic"));
     s_priority[1].push_back(s_rep.sendPic(HArtist::Large,this,"setPic"));
-
-    resizeEvent(0);
     readjustPriorities();
     QWidget::showEvent(e);
 }
 
 void HArtistContext::hideEvent(QHideEvent *e) {
-    ui->label_artistPic->setPixmap(0);
     readjustPriorities();
     QWidget::hideEvent(e);
 }
@@ -201,11 +187,16 @@ void HArtistContext::loadSimilar(int s)
     readjustPriorities();
 }
 
-void HArtistContext::loadShouts()
+void HArtistContext::loadShouts(int s)
 {
-//    ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
-//    s_priority[3].push_back(s_rep.sendShouts(this,"setShouts"));
-//    readjustPriorities();
+    ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
+    if(s==-1) s_priority[1].push_back(s_rep.sendShouts(this,"setShouts",s_shoutsToLoad));
+    else {
+        s_shoutLoadCount=0;
+        s_shoutsToLoad=5;
+        s_priority[3].push_back(s_rep.sendShouts(this,"setShouts",s));
+    }
+    readjustPriorities();
 }
 
 void HArtistContext::play() {
@@ -254,7 +245,6 @@ void HArtistContext::onShoutSent() {
 }
 
 void HArtistContext::setPic(QPixmap& p) {
-    if(isHidden()) return;
     if(ui->label_artistPic->pixmap()) deltaWidth=-ui->label_artistPic->pixmap()->width();
     else deltaWidth=0;
     int deltaHeight;
@@ -264,13 +254,23 @@ void HArtistContext::setPic(QPixmap& p) {
     deltaWidth+=p.width();
     deltaHeight+=p.height();
 
-    if(s_showTime.msecsTo(QTime::currentTime())>110) {
-        QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
-        pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
-                                 qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
-        pa1->setEndValue(QSize(p.width(),p.height()));
-        pa1->setDuration(500);
-        pa1->start(QPropertyAnimation::DeleteWhenStopped);
+    if(ui->label_artistPic->pixmap()) {
+        {
+            QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
+            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
+                                     qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
+            pa1->setEndValue(QSize(p.width(),p.height()));
+            pa1->setDuration(500);
+            pa1->start(QPropertyAnimation::DeleteWhenStopped);
+        }
+        {
+            QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"minimumSize");
+            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
+                                     qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
+            pa1->setEndValue(QSize(p.width(),p.height()));
+            pa1->setDuration(500);
+            pa1->start(QPropertyAnimation::DeleteWhenStopped);
+        }
     } else {
         ui->label_artistPic->setMinimumHeight(p.height());
         ui->label_artistPic->adjustSize();
@@ -285,16 +285,16 @@ void HArtistContext::setBio(QString bio) {
     ui->label_description->setText(bio);
     ui->label_description->adjustSize();
 
-    if(s_showTime.msecsTo(QTime::currentTime())>110)
+//    if(s_showTime.msecsTo(QTime::currentTime())>110)
     {
         QPropertyAnimation* pa=new QPropertyAnimation(ui->label_description,"maximumHeight");
         pa->setStartValue(ui->label_description->height());
         pa->setEndValue(ui->label_description->heightForWidth(ui->label_description->width()-deltaWidth));
         pa->setDuration((ui->label_description->heightForWidth(ui->label_description->width()-deltaWidth)-ui->label_description->height())*2);
         pa->start(QAbstractAnimation::DeleteWhenStopped);
-    } else {
+    } /*else {
         ui->label_description->setMaximumHeight((ui->label_description->heightForWidth(ui->label_description->width()-deltaWidth)-ui->label_description->height())*2);
-    }
+    }*/
 }
 
 void HArtistContext::setMePic(QPixmap& pic) {
@@ -323,7 +323,6 @@ void HArtistContext::updateCounts() {
 }
 
 void HArtistContext::setAlbums(HAlbum* album) {
-    if(!isVisible()) return;
     if(s_loadedAlbums.contains(album)) return;
     s_loadedAlbums.push_back(album);
     {
@@ -361,7 +360,6 @@ void HArtistContext::setAlbums(HAlbum* album) {
 }
 
 void HArtistContext::setTracks(HTrack* track) {
-    if(!isVisible()) return;
     if(s_loadedTracks.contains(track)) return;
     s_loadedTracks.push_back(track);
 //    int i;
@@ -393,7 +391,6 @@ void HArtistContext::setTracks(HTrack* track) {
 }
 
 void HArtistContext::setTags(QList<HTag *> tags) {
-    if(!isVisible()) return;
     int i;
     s_tagsToLoad=qMax(s_tagLoadCount?s_tagLoadCount*2:4,s_tagsToLoad);
     for(i=s_tagLoadCount;i<tags.size()&&i-s_tagLoadCount<s_tagsToLoad;i++) {
@@ -419,7 +416,6 @@ void HArtistContext::setTags(QList<HTag *> tags) {
 }
 
 void HArtistContext::setSimilar(HArtist* similar) {
-    if(!isVisible()) return;
     if(s_loadedSimilar.contains(similar)) return;
     s_loadedSimilar.push_back(similar);
     {
@@ -450,23 +446,36 @@ void HArtistContext::setSimilar(HArtist* similar) {
     s_similarToLoad+=2;
 }
 
-void HArtistContext::setShouts(QList<HShout*> shouts) {
-    int i;
-    int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
-    for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        HShoutBox* ab=new HShoutBox(*shouts[i],this);
-        ui->widget_comments->layout()->addWidget(ab);
-        ui->widget_albums->layout()->setAlignment(ab,Qt::AlignTop);
-    }
-    if(i-s_shoutLoadCount!=toLoad) {
-        ui->label_moreShoutbox->hide();
-    } else {
+void HArtistContext::setShouts(HShout* shouts) {
+    if(!shouts) {
         ui->label_moreShoutbox->setText(
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
             "p, li { white-space: pre-wrap; }"
             "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+        return;
     }
-    s_shoutLoadCount=i;
+    if(s_loadedShouts.contains(shouts)) return;
+    s_loadedShouts.push_back(shouts);
+    {
+        HShoutBox* ab=new HShoutBox(*shouts,this);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+        ab->adjustSize();
+        ui->widget_comments->layout()->addWidget(ab);
+    }
+//    if(i-s_shoutCount!=toLoad) {
+//        ui->label_moreArtists->hide();
+    /*} else*/ {
+    }
+    s_shoutLoadCount++;
+    s_shoutsToLoad+=2;
 }

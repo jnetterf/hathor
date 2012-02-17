@@ -19,7 +19,6 @@ class HTrackBox : public HGrowingWidget
     bool s_lovedCache;
     QString s_tags;
     int s_score;
-    static QHash<QString,HTrackBox*> s_map;
     explicit HTrackBox(HTrack& ref, QWidget *parent = 0);
     QList<int**> s_priority[4];
 public:
