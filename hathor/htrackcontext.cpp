@@ -6,6 +6,7 @@
 #include "hshoutbox.h"
 #include "hartistbox.h"
 #include "halbumbox.h"
+#include "hlfmwebloginaction.h"
 #include "habstractmusicinterface.h"
 #include <QRect>
 #include <QScrollBar>
@@ -28,6 +29,7 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_similarLoadCount(0),
     s_shoutLoadCount(0),
     s_similarToLoad(10),
+    s_shoutsToLoad(5),
     s_loved(0),
     s_contentSet(0),
     s_pw(0),
@@ -45,23 +47,17 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
 
     ui->label_track->setText(s_rep.getTrackName());
 
-    connect(ui->label_moreDescription,SIGNAL(linkActivated(QString)),this,SLOT(showMoreBio()));
-
     connect(ui->button_play,SIGNAL(clicked()),this,SLOT(play()));
     connect(ui->toolButton_loved,SIGNAL(clicked()),this,SLOT(toggleLoved()));
-//    connect(ui->button_more,SIGNAL(clicked()),this,SLOT(playSimilar()));
+    connect(ui->textEdit_shout,SIGNAL(textChanged()),this,SLOT(evalShout()));
+    connect(ui->pushButton_post,SIGNAL(clicked()),this,SLOT(sendShout()));
+    //    connect(ui->button_more,SIGNAL(clicked()),this,SLOT(playSimilar()));
 
     ui->widget_artist->setLayout(new QVBoxLayout);
     ui->widget_albums->setLayout(new QVBoxLayout);
     ui->widget_tags->setLayout(new QVBoxLayout);
     ui->widget_similar->setLayout(new QVBoxLayout);
     ui->widget_comments->setLayout(new QVBoxLayout);
-
-    loadArtist();
-    loadAlbum();
-    loadSimilar();
-    loadShouts();
-    loadTags();
 
     connect(ui->label_moreTracks,SIGNAL(linkActivated(QString)),this,SLOT(loadSimilar()));
 
@@ -72,16 +68,16 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     ui->frame_header->adjustSize();
 
     // menus
-//    QMenu* playMenu=new QMenu;
-//    playMenu->addAction("Queue",this,SLOT(playTrack()));
-//    playMenu->addAction("Replace",this,SLOT(playReplacing()));
-//    ui->button_play->setMenu(playMenu);
+    //    QMenu* playMenu=new QMenu;
+    //    playMenu->addAction("Queue",this,SLOT(playTrack()));
+    //    playMenu->addAction("Replace",this,SLOT(playReplacing()));
+    //    ui->button_play->setMenu(playMenu);
 
-//    QMenu* moreMenu=new QMenu;
-//    moreMenu->addAction("Queue five similar tracks",this,SLOT(playSimilar()));
-//    moreMenu->addAction("Queue ten similar tracks",this,SLOT(playMoreSimilar()));
-//    moreMenu->addAction("Replace queue with ten songs",this,SLOT(playMoreSimilarReplacing()));
-//    ui->button_more->setMenu(moreMenu);
+    //    QMenu* moreMenu=new QMenu;
+    //    moreMenu->addAction("Queue five similar tracks",this,SLOT(playSimilar()));
+    //    moreMenu->addAction("Queue ten similar tracks",this,SLOT(playMoreSimilar()));
+    //    moreMenu->addAction("Replace queue with ten songs",this,SLOT(playMoreSimilarReplacing()));
+    //    ui->button_more->setMenu(moreMenu);
 
     s_priorities[3].push_back(s_rep.sendBpm(this,"setBpm"));
     s_priorities[3].push_back(s_rep.sendValence(this,"setValence"));
@@ -102,13 +98,16 @@ HTrackContext::HTrackContext(HTrack& rep, QWidget *parent) :
     s_tagLoadCount=0;
     s_albumLoadCount=0;
 
-    loadArtist();
     loadTags();
+    loadArtist();
     loadAlbum();
+    loadShouts();
     loadSimilar(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
     if(s_slideshow) s_slideshow->show();
 
+    loadShouts(s_similarLoadCount?s_similarLoadCount:s_similarToLoad);
     readjustPriorities();
+    s_rep.sendLyrics(this,"setLyrics");
 }
 
 HTrackContext::~HTrackContext()
@@ -132,12 +131,12 @@ void HTrackContext::hideEvent(QHideEvent *e) {
 
 void HTrackContext::showMoreBio()
 {
-    ui->label_moreDescription->setText("Loading...");
     s_priorities[1].push_back(s_rep.sendContent(this,"setContent"));
     readjustPriorities();
 }
 
-void HTrackContext::setMePic(QPixmap& pic) {
+void HTrackContext::setMePic(QImage& pic) {
+    if(!isVisible()) return;
     if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
     ui->label_you->setPixmap(pic);
     ui->label_you->setMinimumHeight(pic.height());
@@ -145,7 +144,6 @@ void HTrackContext::setMePic(QPixmap& pic) {
 
 void HTrackContext::loadArtist()
 {
-    if(!isVisible()) return;
     ui->label_moreArtists->setText("<p align=\"right\"><i>Loading...</i></p>");
     {
         HArtistBox* ab=HArtistBox::getBox(s_rep.getArtist());
@@ -177,11 +175,16 @@ void HTrackContext::loadTags()
     readjustPriorities();
 }
 
-void HTrackContext::loadShouts()
+void HTrackContext::loadShouts(int s)
 {
     ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
-//    s_priorities[3].push_back(s_rep.sendShouts(this,"setShouts"));
-//    readjustPriorities();
+    if(s==-1) s_priorities[1].push_back(s_rep.sendShouts(this,"setShouts",s_shoutsToLoad));
+    else {
+        s_shoutLoadCount=0;
+        s_shoutsToLoad=5;
+        s_priorities[3].push_back(s_rep.sendShouts(this,"setShouts",s));
+    }
+    readjustPriorities();
 }
 
 void HTrackContext::loadSimilar(int s)
@@ -226,10 +229,9 @@ void HTrackContext::hidePlay() {
 }
 
 void HTrackContext::setContent(QString t) {
-    ui->label_description->setText(t.size()?t:"No article is available for this track.");
+    ui->label_description->setText(t.size()?t:"");
     ui->label_description->adjustSize();
 
-    if(s_contentSet) ui->label_moreDescription->hide();
     s_contentSet=1;
 
     if(t.size()) {
@@ -302,34 +304,47 @@ void HTrackContext::setTags(QList<HTag *> tags) {
         ui->label_moreTags->hide();
     } else {
         ui->label_moreTags->setText(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-            "p, li { white-space: pre-wrap; }"
-            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+                    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+                    "p, li { white-space: pre-wrap; }"
+                    "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+                    "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+                    "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
     s_tagLoadCount=i;
 }
 
-void HTrackContext::setShouts(QList<HShout *> shouts) {
-    int i;
-    int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
-    for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        HShoutBox* ab=new HShoutBox(*shouts[i],this);
-        ui->widget_comments->layout()->addWidget(ab);
-
-    }
-    if(i-s_shoutLoadCount!=toLoad) {
-        ui->label_moreShoutbox->hide();
-    } else {
+void HTrackContext::setShouts(HShout* shouts) {
+    if(!shouts) {
         ui->label_moreShoutbox->setText(
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-            "p, li { white-space: pre-wrap; }"
-            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+                    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+                    "p, li { white-space: pre-wrap; }"
+                    "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+                    "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+                    "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+        return;
     }
-    s_shoutLoadCount=i;
+    if(s_loadedShouts.contains(shouts)) return;
+    s_loadedShouts.push_back(shouts);
+    {
+        HShoutBox* ab=new HShoutBox(*shouts,this);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+        ab->adjustSize();
+        ui->widget_comments->layout()->addWidget(ab);
+    }
+    //    if(i-s_shoutCount!=toLoad) {
+    //        ui->label_moreArtists->hide();
+    /*} else*/ {
+    }
+    s_shoutLoadCount++;
+    s_shoutsToLoad+=2;
 }
 
 void HTrackContext::setSimilar(HTrack* similar) {
@@ -339,11 +354,11 @@ void HTrackContext::setSimilar(HTrack* similar) {
         return;
     }
     ui->label_moreTracks->setText(
-        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-        "p, li { white-space: pre-wrap; }"
-        "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-        "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-        "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+                "p, li { white-space: pre-wrap; }"
+                "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+                "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+                "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     if(s_loadedSimilar.contains(similar)) return;
     s_loadedSimilar.push_back(similar);
     {
@@ -360,8 +375,8 @@ void HTrackContext::setSimilar(HTrack* similar) {
         ab->adjustSize();
         ui->widget_similar->layout()->addWidget(ab);
     }
-//    if(i-s_similarLoadCount!=toLoad) {
-//        ui->label_moreArtists->hide();
+    //    if(i-s_similarLoadCount!=toLoad) {
+    //        ui->label_moreArtists->hide();
     /*} else*/ {
     }
     s_similarLoadCount++;
@@ -370,31 +385,31 @@ void HTrackContext::setSimilar(HTrack* similar) {
 
 
 
-//    int i;
-//    int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
-//    for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
-//        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
-//        if(s_showTime.msecsTo(QTime::currentTime())>110) {
-//            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
-//            pa->setStartValue(0);
-//            pa->setEndValue(40);
-//            pa->setDuration(500);
-//            pa->start(QAbstractAnimation::DeleteWhenStopped);
-//        }
-//        ui->widget_similar->layout()->addWidget(ab);
-//    }
-//    if(i-s_similarLoadCount!=toLoad) {
-//        ui->label_moreTracks->hide();
-//    } else {
-//        ui->label_moreTracks->setText(
-//            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
-//            "p, li { white-space: pre-wrap; }"
-//            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
-//            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
-//            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
-//    }
+    //    int i;
+    //    int toLoad=s_similarLoadCount?s_similarLoadCount*2:4;
+    //    for(i=s_similarLoadCount;i<tracks.size()&&i-s_similarLoadCount<toLoad;i++) {
+    //        HTrackBox* ab=HTrackBox::getBox(*tracks[i]);
+    //        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+    //            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+    //            pa->setStartValue(0);
+    //            pa->setEndValue(40);
+    //            pa->setDuration(500);
+    //            pa->start(QAbstractAnimation::DeleteWhenStopped);
+    //        }
+    //        ui->widget_similar->layout()->addWidget(ab);
+    //    }
+    //    if(i-s_similarLoadCount!=toLoad) {
+    //        ui->label_moreTracks->hide();
+    //    } else {
+    //        ui->label_moreTracks->setText(
+    //            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
+    //            "p, li { white-space: pre-wrap; }"
+    //            "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
+    //            "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
+    //            "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+    //    }
 
-//    s_similarLoadCount=i;
+    //    s_similarLoadCount=i;
 }
 
 void HTrackContext::setSlideshow(QWidget *w) {
@@ -419,8 +434,6 @@ void HTrackContext::setLoved(bool a) {
 }
 
 void HTrackContext::toggleLoved() {
-    HL("HTrackContext::toggleLoved: "+s_rep.getTrackName()+" by "+s_rep.getArtistName()+" TO "+(s_loved?"unloved":"loved"));
-
     QMap<QString, QString> params;
     params["method"] = s_loved?"track.unlove":"track.love";
     params["artist"] = s_rep.getArtistName();
@@ -428,6 +441,7 @@ void HTrackContext::toggleLoved() {
 
     QNetworkReply* reply = lastfmext_post( params );
     setLoved(!s_loved);//FIXME::REPLACE
+    connect(reply,SIGNAL(finished()),reply,SLOT(deleteLater()));    //!!?
 }
 
 void HTrackContext::setBpm(int d) {
@@ -474,7 +488,7 @@ void HTrackContext::setPunch(double d) {
 }
 
 void HTrackContext::setSoundCreativity(double d) {
-//        qDebug()<<d<<"(loudness)";
+    //        qDebug()<<d<<"(loudness)";
 
     if(d>0.55) s_character+=QString(s_character.size()?", ":" ")+"interesting";
     if(d<0.4) s_character+=QString(s_character.size()?", ":" ")+"conventional";
@@ -497,4 +511,38 @@ void HTrackContext::setRhythmicIntricacy(double d) {
 
 void HTrackContext::setSpeed(double d) {
 
+}
+
+void HTrackContext::evalShout() {
+    ui->pushButton_post->setEnabled(ui->textEdit_shout->toPlainText().size()&&ui->textEdit_shout->toPlainText().size()<1000);
+    ui->label_characterUse->setText(QString::number(ui->textEdit_shout->toPlainText().size())+"/1000 characters used");
+}
+
+void HTrackContext::sendShout() {
+    if(HLfmWebManager::singleton()) HLfmWebManager::singleton()->shout("http://www.last.fm/music/"+s_rep.getArtistName()+"/_/"+s_rep.getTrackName(),ui->textEdit_shout->toPlainText());
+    ui->textEdit_shout->setText("");
+    ui->label_characterUse->setText("Sent!");
+}
+
+void HTrackContext::setLyrics(QString l) {
+    ui->label_lyrics->setText(l);
+    if(s_showTime.msecsTo(QTime::currentTime())>110) {
+        {
+            QPropertyAnimation* pa=new QPropertyAnimation(ui->label_lyrics,"maximumHeight");
+            pa->setStartValue(ui->label_lyrics->height());
+            pa->setEndValue(378);
+            pa->setDuration(200);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+        {
+            QPropertyAnimation* pa=new QPropertyAnimation(ui->label_lyrics,"minimumHeight");
+            pa->setStartValue(ui->label_lyrics->height());
+            pa->setEndValue(378);
+            pa->setDuration(200);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+    }
+    else {
+        ui->label_lyrics->setFixedHeight(378);
+    }
 }

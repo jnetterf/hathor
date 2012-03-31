@@ -153,6 +153,7 @@ void HSearchContext::getMoreAlbums_2() {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    reply->deleteLater();
 }
 
 void HSearchContext::getMoreArtists(QString s) {
@@ -221,6 +222,7 @@ void HSearchContext::getMoreArtists_2() {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    reply->deleteLater();
 }
 
 void HSearchContext::getMoreTags(QString s) {
@@ -282,6 +284,7 @@ void HSearchContext::getMoreTags_2() {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    reply->deleteLater();
 }
 
 void HSearchContext::getMoreTracks(QString s) {
@@ -350,6 +353,7 @@ void HSearchContext::getMoreTracks_2() {
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
     }
+    reply->deleteLater();
 }
 
 void HSearchContext::getMoreUsers(QString s) {

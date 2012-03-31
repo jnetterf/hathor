@@ -6,7 +6,7 @@
 #include "libhathor_global.h"
 
 #include <QStringList>
-#include <QPixmap>
+#include <QImage>
 
 class LIBHATHORSHARED_EXPORT HTag : public HObject
 {

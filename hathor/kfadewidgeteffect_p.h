@@ -24,7 +24,7 @@
 #include "kfadewidgeteffect.h"
 
 #include <QtCore/QTimeLine>
-#include <QtGui/QPixmap>
+#include <QtGui/QImage>
 
 class KFadeWidgetEffectPrivate
 {
@@ -34,12 +34,12 @@ class KFadeWidgetEffectPrivate
         KFadeWidgetEffect *q_ptr;
 
     private:
-    QPixmap transition(const QPixmap &from, const QPixmap &to, qreal amount) const;
+    QImage transition(const QImage &from, const QImage &to, qreal amount) const;
         void finished();
 
         QTimeLine timeLine;
-        QPixmap oldPixmap;
-        QPixmap newPixmap;
+        QImage oldPixmap;
+        QImage newPixmap;
         QWidget *destWidget;
         bool disabled;
 };

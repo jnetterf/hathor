@@ -10,7 +10,7 @@
 #include <lastfm/XmlQuery>
 #include <QGraphicsColorizeEffect>
 #include <QDesktopServices>
-#include <QPixmap>
+#include <QImage>
 #include <QPalette>
 #include "lastfmext.h"
 #include "hsearchcontext.h"
@@ -44,11 +44,9 @@ void HLoginWidget::continueLoading() {
         emit showMainContext();
         deleteLater();
         //******
-//        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
-        HL("[INIT] LFM/RESTORE");
+        new HLfmWebManager(lastfm::ws::Username,auth.value("lfm.password").toString());
         return;
     }
-    HL("[INIT] LFM/FIRST");
     ///
     px = new FadePixmap;
     px->setPixmap(QPixmap(":/icons/lfmRed.jpg").scaledToHeight(100,Qt::SmoothTransformation));
@@ -188,6 +186,7 @@ void HLoginWidget::doLogin2() {
     try {
         QSettings auth("Nettek","last.fm for Hathor");
         lastfm::XmlQuery const lfm = lastfm::ws::parse( reply );
+        reply->deleteLater();
         lastfm::ws::Username = lfm["session"]["name"].text();
         lastfm::ws::SessionKey = lfm["session"]["key"].text();
 
@@ -234,7 +233,6 @@ void HLoginWidget::doLogin2() {
         tx->setOpacity(0);
 
     } catch (std::runtime_error& e) {
-        HL("[INIT] LFM/ERROR LOGGING IN");
         tx->setFont(QFont("Candara",60));
         tx->setPlainText("Press tab.");
         tx->setOpacity(0);
@@ -271,7 +269,6 @@ void HLoginWidget::finish(int ax) {
 }
 
 void HLoginWidget::openLink(QString s) {
-    HL("[INIT] LFM/OPEN LINK:"+s);
     QDesktopServices::openUrl(QUrl(s));
 }
 

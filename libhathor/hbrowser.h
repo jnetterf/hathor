@@ -44,6 +44,7 @@ class LIBHATHORSHARED_EXPORT HBrowser : public QWidget
     Q_OBJECT
 
     static HRunOnceNotifier* s_notifier;
+    static QOAuth::Interface a;
 
     QWebView* s_webView;
     QList<QWebElement> elements;

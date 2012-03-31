@@ -9,7 +9,7 @@ namespace Ui {
 class HShoutBox;
 }
 
-class HShoutBox : public QWidget
+class HShoutBox : public HGrowingWidget
 {
     Q_OBJECT
     
@@ -48,7 +48,7 @@ public:
     }
 
 public slots:
-    void setPic(QPixmap &p);
+    void setPic(QImage &p);
 
 private:
     Ui::HShoutBox *ui;

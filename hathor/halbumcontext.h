@@ -17,7 +17,9 @@ class HAlbumContext : public QWidget
     HAlbum& s_rep;
     int s_albumLoadCount, s_trackLoadCount, s_tagLoadCount, s_artistLoadCount,s_shoutLoadCount;
     int s_cachedPlayCount,s_cachedListenerCount,s_cachedUserPlayCount;
+    int s_shoutsToLoad;
     int deltaWidth;
+    QList<HShout*> s_loadedShouts;
     QTime s_showTime;
     HPlayWidget* s_pw;
     QGraphicsBlurEffect* s_ge;
@@ -36,7 +38,7 @@ public slots:
     void loadTracks_2(HTrack *track);
     void loadArtist();
     void loadTags();
-    void loadShouts();
+    void loadShouts(int s=-1);
 
     void play();
     void hidePlay();
@@ -46,11 +48,13 @@ public slots:
     void setUserPlayCount(int);
     void updateBoxes();
 
-    void setPic(QPixmap &);
+    void setPic(QImage &);
     void setSummary(QString);
-    void setMePic(QPixmap &p);
-    void setShouts(QList<HShout*>);
+    void setMePic(QImage &p);
+    void setShouts(HShout*);
     void addTags(QList<HTag*> tags);
+    void evalShout();
+    void sendShout();
 
     void readjustPriorities() {
         const static int a[4] = {90,80,70,60};

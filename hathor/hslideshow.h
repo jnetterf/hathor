@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QList>
-#include <QPixmap>
+#include <QImage>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
@@ -20,6 +20,7 @@ class SlideshowItem : public QObject, public QGraphicsPixmapItem {
     Q_PROPERTY(qreal echoX READ echoX WRITE setEchoX)
     Q_PROPERTY(qreal echoY READ echoY WRITE setEchoY)
     QTime wt,xt,yt,zt;
+    int* s_pri;
 public slots:
     void setEchoOpacity(qreal opacity){
         if(wt.msecsTo(QTime::currentTime())<40) return;
@@ -48,9 +49,12 @@ public:
     qreal echoX() { return x(); }
     qreal echoY() { return y(); }
 
-    SlideshowItem( QPixmap& pmap ) : QGraphicsPixmapItem(pmap) {}
+    SlideshowItem( QImage& pmap,int* pri ) : QGraphicsPixmapItem(QPixmap::fromImage(pmap)),s_pri(pri) {}
     virtual ~SlideshowItem() {
-        qDebug()<<"DEL SI";
+        setPixmap(0);
+        scene()->removeItem(this);
+        *s_pri=0;
+        HCachedPixmap::release();
     }
 };
 
@@ -63,36 +67,34 @@ class HSlideshow : public QGraphicsView
     int s_i;
     int s_z;
     bool s_sending;
-    QList<int*> s_pri;
+    QTime s_t;
     QSize minimumSizeHint() const {
         return sizeHint();
     }
     explicit HSlideshow(HArtist& artist,QWidget* parent=0);
 
     void hideEvent(QHideEvent * e) {
-        s_cache.clear();
-        while(s_pri.size()) {
-            *s_pri.takeFirst()=0;
-        }
+        s_cur=0;
+        s_curPri=0;
         QGraphicsView::hideEvent(e);
     }
     void showEvent(QShowEvent *event) {
-        s_i=0;
-//        if(!s_cache.size()) {
-//            s_pri.push_back(s_artist.sendExtraPics(this,"addPic",15));
-//            *s_pri.back()=1;
-//        }
         resume();
         QGraphicsView::showEvent(event);
     }
 
-    QList<QPixmap*> s_cache;
+    int* s_curPri;
+    QImage* s_cur;
 public:
     static HSlideshow* getSlideshow(HArtist&);
+    virtual ~HSlideshow() {
+        s_u.remove(s_artist.getName());
+    }
 public slots:
     void nextPic();
     void resume();
-    void addPic(QPixmap &p);
+    void addPic(QImage &p);
+    void addPic(QImage *p);
 };
 
 #endif // HSLIDESHOW_H

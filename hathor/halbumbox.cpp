@@ -67,16 +67,12 @@ void HAlbumBox::updateCounts() {
 }
 
 
-void HAlbumBox::setPixmap(QPixmap& p) {
+void HAlbumBox::setPixmap(QImage& p) {
+    if(!isVisible()) return;
     if(p.width()!=174) p=p.scaledToWidth(174,Qt::SmoothTransformation);
-    KFadeWidgetEffect* kwe=0;
-    if(s_showTime.msecsTo(QTime::currentTime())>110) {
-        kwe=new KFadeWidgetEffect(ui->label_icon);
-    }
     ui->label_icon->setPixmap(p);
     ui->label_icon->adjustSize();
     adjustSize();
-    if(kwe) kwe->start();
 }
 
 void HAlbumBox::setTagNames(QStringList tsl) {

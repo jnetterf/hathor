@@ -13,6 +13,7 @@
 #include "htrackcontext.h"
 #include "halbumcontext.h"
 #include "hconfigcontext.h"
+#include "hplugin.h"
 
 HMainWindow* HMainWindow::s_singleton=0;
 
@@ -49,7 +50,6 @@ void HMainWindow::keyPressEvent(QKeyEvent *e) {
 }
 
 void HMainWindow::hideEvent(QHideEvent *e) {
-    qDebug()<<"###SAVE";
     HCachedInfo::save();
     QWidget::hideEvent(e);
 }
@@ -61,7 +61,7 @@ void HMainWindow::setupMainContext() {
 
 void HMainWindow::setupMainContext_2() {
 
-    if(ui->toolbar->isHidden()) {
+    if(!ui->toolbar->isVisible()) {
         QPropertyAnimation* pa= new QPropertyAnimation(ui->toolbar,"maximumHeight");
         pa->setStartValue(1);
         ui->toolbar->adjustSize();
@@ -102,6 +102,7 @@ void HMainWindow::showContext(HTrack& a) {
 }
 
 void HMainWindow::setContext(QWidget *ac) {
+    KFadeWidgetEffect* kfe=new KFadeWidgetEffect(ui->widget);
     if(s_curContext) {
         if(dynamic_cast<HSearchContext*>(s_curContext.data())) {
             HSearchContext::detach();
@@ -115,6 +116,7 @@ void HMainWindow::setContext(QWidget *ac) {
     ui->toolbar->setHomeEnabled(1);
     s_curContext=ac;
     s_curContext->show();
+    QTimer::singleShot(40,kfe,SLOT(start()));
 }
 
 
@@ -122,7 +124,9 @@ void HMainWindow::back() {
     KFadeWidgetEffect* kwe=new KFadeWidgetEffect(ui->widget);
     if(s_curContext) s_curContext->hide();
     ui->gridLayout->removeWidget(s_contextStack.back());
-    s_contextStack.back()->deleteLater();
+    if(!dynamic_cast<HSearchContext*>(s_contextStack.back())&&!dynamic_cast<HPlayerContext*>(s_contextStack.back())) {
+        s_contextStack.back()->deleteLater();
+    }
     s_contextStack.pop_back();
 
     if(s_contextStack.size()==1) {
@@ -223,10 +227,10 @@ void HMainWindow::setGetLoggingAllowed() {
 }
 
 void HMainWindow::getLogging() {
-    if(!s_getLoggingAllowed) return;
-    s_getLoggingAllowed=0;
-    ask("<center><B><font size='4'>Help make Hathor better!</B><br></font>Hathor logs crashes, page load times, and other boring information which can be used to improve Hathor.<br>"
-        "Can Hathor send this info off to its developper?<br><br><A href=\"no\">Configure Hathor</A>&nbsp;&nbsp;or&nbsp;&nbsp;<B><font size='4'><A href=\"yes\">Yes! I'm a good person!</A></B>",this,"setLogging");
+//    if(!s_getLoggingAllowed) return;
+//    s_getLoggingAllowed=0;
+//    ask("<center><B><font size='4'>Help make Hathor better!</B><br></font>Hathor logs crashes, page load times, and other boring information which can be used to improve Hathor.<br>"
+//        "Can Hathor send this info off to its developper?<br><br><A href=\"no\">Configure Hathor</A>&nbsp;&nbsp;or&nbsp;&nbsp;<B><font size='4'><A href=\"yes\">Yes! I'm a good person!</A></B>",this,"setLogging");
 }
 
 void HMainWindow::setLogging(QString result) {

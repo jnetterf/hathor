@@ -61,9 +61,8 @@ void HBackground::showStuff() {
             QMap<QString, QString> p1;
             p1["method"] = "library.getArtists";
             p1["user"] = lastfm::AuthenticatedUser().name();
-            p1["period"]="3month";
-            /*if(s_style==List) */p1["limit"]="200";
-//            else p1["limit"]="50";
+//            p1["period"]="3month";
+            p1["limit"]="5000";
             QNetworkReply* reply = lastfm::ws::get( p1 );
 
             connect(reply,SIGNAL(finished()),this,SLOT(showStuff_makeList()));
@@ -75,8 +74,7 @@ void HBackground::showStuff() {
         } else {
             QMap<QString, QString> p1;
             p1["method"] = "user.getRecommendedArtists";
-            /*if(s_style==List) */p1["limit"]="200";
-//            else p1["limit"]="50";
+            p1["limit"]="5000";
             QNetworkReply* reply = lastfmext_post(p1);
             connect(reply,SIGNAL(finished()),this,SLOT(showStuff_makeList()));
         }
@@ -90,6 +88,13 @@ void HBackground::showStuff() {
 }
 
 void HBackground::showStuff_makeList() {
+    if(s_stopRequest) {
+        s_showingStuff=0;
+        doStopRequest();
+        delete sender();
+        return;
+    }
+
     QNetworkReply* reply=dynamic_cast<QNetworkReply*>(sender());
     if(reply) {
         if(s_mode==Top) {
@@ -97,8 +102,6 @@ void HBackground::showStuff_makeList() {
             s_toplist=list;
             s_gotTop=1;
         } else if(s_mode==Suggestions) {
-
-            QList<lastfm::Artist> list2=s_toplist;
             list.clear();
             list=lastfm::Artist::list( reply );
             for(int i=0;i<list.size();i++) {
@@ -108,16 +111,17 @@ void HBackground::showStuff_makeList() {
                     }
                 }
             }
-            for(int i=0;i<list2.size();i++) {
-                for(int j=0;j<list.size();j++) {
-                    if(list2[i]==list[j]) {
-                        list.removeAt(j--);
-                    }
-                }
-            }
+//            for(int i=0;i<list2.size();i++) {
+//                for(int j=0;j<list.size();j++) {
+//                    if(list2[i]==list[j]) {
+//                        list.removeAt(j--);
+//                    }
+//                }
+//            }
             s_reclist=list;
             s_gotRec=1;
         }
+        reply->deleteLater();
     }
     w=0;
     x=500;
@@ -152,6 +156,9 @@ void HBackground::showStuff_makeList() {
             return;
         }
     } else if(s_style==Album) {
+        while(list.size()>61) {
+            list.pop_back();
+        }
         s_showingStuff=0;
         if(s_stopRequest) {
             s_showingStuff=0;
@@ -184,8 +191,8 @@ void HBackground::continueShowStuff() {
     }
 }
 
-void HBackground::showStuff_addPic(QPixmap& pix) {
-    if(_sc->views()[0]->isHidden()) {
+void HBackground::showStuff_addPic(QImage& pix) {
+    if(!_sc->views()[0]->isVisible()) {
         s_showingStuff=0;
         return;
     }
@@ -200,7 +207,7 @@ void HBackground::showStuff_addPic(QPixmap& pix) {
     int COLUMN=0;
     int& i=s_drawingI;
     if(!pix.height()) {
-        pix=QPixmap(126,200);
+        pix=QImage(126,200,QImage::Format_ARGB32);
         pix.fill(Qt::red);
     }
 
@@ -228,7 +235,7 @@ void HBackground::showStuff_addPic(QPixmap& pix) {
         x_[COLUMN]=fp;
     }
 
-    fp->setPixmap(pix);
+    fp->setPixmap(QPixmap::fromImage(pix));
     fp->setPos(197+_nX[COLUMN],-250+_nv[COLUMN]);
     _sc->addItem(fp);
     s_cache.push_back(fp);
@@ -281,6 +288,7 @@ void HBackground::showContext() {
 
 
 void HBackground::doStopRequest() {
+    closeMode();
     s_stopRequest=0;
     showStuff();
 }
@@ -326,6 +334,7 @@ void HBackground::closeMode() {
         _sc->removeItem(s_cache.first());
         delete s_cache.takeFirst();
     }
+    HCachedPixmap::release();
 }
 
 void HBackground::openMode() {

@@ -13,12 +13,13 @@
 #include <QDomDocument>
 #include <lastfm/ws.h>
 #include "lastfmext.h"
+#include "hplugin.h"
 //#include "hrdiointerface.h"
 
 QHash<QString, HTrack*> HTrack::_map;
 
-HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track), s_albumAlbumNameCache_GOT(0), s_trackNameCache_GOT(0), s_infoData(artist,track), s_extraTagData(artist,track),
-    s_similarData(artist,track), s_audioFeatureData(artist,track)
+HTrack::HTrack(QString artist, QString track) : s_artist(artist), s_track(track), s_albumAlbumNameCache_GOT(0), s_trackNameCache_GOT(0), s_gotShouts(0), s_infoData(artist,track), s_extraTagData(artist,track),
+    s_similarData(artist,track), s_audioFeatureData(artist,track), s_shoutData(artist,track)
 {
 }
 
@@ -39,6 +40,7 @@ int** HTrack::sendListenerCount(QObject * o, QString m) { return s_infoData.send
 int** HTrack::sendUserPlayCount(QObject * o, QString m) { return s_infoData.sendProperty("userPlayCount",o,m); }
 int** HTrack::sendTagNames(QObject * o, QString m,QObject* g) { return s_infoData.sendProperty("tagNames",o,m,g); }
 int** HTrack::sendTags(QObject * o, QString m) {
+    connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_tagQueue.push_back(qMakePair(o,m));
     return sendTagNames(this,"sendTags_2",o);
 }
@@ -59,6 +61,7 @@ void HTrack::sendTags_2(QStringList t) {
 int** HTrack::sendMoreTagNames(QObject * o, QString m,QObject* g) { return s_extraTagData.sendProperty("tagNames",o,m,g); }
 
 int** HTrack::sendMoreTags(QObject * o, QString m) {
+    connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_extraTagQueue.push_back(qMakePair(o,m));
     return sendMoreTagNames(this,"sendMoreTags_2",o);
 }
@@ -77,10 +80,49 @@ void HTrack::sendMoreTags_2(QStringList t) {
     s_extraTagQueue.clear();
 }
 
-int** HTrack::sendShouts(QObject * o, QString m) {
-//    s_shoutData.shoutQueue.push_back(qMakePair(o,QString(m)));
-//    s_shoutData.sendData(s_artist,s_track);
-    return 0;
+int** HTrack::sendShouts(QObject *obj, QString member,int count) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
+    s_shoutQueue.push_back(HTriple(obj,member,count));
+    return &(*s_shoutData.sendProperty("shouts",this,"sendShouts_2",obj)=*s_shoutData.sendProperty("authors",this,"sendShouts_3",obj)=*s_shoutData.sendProperty("dates",this,"sendShouts_4",obj));
+}
+
+int** HTrack::sendLyrics(QObject *obj, QString m) {
+    return HPluginManager::singleton()->send("getLyrics",this,obj,m);
+}
+
+void HTrack::sendShouts_2(QStringList t) {
+    s_gotShouts=1;
+    s_shout_shouts=t;
+    sendShouts_4(QStringList());
+}
+
+void HTrack::sendShouts_3(QStringList t) {
+    s_shout_artists=t;
+    sendShouts_4(QStringList());
+}
+
+void HTrack::sendShouts_4(QStringList t) {
+    if(!s_shout_dates.size()) s_shout_dates=t;
+    t=s_shout_dates;
+    if(s_gotShouts&&(s_shout_shouts.size()==s_shout_artists.size())&&(s_shout_shouts.size()==s_shout_dates.size())) {
+        for(int i=0;i<t.size();i++) {
+            bool ok=0;
+            for(int j=0;j<s_shoutQueue.size();j++) {
+                if((i<s_shoutQueue[j].third)||(s_shoutQueue[j].third==-1)) {
+                    ok=1;
+                    if(i==shouts.size()) {
+                        shouts.push_back(new HShout(s_shout_shouts[i],HUser::get(s_shout_artists[i]),s_shout_dates[i]));
+                    }
+                    QMetaObject::invokeMethod(s_shoutQueue[j].first,s_shoutQueue[j].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HShout*,shouts[i]));
+                }
+            }
+            if(!ok) break;
+        }
+        for(int i=0;i<s_shoutQueue.size();i++) {
+            QMetaObject::invokeMethod(s_shoutQueue[i].first,s_shoutQueue[i].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HShout*,0));
+        }
+        s_shoutQueue.clear();
+    }
 }
 
 int** HTrack::sendSummary(QObject * o, QString m) { return s_infoData.sendProperty("summary",o,m); }
@@ -90,6 +132,7 @@ int** HTrack::sendAlbumNames(QObject * o, QString m,QObject* g) { return s_infoD
 int** HTrack::sendAlbumArtistNames(QObject * o, QString m,QObject* g) { return s_infoData.sendProperty("albumArtistNames",o,m,g); }
 
 int** HTrack::sendAlbums(QObject * o, QString m) {
+    connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_albumQueue.push_back(qMakePair(o,m));
     return &(*sendAlbumNames(this,"sendAlbums_2",o)=*sendAlbumArtistNames(this,"sendAlbums_3",o));  // I <3 this line
 }
@@ -120,6 +163,7 @@ int** HTrack::sendSimilarTrackNames(QObject *o, QString m,QObject* g) { return s
 int** HTrack::sendSimilarTrackArtistNames(QObject *o, QString m, QObject* g) { return s_similarData.sendProperty("similarArtistNames",o,m,g); }
 
 int** HTrack::sendSimilar(QObject * o, QString m, int s) {
+    connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_similarQueue.push_back(HTrackTriplet(o,m,s));
     return &(*sendSimilarTrackNames(this,"sendSimilar_2")=*sendSimilarTrackArtistNames(this,"sendSimilar_3"));
 }
@@ -407,42 +451,23 @@ bool HTrack::AudioFeatures::process(const QString &data) {
     return 1;
 }
 
-
-void TrackShoutData::sendData(QString artist,QString track) {
-    QMutexLocker lock(&mutex);  // DO NOT USE QMetaObject::invokeMethod
-    this->artist=artist;
-    this->track=track;
-
-    if(getting) connect(getting,SIGNAL(notify()),this,SLOT(sendData_processQueue()));
-    else if(got) sendData_processQueue();
-    else {
-        // no cache?
-        QMap<QString, QString> params;
-        params["method"] = "track.getShouts";
-        params["artist"] = artist;
-        params["track"] = track;
-        QNetworkReply* reply = lastfmext_post( params );
-
-        getting=new HRunOnceNotifier;   // !!
-        connect(reply,SIGNAL(finished()),this,SLOT(sendData_process()));
-    }
+HTrack::ShoutData::ShoutData(QString artist,QString track) {
+    QMap<QString, QString> params;
+    params["method"] = "track.getShouts";
+    params["artist"] = artist;
+    params["track"] = track;
+    setParams(params);
+    QByteArray b=QCryptographicHash::hash(artist.toUtf8()+track.toUtf8()+"TRACKSHOUTDATA",QCryptographicHash::Md5).toHex();
+    addProperty<QStringList>("shouts",b);
+    addProperty<QStringList>("authors",b);
+    addProperty<QStringList>("dates",b);
 }
 
-void TrackShoutData::sendData_process() {
-    QNetworkReply* reply=qobject_cast<QNetworkReply*>(sender());
-    Q_ASSERT(reply);
-
-    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"GOT ERROR - INVALID DATA RECORDED!";
-        getting->emitNotify();
-        getting=0;
-        return;
-    }
-
+bool HTrack::ShoutData::process(const QString &data) {
+    QStringList shouts, authors, dates;
     try {
-        QString body,author,date;
         QDomDocument doc;
-        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
+        doc.setContent( data );
 
         QDomElement element = doc.documentElement();
 
@@ -450,11 +475,10 @@ void TrackShoutData::sendData_process() {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
-                        if ( l.nodeName() == "body" ) body = k.toText().data();
-                        else if ( l.nodeName() == "author" ) author = k.toText().data();
+                        if ( l.nodeName() == "body" ) shouts.push_back(k.toText().data());
+                        else if ( l.nodeName() == "author" ) authors.push_back(k.toText().data());
                         else if ( l.nodeName() == "date") {
-                            date = k.toText().data();
-                            shouts.push_back(new HShout(body,HUser::get(author),date));
+                            dates.push_back(k.toText().data());
                         }
                     }
                 }
@@ -463,19 +487,10 @@ void TrackShoutData::sendData_process() {
 
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
+        return 0;
     }
-
-    got=1;    // !!
-    getting->emitNotify();
-    getting=0;
-    sendData_processQueue();
-}
-
-void TrackShoutData::sendData_processQueue() {
-    QMutexLocker locker(&mutex_2);
-    while(shoutQueue.size()) {
-        QPair< QObject*, QString > p=shoutQueue.takeFirst();
-        QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(QList<HShout*>,shouts));
-    }
-    shoutQueue.clear();
+    setProperty("shouts",shouts);
+    setProperty("authors",authors);
+    setProperty("dates",dates);
+    return 1;
 }

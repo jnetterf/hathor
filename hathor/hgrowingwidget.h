@@ -14,6 +14,7 @@ public:
         setMinimumHeight(qMax(height(),ev->oldSize().height()));
         if(ev->oldSize().height()>height()) {
         }
+
     }
 };
 

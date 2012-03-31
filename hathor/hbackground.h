@@ -63,7 +63,7 @@ public slots:
     void showStuff();
     void showStuff_makeList();
     void continueShowStuff();
-    void showStuff_addPic(QPixmap &);
+    void showStuff_addPic(QImage &);
 
     void doStopRequest();
     void onSuggMode();

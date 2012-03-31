@@ -32,20 +32,7 @@ struct ArtistAvatarList {
     bool iterateHide(int it=0);
 };
 
-class HPlayLibraryThread : public QThread {
-    QList<lastfm::Artist> s_rec;
-public:
-    HPlayLibraryThread(QList<lastfm::Artist> a) : s_rec(a) {}
-    void run() {
-//        for(int i=0;i<20;i++) {
-//            for(int j=0;j<s_rec.size();j++) {
-//                QList<HTrack*> ts=HArtist::get(s_rec[j].name()).getTracks();
-//                if(ts.size()>i) HPlayer::singleton()->queue(*ts[i]);
-//            }
-//        }
-//        delete this;
-    }
-};
+class HGraphicsPixmapItem : public QObject, public QGraphicsPixmapItem { Q_OBJECT public: HGraphicsPixmapItem(QImage& a, QGraphicsTextItem* const b) : QGraphicsPixmapItem(QPixmap::fromImage(a),b) {} };
 
 class ArtistLabel : public QGraphicsTextItem {
     Q_OBJECT
@@ -54,7 +41,7 @@ public:
     static ArtistLabel* _cur_;
     HArtist& s_rep;
     bool s_vis;
-    QGraphicsPixmapItem* s_px;
+    HGraphicsPixmapItem* s_px;
     ArtistLabel(HArtist& rep) : s_rep(rep),s_vis(1),s_px(0) {
         _u_.push_back(this);
         hideInfo();
@@ -92,7 +79,10 @@ public slots:
 
     void hideInfo() {
         if(!s_vis) return;
-        if(s_px) s_px->hide();
+        if(s_px) {
+            s_px->deleteLater();
+            s_px=0;
+        }
         s_vis=0;
         setHtml("<html>"
                 "<table border='0' width='919' ><tr>"
@@ -104,18 +94,20 @@ public slots:
         pa->setEasingCurve(QEasingCurve::OutSine);
         pa->start(QAbstractAnimation::DeleteWhenStopped);
     }
-    void setPic(QPixmap& p) {
+    void setPic(QImage& p) {
         if(!s_vis) return;
         if(s_px) {
             s_px->show();
             return;
         }
 
-        s_px=new QGraphicsPixmapItem(p,this);
+        s_px=new HGraphicsPixmapItem(p,this);
+
 
         s_px->setX(923-p.width());
         s_px->setY(4);
         s_px->show();
+        s_px->setParent(this);
     }
     void setTags(QStringList l) {
         if(!s_vis) return;
@@ -229,7 +221,6 @@ public slots:
 public:
     ArtistAvatar( QGraphicsScene* sc, QString name, ArtistAvatarList up ) : s_rep(HArtist::get(name)){
         _sc=sc;
-        _artist=0;
         _shown=0;
         _id=++_lastId;
         _pendShow=0;
@@ -436,8 +427,8 @@ private slots:
             anim->setEndValue(1.0);
             anim->setDuration(1000);
             anim->start();
-
         }
+        tx->setParent(this);
     }
 
     void setTn(QStringList txt) {
@@ -456,6 +447,7 @@ private slots:
             anim->setEndValue(1.0);
             anim->setDuration(1000);
             anim->start();
+            tx->setParent(this);
         }
     }
 
@@ -476,7 +468,6 @@ public:
     QList<ArtistAvatar*> _hidden_;
 
     ArtistAvatarList _neighbours_[4];
-    lastfm::Artist* _artist;
 
 signals:
     void showContext();

@@ -17,7 +17,7 @@ static QString sufix(int a) {
 }
 
 HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
-    QWidget(parent),
+    HGrowingWidget(parent),
     s_rep(rep),
     ui(new Ui::HShoutBox)
 {
@@ -42,8 +42,8 @@ HShoutBox::HShoutBox(HShout& rep, QWidget *parent) :
     readjustPriorities();
 }
 
-void HShoutBox::setPic(QPixmap& pic) {
-    if(isHidden()) return;
+void HShoutBox::setPic(QImage& pic) {
+    if(!isVisible()) return;
     if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
     ui->label_pic->setPixmap(pic);
 }

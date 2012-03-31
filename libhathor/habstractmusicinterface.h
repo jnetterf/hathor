@@ -12,6 +12,7 @@
 #include <QDir>
 
 #include <phonon/MediaObject>
+#include <phonon/AudioOutput>
 
 class LIBHATHORSHARED_EXPORT HAbstractTrackInterface : public QObject {
     Q_OBJECT
@@ -215,6 +216,12 @@ public:
     }
 public slots:
     void onStateChanged() {
+        for(int i=0;i<s_mo->outputPaths().size();i++) {
+            Phonon::AudioOutput* a=dynamic_cast<Phonon::AudioOutput*>(s_mo->outputPaths()[i].sink());
+            if(a) {
+                a->setVolume(1.0);
+            }
+        }
         if(s_mo->state()==Phonon::ErrorState) emit finished();
         if(s_mo->state()==Phonon::PlayingState) s_played=1;
         if(s_mo->state()==Phonon::StoppedState&&s_played) emit finished();

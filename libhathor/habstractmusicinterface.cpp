@@ -21,8 +21,7 @@ void HPlayer_PotentialTrack::regProvider(HAbstractTrackProvider *tp) {
 void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
     if(s_rem==-1) return;
     QMutexLocker locker(&mutex);
-    HL("regScore: "+QString::number(score)+" Provider:"+tp->name()+" Track:"+track.getTrackName()+" by "+track.getArtistName());
-//    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
+    qDebug()<<"###GOT SCORE"<<score<<"VS"<<s_score<<"FROM"<<tp<<s_rem-1<<"REMAINING";
     if(score>s_score&&score) {
         if(p_ti) {
             delete p_ti;
@@ -49,7 +48,6 @@ HAbstractTrackProvider* HPlayer_PotentialTrack::getProvider() {
 
 void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackProvider *tp) {
     if(s_rem==-1) {
-        HL("[ERR ] PPT/TP send too late for"+tp->name());
         return;
     }
     QMutexLocker locker(&mutex);
@@ -64,31 +62,26 @@ void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackPr
 }
 
 void HPlayer_PotentialTrack::play() {
-    HL("[PLAY] PPT/REQUEST: "+track.getTrackName()+" by "+track.getArtistName());
     if(s_rem>0) { s_readyToPlay=1; return; }
     if(s_readyToSkip) { skip(); return; }
     if(!p_ti) {
         emit finished();
         return;
     }
-    HL("[PLAY] PPT/REALSTART: "+track.getTrackName()+" by "+track.getArtistName());
     s_rem=-1;
     connect(p_ti,SIGNAL(finished()),this,SIGNAL(finished()));
     connect(p_ti,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
     if(!s_readyToPause) {
         p_ti->play();
-        qDebug()<<"PT::PLAY!!!!";
         emit startedPlaying(p_ti->getTrack());
     }
 }
 
 void HPlayer_PotentialTrack::resume() {
-    HL("[PLAY] PPT/RESUME"+track.getTrackName()+" by "+track.getArtistName());
     if(p_ti&&s_rem==-1) { p_ti->play(); }
 }
 
 void HPlayer_PotentialTrack::skip()  {
-    HL("[PLAY] PPT/SKIP"+track.getTrackName()+" by "+track.getArtistName()+" _ "+(s_readyToSkip?"delayed":"immediate"));
 
 //    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
     if(s_rem>0) { s_readyToSkip=1; }
@@ -96,7 +89,6 @@ void HPlayer_PotentialTrack::skip()  {
 }
 
 void HPlayer_PotentialTrack::pause() {
-    HL("[PLAY] PPT/PAUSE"+track.getTrackName()+" by "+track.getArtistName()+" _ "+(s_readyToPause?"delayed":"immediate"));
     if(s_rem>0) { s_readyToPause=1; return; }
     else if(s_rem==-1&&p_ti) { p_ti->pause(); }
 }
@@ -230,7 +222,6 @@ void HPlayer::resume() {
 
 void HStandardQueue::playNext() {
 
-    HL("[PLAY] HSQ/PLAYNEXT");
     if(s_currentTrack) {
         disconnect(s_currentTrack,0,this,0);
         s_currentTrack->skip();
@@ -245,7 +236,6 @@ void HStandardQueue::playNext() {
         connect(s_currentTrack,SIGNAL(stateChanged(HAbstractTrackInterface::State)),this,SIGNAL(stateChanged(HAbstractTrackInterface::State)));
         connect(s_currentTrack,SIGNAL(startedPlaying(HTrack&)),this,SIGNAL(trackChanged(HTrack&)));
         emit stateChanged(HAbstractTrackInterface::Searching);
-        qDebug()<<"ABOUT TO PLAY!";
         HScrobbler::singleton()->onSongStart(&s_currentTrack->track);
         s_currentTrack->play();
     } else {
@@ -256,7 +246,6 @@ void HStandardQueue::playNext() {
 }
 
 void HPlayer::playNext() {
-    HL("[PLAY] HPL/PLAYNEXT"+QString(Q?"queue exists":"no queue"));
     if(Q) Q->playNext();
 }
 
@@ -302,7 +291,7 @@ void HPlayer::loadPlugins_continue_continue() {
             HPlugin* pl=qobject_cast<HPlugin*>(plugin);
             qDebug()<<plugin<<pl;
             if(pl) {
-                HL("[INIT] HPL/Loading plugin "+fileName);
+                HPluginManager::singleton()->regPlugin(pl);
                 HAbstractTrackProvider* p=pl->trackProvider();
                 qDebug()<<p<<"!";
                 if(p) {
@@ -337,7 +326,7 @@ void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-        // FIX ME
+        connect(reply,SIGNAL(finished()),reply,SLOT(deleteLater()));    //!!?
     }
     s_heuristic=QTime::currentTime();
     s_cur=t;
@@ -348,6 +337,6 @@ void HScrobbler::onSongStart(HTrack *t) { //NO EVENT LOOP{
         params["track"] = s_cur->getTrackName();
 
         QNetworkReply* reply = lastfmext_post( params );
-        // FIX ME
+        connect(reply,SIGNAL(finished()),reply,SLOT(deleteLater()));    //!!?
     }
 }

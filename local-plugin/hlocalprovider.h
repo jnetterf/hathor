@@ -75,7 +75,7 @@ public:
     }
     virtual QString name() { return s_provider->name(); }
     virtual QSet<QString> abilities() { return QSet<QString>(); }
-    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { Q_ASSERT(0); return 0; }
+    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { return 0; }
     virtual int getScore(const QString &, HObject *, QObject *, QString, QObject *) { return -1; }
     bool isLocal(const QString &, HObject *, QObject *, QString , QObject *) { return 1; }
     virtual QWidget* configurationWidget() { return 0; }

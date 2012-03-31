@@ -3,7 +3,7 @@
 
 #include "hobject.h"
 #include <QStringList>
-#include <QPixmap>
+#include <QImage>
 #include <QVariant>
 #include <QObject>
 #include <QTimer>
@@ -14,27 +14,11 @@
 
 struct HTag;
 
-struct LIBHATHORSHARED_EXPORT ArtistShoutData : public QObject {
-    Q_OBJECT
-    friend class HArtist;
-private:
-    QMutex mutex, mutex_2;
-    QString artist;
-    QList<HShout*> shouts;
-    QList< QPair<QObject*,QString> > shoutQueue;
-    bool got;
-    HRunOnceNotifier* getting;
-    ArtistShoutData() : got(0), getting(0) {}
-public slots:
-    void sendData(QString artist);
-    void sendData_process();
-    void sendData_processQueue();
-};
-
 struct ExtraPictureData : QObject {
     Q_OBJECT
     friend class HArtist;
 private:
+    QMap<int,int> s_i;
     bool s_errored;
     QList<HCachedPixmap*> pics;
     QStringList pic_urls;
@@ -51,7 +35,7 @@ private:
     };
     QList<HEPTriplet> s_queue;
 
-    void sendPics(QObject* o,QString m,int c);
+    int* sendPics(QObject* o,QString m,int c);
     ExtraPictureData(QString artist);
 public slots:
     void processPicUrls();
@@ -74,6 +58,7 @@ class LIBHATHORSHARED_EXPORT HArtist : public HObject
     QList< QPair<QObject*,QString> > s_picQueue[4];
     QList< QPair<QObject*,QString> > s_tagQueue;
     QList< QPair<QObject*,QString> > s_moreTagQueue;
+    QList<HShout*> shouts;
     struct HTriple {
         QObject* first;
         QString second;
@@ -84,6 +69,9 @@ class LIBHATHORSHARED_EXPORT HArtist : public HObject
     QList< HTriple > s_albumQueue;
     QList< HTriple > s_trackQueue;
     QList< HTriple > s_similarQueue;
+    QList< HTriple > s_shoutQueue;
+    QStringList s_shout_shouts,s_shout_artists,s_shout_dates;
+    bool s_gotShouts;
 
 public:
     static HArtist& get(QString name);
@@ -98,7 +86,7 @@ public:
 
 public slots:
     QString getName() { return s_name; }
-    int** sendPic(PictureSize p,QObject* o,QString m); /* QPixmap& */
+    int** sendPic(PictureSize p,QObject* o,QString m); /* QImage& */
     int** sendPicNames(PictureSize p,QObject* o,QString m,QObject* g=0); /* QString */
     int** sendTagNames(QObject* o,QString m,QObject* g=0); /* QStringList */
     int** sendTags(QObject* o,QString m); /* QList<HTag*> */
@@ -115,9 +103,9 @@ public slots:
     int** sendTracks(QObject* o,QString m, int count=-1); /* multiple HTrack* */
     int** sendSimilarNames(QObject* o,QString m,QObject* g=0); /* QStringList */
     int** sendSimilar(QObject* o,QString m, int count=-1); /* multiple HArtist* */
-    int** sendShouts(QObject* o,QString m); /* QList<HShout*> */
+    int** sendShouts(QObject* o,QString m,int count=10); /* multiple HShout* */
     int** sendSimilarScores(QObject* o,QString m); /* QList<double> */
-    void sendExtraPics(QObject* o,QString m, int count);    /* TO DO */
+    int* sendExtraPics(QObject* o,QString m, int num);    /* TO DO */
 
     void removeFromQueue(QObject* a) {
         for(int i=0;i<s_tagQueue.size();i++) {
@@ -157,6 +145,12 @@ public slots:
                     s_picQueue[j].removeAt(i);
                     --i;
                 }
+            }
+        }
+        for(int i=0;i<s_shoutQueue.size();i++) {
+            if(s_shoutQueue[i].first==a) {
+                s_shoutQueue.removeAt(i);
+                --i;
             }
         }
     }
@@ -200,8 +194,11 @@ private:
         bool process(const QString& data);
     } s_similarData;
 
+    struct LIBHATHORSHARED_EXPORT ShoutData : public HCachedInfo {
+        ShoutData(QString artist);
+        bool process(const QString& data);
+    } s_shoutData;
 
-    ArtistShoutData s_shoutData;
     ExtraPictureData s_extraPictureData;
 
 public slots:
@@ -210,6 +207,10 @@ public slots:
     void sendAlbums_2(QStringList); /* for internal use */
     void sendTracks_2(QStringList); /* for internal use */
     void sendSimilar_2(QStringList); /* for internal use */
+
+    void sendShouts_2(QStringList); /* for internal use */
+    void sendShouts_3(QStringList); /* for internal use */
+    void sendShouts_4(QStringList); /* for internal use */
 
 private:
     //Degenerate copy and assignment

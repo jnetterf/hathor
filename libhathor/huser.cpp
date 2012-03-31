@@ -33,13 +33,14 @@ void HUser::sendRealName(QObject* o, QString m) {
     s_infoData.sendProperty("realName",o,m);
 }
 
-void HUser::sendPicNames(PictureSize p, QObject* obj, QString member) {
-    s_infoData.sendProperty("pic_"+QString::number(p),obj,member);
+int** HUser::sendPicNames(PictureSize p, QObject* obj, QString member, QObject *g) {
+    return s_infoData.sendProperty("pic_"+QString::number(p),obj,member,g);
 }
 
-void HUser::sendPic(PictureSize p, QObject* obj, QString member) {
+int** HUser::sendPic(PictureSize p, QObject* obj, QString member) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     s_picQueue[p].push_back(qMakePair(obj,QString(member)));
-    sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data());
+    return sendPicNames(p,this,QString("sendPic_2_"+QString::number(p)).toUtf8().data(),obj);
 }
 
 void HUser::sendPic_2(PictureSize p,QString pic) {

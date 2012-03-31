@@ -115,7 +115,7 @@ void HToolbar::clearMessage2() {
 }
 
 void HToolbar::setPlaybackStatus(QString s) {
-    if(!ui->toolButton_play->isHidden()&&ui->label_status->text()!=s_message) {
+    if(ui->toolButton_play->isVisible()&&ui->label_status->text()!=s_message) {
         ui->label_status->setText(s);
     }
     s_playback=s;
@@ -175,7 +175,6 @@ void HToolbar::onStateChanged(HAbstractTrackInterface::State s) {
         setPlayEnabled(true);
         break;
     case HAbstractTrackInterface::Searching:
-        qDebug()<<"SEARCH";
         setPlaybackStatus("Searching for track...");
         setPlayChecked(true);
         setPlayEnabled(true);

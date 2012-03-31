@@ -508,7 +508,6 @@ void HRdioProvider::oauth(QByteArray rdioToken, QByteArray rdioSecret, QByteArra
     //    map1.insert("types", "\"Track\"");
     QMultiMap<QByteArray,QByteArray> p=HBrowser::request(RDIO_CONSUMER_KEY,RDIO_CONSUMER_SECRET,"http://api.rdio.com/1/",map1,s_oauthToken,s_oauthSecret);
     if(p.values().size()<1) {
-        HL("Invalid response from rdio api!");
         if(s_badSet) {
         } else {
             s_badSet=1;

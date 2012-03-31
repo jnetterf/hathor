@@ -15,8 +15,10 @@ class QGraphicsBlurEffect;
 class HTrackContext : public QWidget
 {
     Q_OBJECT
+    friend class HPlayerContext;
     HTrack& s_rep;
-    int s_albumLoadCount, s_artistLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount, s_similarToLoad;
+    int s_albumLoadCount, s_artistLoadCount, s_tagLoadCount, s_similarLoadCount,s_shoutLoadCount;
+    int s_similarToLoad,s_shoutsToLoad;
 
     int s_listenerCountCache, s_playCountCache;
     int s_bpm;
@@ -25,6 +27,7 @@ class HTrackContext : public QWidget
     QString s_key;
     bool s_contentSet;
     HPlayWidget* s_pw;
+    QList<HShout*> s_loadedShouts;
     QGraphicsBlurEffect* s_ge;
     explicit HTrackContext(HTrack& rep, QWidget *parent = 0);
     QWidget* s_slideshow;
@@ -40,13 +43,13 @@ public:
 
 public slots:
     void showMoreBio();
-    void setMePic(QPixmap &p);
+    void setMePic(QImage &p);
     void loadArtist();
     void loadAlbum();
 //    void loadTracks();
     void loadTags();
     void loadSimilar(int s=-1);
-    void loadShouts();
+    void loadShouts(int s=-1);
     void setSlideshow(QWidget*);
 
     void play();
@@ -60,7 +63,7 @@ public slots:
 
     void setAlbums(QList<HAlbum*>);
     void setTags(QList<HTag*>);
-    void setShouts(QList<HShout*>);
+    void setShouts(HShout*);
     void setSimilar(HTrack*);
 
     void setLoved(bool);
@@ -78,6 +81,8 @@ public slots:
     void setTempoInstability(double);
     void setRhythmicIntricacy(double);
     void setSpeed(double);
+    void evalShout();
+    void sendShout();
 
     void toggleLoved();
 
@@ -96,6 +101,8 @@ public slots:
             }
         }
     }
+
+    void setLyrics(QString);
 
 private:
     Ui::HTrackContext *ui;

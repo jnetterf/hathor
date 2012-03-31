@@ -12,7 +12,7 @@ HSlideshow* HSlideshow::getSlideshow(HArtist &t) {
     }
 }
 
-HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent), s_artist(artist), s_i(0), s_z(0), s_sending(0)
+HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent), s_artist(artist), s_i(0), s_z(0), s_sending(0), s_t(), s_curPri(0), s_cur(0)
 {
     setScene(&sc);
     setFixedWidth(900);
@@ -23,25 +23,25 @@ HSlideshow::HSlideshow(HArtist &artist, QWidget *parent) : QGraphicsView(parent)
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setResizeAnchor(QGraphicsView::NoAnchor);
     setTransformationAnchor(QGraphicsView::NoAnchor);
-    setSceneRect(0,0,900,600);
+    setSceneRect(0,0,900,590);
 }
 
 void HSlideshow::nextPic() {
-    if(isHidden()) {
+    if(!isVisible()) {
         s_sending=0;
         return;
     }
-    if(!s_cache.size()) {
-        s_pri.push_back(s_artist.sendExtraPics(this,"addPic",7));
-        *s_pri.back()=1;
+    if(!s_cur||!s_curPri) {
+        *(s_curPri=s_artist.sendExtraPics(this,"addPic",s_i))=1;
         s_sending=0;
         return;
-    }
-    if(s_i>=s_cache.size()) {
-        s_i=0;
     }
 
-    SlideshowItem* gpi=new SlideshowItem(*s_cache[s_i]);
+    SlideshowItem* gpi=new SlideshowItem(*s_cur,s_curPri);
+
+    *s_curPri=0;
+    HCachedPixmap::release();
+
     sc.addItem(gpi);
     gpi->setTransformationMode(Qt::SmoothTransformation);
     gpi->setZValue(++s_z);
@@ -53,8 +53,8 @@ void HSlideshow::nextPic() {
     pa->setDuration(3000);
     pa->start(QAbstractAnimation::DeleteWhenStopped);
 
-    double startScale=qMin(1.0,600.0/gpi->boundingRect().height());
-    double endScale=qMax(1.0,600.0/gpi->boundingRect().height());
+    double startScale=qMin(900.0/gpi->boundingRect().width(),600.0/gpi->boundingRect().height());
+    double endScale=qMax(900.0/gpi->boundingRect().width(),600.0/gpi->boundingRect().height());
 
     QPropertyAnimation* pa2=new QPropertyAnimation(gpi,"echoScale");
     pa2->setStartValue(startScale);
@@ -64,7 +64,7 @@ void HSlideshow::nextPic() {
     pa2->start(QAbstractAnimation::DeleteWhenStopped);
 
     QPropertyAnimation* pa3=new QPropertyAnimation(gpi,"echoX");
-    pa3->setStartValue((900.0-startScale*900.0)/2.0);
+    pa3->setStartValue((900.0-startScale*gpi->boundingRect().width())/2.0);
     pa3->setEndValue(0.0);
     pa3->setEasingCurve(QEasingCurve::InOutQuad);
     pa3->setDuration(7000);
@@ -77,16 +77,33 @@ void HSlideshow::nextPic() {
     pa4->setDuration(7000);
     pa4->start(QAbstractAnimation::DeleteWhenStopped);
 
-    QTimer::singleShot(15000,this,SLOT(nextPic()));
-    QTimer::singleShot(30020,gpi,SLOT(deleteLater()));
+    s_t=QTime::currentTime();
+    QTimer::singleShot(38000,gpi,SLOT(deleteLater()));
     ++s_i;
+    if(s_i==9) s_i=0;
+    s_cur=0;
+    s_curPri=s_artist.sendExtraPics(this,"addPic",s_i);
+    *s_curPri=1;
     s_sending=1;
 }
 
-void HSlideshow::addPic(QPixmap& p) {
-    p=p.scaledToWidth(900,Qt::SmoothTransformation);
-    s_cache.push_back(&p);
-    if(s_cache.size()==1&&!s_sending) nextPic();
+void HSlideshow::addPic(QImage& p) {
+//    if(p.width()>900) p=p.scaledToWidth(900,Qt::SmoothTransformation);
+    s_cur=&p;
+    int a=s_t.msecsTo(QTime::currentTime());
+    if(a>15000||s_t.isNull()) nextPic();
+    else {
+        QTimer::singleShot(15000-a,this,SLOT(nextPic()));
+    }
+}
+
+void HSlideshow::addPic(QImage* p) {
+    if(!p) {
+        s_i=0;
+        s_cur=0;
+        s_curPri=0;
+        nextPic();
+    }
 }
 
 void HSlideshow::resume() {

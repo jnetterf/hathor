@@ -10,7 +10,7 @@
 #include <QMutex>
 #include <QStringList>
 #include <QDebug>
-#include <QPixmap>
+#include <QImage>
 #include <QFile>
 #include <QHttp>
 #include <QSettings>
@@ -31,6 +31,7 @@ class LIBHATHORSHARED_EXPORT HCachedInfo : public QObject {
 
     QMutex mutex;
     QMap<QString, QString> params;
+    bool s_tryOnceMore;
 
     QHash<QString, QHash<QObject*, int*> > s_priority;
 
@@ -84,7 +85,7 @@ class LIBHATHORSHARED_EXPORT HCachedInfo : public QObject {
     HRunOnceNotifier* getting;
 public:
     static void save();
-    HCachedInfo() : got(0), getting(0) {}
+    HCachedInfo() : s_tryOnceMore(1), got(0), getting(0) {}
     void setParams(QMap<QString, QString> cparams) {
         params=cparams;
     }
@@ -146,7 +147,7 @@ class LIBHATHORSHARED_EXPORT HCachedPixmap : public QObject {
     static int s_count;
 
     QList< QPair<QObject*, QString > > queue;
-    QPixmap* pix;
+    QImage* pix;
     QHttp http;
     QFile file;
     QString t;
@@ -179,9 +180,14 @@ public:
         if(!s_map.contains(url)) s_map[url]=new HCachedPixmap(url);
         return s_map[url];
     }
+    void release_exceptMe();
+    static void release();  //clears unused pixmaps;
 
 public slots:
+    void removeFromQueue(QObject*o);
+
     int** send(QObject*o,QString m) {
+        connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
         queue.push_back(qMakePair(o,m));
         if(pix) QMetaObject::invokeMethod(this,"processDownload_2",Qt::QueuedConnection);   //DO NOT RECURSE
         if(!pix||s_cleared||pix->isNull()) QMetaObject::invokeMethod(this,"download",Qt::QueuedConnection);   //DO NOT RECURSE

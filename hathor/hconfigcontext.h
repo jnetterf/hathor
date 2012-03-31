@@ -19,7 +19,7 @@ class HConfigContext : public QWidget
     explicit HConfigContext(QWidget *parent = 0);
     HBrowser s_browser;
 public:
-    static HConfigContext* singleton() { HL("HConfigContext::singleton()"); if(!s_singleton) s_singleton=new HConfigContext; return s_singleton; }
+    static HConfigContext* singleton() { if(!s_singleton) s_singleton=new HConfigContext; return s_singleton; }
     ~HConfigContext();
     void showEvent(QShowEvent *) {
         **HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic")=1;
@@ -27,7 +27,7 @@ public:
 
 public slots:
     void getShouts();
-    void setMePic(QPixmap &p);
+    void setMePic(QImage &p);
     void validateShout();
     void shout();
     

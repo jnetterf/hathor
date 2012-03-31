@@ -20,6 +20,7 @@ class HAlbumBox : public HGrowingWidget
     QTime s_showTime;
     QString s_tagString;
     bool s_gotTags;
+    QList<HShout*> s_loadedShouts;
 
     QList<int**> s_priority[4];
 
@@ -53,7 +54,7 @@ public slots:
     void setUserPlayCount(int count);
     void updateCounts();
 
-    void setPixmap(QPixmap&);
+    void setPixmap(QImage&);
     void setTagNames(QStringList);
 
 signals:

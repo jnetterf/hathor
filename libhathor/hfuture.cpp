@@ -13,7 +13,6 @@
 #include <QHttp>
 #include <QDir>
 #include <QCryptographicHash>
-#include <QPixmapCache>
 
 QSettings HCachedInfo::_sett_("Nettek","Hathor");
 QHash<QString,QVariant> HCachedInfo::sett;
@@ -30,11 +29,24 @@ QHash<QUrl,HCachedPixmap*> HCachedPixmap::s_map;
 
 HCachedPixmap::HCachedPixmap(const QUrl &url) : pix(0), s_cleared(0), s_proc(0) {
     this->url=url;
-    download();
     tryAgain=1;
+    if(!url.isValid()) {
+        qDebug()<<"XX";
+    }
+    download();
+}
+
+void HCachedPixmap::removeFromQueue(QObject *o) {
+    for(int i=0;i<queue.size();i++) {
+        if(queue[i].first==o) {
+            queue.removeAt(i);
+            --i;
+        }
+    }
 }
 
 void HCachedPixmap::download() {
+    if(s_proc) return;
     s_cleared=0;
     s_proc=1;
     if(file.isOpen()) file.close();
@@ -48,24 +60,28 @@ void HCachedPixmap::download() {
     QString y=x;
     y.remove(0,y.lastIndexOf('.'));
     t+="/"+ QCryptographicHash::hash(url.path().toLocal8Bit(),QCryptographicHash::Md5).toHex()+y;
+    file.setFileName(t);
     if(!QFile::exists(t)) {
         if(ss_connections>3) {
             ss_futureConnetions.push_back(qMakePair((QObject*)this,QString("download")));
             return;
         }
         ++ss_connections;
-        file.setFileName(t);
         file.open(QIODevice::WriteOnly);
+        file.write("Test");
 
         http.setHost(url.host(), url.port(80));
         http.get(url.toEncoded(QUrl::RemoveScheme | QUrl::RemoveAuthority), &file);
-        connect(&http,SIGNAL(done(bool)),this,SLOT(processDownload()));
+        connect(&http,SIGNAL(done(bool)),this,SLOT(processDownload(bool)));
     } else {
         QMetaObject::invokeMethod(this,"processDownload",Qt::QueuedConnection);
     }
 }
 
 void HCachedPixmap::processDownload(bool err) {
+    if(err) {
+        qDebug()<<http.errorString()<<this;
+    }
     ++s_count;
     s_proc=0;
 
@@ -73,6 +89,9 @@ void HCachedPixmap::processDownload(bool err) {
         file.flush();
         file.close();
     }
+    file.setFileName(t);
+
+    file.open(QIODevice::ReadOnly);
     --ss_connections;
 
     if(ss_connections<4&&ss_futureConnetions.size()) {
@@ -92,44 +111,64 @@ void HCachedPixmap::processDownload(bool err) {
     }
 
 
+    file.waitForReadyRead(9000);
 
     QMutexLocker locker(&m); Q_UNUSED(locker);  //DO NOT USE QMetaObject::invokeMethod()
-    pix=new QPixmap(t);
-    if((pix->isNull()||!pix->width())) { delete pix; pix=0; tryAgain=0; if(file.fileName().size()) file.remove(); download(); }
+    pix=new QImage(QImage::fromData(file.readAll()));
+//    pix->loadFromData(file.readAll());
+//    delete pix;
+//    pix=new QImage(1,1);
+//    pix->fill(Qt::red);
+    if((pix->isNull()||!pix->width())) {
+        delete pix; pix=0; if(!tryAgain) url=""; tryAgain=0; if(file.fileName().size()) file.remove(); download();
+    }
     else QTimer::singleShot(0,this,SLOT(processDownload_2()));
+
+    file.close();
 }
 
 void HCachedPixmap::processDownload_2() {
-    // Make sure all the objects are sent if they are going to be sent!
-    qApp->processEvents();
+    qApp->processEvents();    // Make sure all the objects are sent if they are going to be sent!
 
     if(!queue.size()) return;
     if(getTruePriority()) {
         if(pix->isNull()) {
             qDebug()<<"WHO ARE YOU TRYING TO TRICK?";
+            queue.clear();
         }
         while(queue.size()) {
             QPair<QObject*, QString> p=queue.takeFirst();
-            QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Q_ARG(QPixmap&,*pix));
+            QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Q_ARG(QImage&,*pix));
         }
     } else {
-        qDebug()<<"Clearing unloved queue.";
+//        qDebug()<<"Clearing unloved queue.";
         queue.clear();
     }
-    if(s_count>50&&s_map.size()) {
-        for(int i=0;i<s_map.size();i++) {
-            if((s_map.values()[i]!=this)&&!s_map.values()[i]->getTruePriority()&&!s_map.values()[i]->s_cleared&&!s_map.values()[i]->queue.size()&&!s_proc) {
-                qDebug()<<"DEL"<<s_map.values()[i]->url<<"W/ PRIORITY"<<s_map.values()[i]->getTruePriority();
-                s_count--;
-                s_map.values()[i]->s_cleared=1;
-                delete s_map.values()[i]->pix;
-                s_map.values()[i]->pix=0;
-                if(s_count<=50) break;
-            }
+    release();
+}
+
+
+void HCachedPixmap::release_exceptMe() {
+    for(int i=0;i<s_map.size();i++) {
+        if(s_map.values()[i]->pix&&(s_map.values()[i]!=this)&&!s_map.values()[i]->getTruePriority()&&!s_map.values()[i]->queue.size()/*&&!s_proc*/) {
+//            qDebug()<<"DEL"<<s_map.values()[i]->url<<"W/ PRIORITY"<<s_map.values()[i]->getTruePriority()<<s_map.values()[i]->pix;
+            s_count--;
+            s_map.values()[i]->s_cleared=1;
+            delete s_map.values()[i]->pix;
+            s_map.values()[i]->pix=0;
         }
     }
-    else if (s_count>50) {
-        qDebug()<<"Uh. oh.";
+}
+
+void HCachedPixmap::release() {
+    for(int i=0;i<s_map.size();i++) {
+        if(s_map.values()[i]->pix&&/*(s_map.values()[i]!=this)&&*/!s_map.values()[i]->getTruePriority()&&!s_map.values()[i]->s_cleared&&!s_map.values()[i]->queue.size()/*&&!s_proc*/) {
+//            qDebug()<<"DEL"<<s_map.values()[i]->url<<"W/ PRIORITY"<<s_map.values()[i]->getTruePriority()<<s_map.values()[i]->pix;
+            s_count--;
+            s_map.values()[i]->s_cleared=1;
+            delete s_map.values()[i]->pix;
+            s_map.values()[i]->pix=0;
+        }
     }
 }
 
@@ -192,8 +231,6 @@ void HCachedInfo::sendData() {
             return;
         }
 
-        HL("[LOAD] NOT CACHED: "+params["method"]+" "+desc);
-
         getting=new HRunOnceNotifier;
         if(ss_connections<3) {
             ++ss_connections;
@@ -229,15 +266,16 @@ void HCachedInfo::sendData_process() {
         if(params.contains("track")) desc+="track="+params["track"]+" ";
         if(params.contains("album")) desc+="album="+params["album"]+" ";
         if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
-        HL("[LOAD] HCI/ERROR!!!: "+params["method"]+" "+desc);
 
         qDebug()<<"GOT ERROR - INVALID DATA RECORDED!";
         getting->emitNotify();
         getting=0;
         qDebug()<<ba;
-        if(!ba.size()||ba.contains("Rate Limit Exceded")) {
+        if(s_tryOnceMore&&(!ba.size()||ba.contains("Rate Limit Exceded"))) {
+            s_tryOnceMore=0;
             QTimer::singleShot(0,this,SLOT(sendData()));
         }
+        reply->deleteLater();
         return;
     }
 
@@ -281,6 +319,7 @@ void HCachedInfo::sendData_process() {
         QMetaObject::invokeMethod(t.first,t.second.toUtf8().data(),Qt::QueuedConnection);
     }
     QTimer::singleShot(0,this,SLOT(sendData_processQueue())); // DO NOT RECURSE
+    reply->deleteLater();
 }
 
 void HCachedInfo::sendData_processQueue() {
@@ -288,7 +327,6 @@ void HCachedInfo::sendData_processQueue() {
     if(params.contains("track")) desc+="track="+params["track"]+" ";
     if(params.contains("album")) desc+="album="+params["album"]+" ";
     if(params.contains("artist")) desc+="artist="+params["artist"]+" ";
-    HL("[LOAD] HCI/FINISH: "+params["method"]+" "+desc);
 
     if(!got) return;
     for(int i=0;i<data.size();i++) {

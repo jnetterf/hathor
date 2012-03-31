@@ -18,6 +18,7 @@ HBrowser.cpp
 #include <QMessageBox>
 
 HRunOnceNotifier* HBrowser::s_notifier=0;
+QOAuth::Interface HBrowser::a;
 
 HBrowser::HBrowser(QWidget *parent, bool havePlugins)
     : QWidget(parent), s_webView(new QWebView(this))
@@ -190,7 +191,6 @@ QMultiMap<QByteArray,QByteArray> HBrowser::request(const QByteArray& consumerKey
 
     s_notifier=new HRunOnceNotifier;
 
-    QOAuth::Interface a;
     a.setConsumerKey(consumerKey);
     a.setConsumerSecret(consumerSecret);
     a.setRequestTimeout(2500);

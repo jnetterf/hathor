@@ -226,7 +226,7 @@ public: //HAbstractTrackProvider
     int globalScore() { return 90; /*Rdio is really good!*/ }
     void sendScore(HTrack& track,QObject* o,QString m) {
         if(!s_ready) {
-            QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(int,0),Q_ARG(HAbstractTrackProvider*,HRdioProvider::singleton()));
+            QMetaObject::invokeMethod(o,m.toUtf8().data(),Qt::QueuedConnection,Q_ARG(int,0),Q_ARG(HAbstractTrackProvider*,this));
             return;
         }
         new HSendScoreTriplet_Rdio(track,o,m,s_ready,s_calmDown);
@@ -334,7 +334,7 @@ public:
     }
     virtual QString name() { return s_provider->name(); }
     virtual QSet<QString> abilities() { return QSet<QString>(); }
-    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { Q_ASSERT(0); return 0; }
+    virtual int** send(const QString &, HObject *, QObject *, QString , QObject *) { return 0; }
     virtual int getScore(const QString &, HObject *, QObject *, QString, QObject *) { return -1; }
     bool isLocal(const QString &, HObject *, QObject *, QString , QObject *) { return 0; }
 

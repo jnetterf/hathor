@@ -678,136 +678,6 @@
               </spacer>
              </item>
              <item>
-              <widget class="QCheckBox" name="checkBox_4">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
-               <property name="font">
-                <font>
-                 <family>Candara</family>
-                 <weight>75</weight>
-                 <bold>true</bold>
-                </font>
-               </property>
-               <property name="text">
-                <string>Enable animations</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_7">
-               <property name="font">
-                <font>
-                 <family>Candara</family>
-                 <italic>true</italic>
-                </font>
-               </property>
-               <property name="text">
-                <string>Disable this if you are old-school or have an old-school computer. (Coming soon)</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_9">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>5</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="Line" name="line_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_12">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Privacy Settings&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
-               <item>
-                <widget class="QLabel" name="label_13">
-                 <property name="font">
-                  <font>
-                   <family>Candara</family>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>Logging policy:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="comboBox_log">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Candara</family>
-                  </font>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>ask me later</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>send all useful information</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>send critical information</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>don't send anything</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_14">
-               <property name="font">
-                <font>
-                 <family>Candara</family>
-                 <italic>true</italic>
-                </font>
-               </property>
-               <property name="text">
-                <string>Hathor relies on logs to fix bugs, improve highly used features, decrease loading times, and more... Thank you for your support!</string>
-               </property>
-               <property name="wordWrap">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="Line" name="line_4">
                <property name="palette">
                 <palette>
@@ -2077,15 +1947,12 @@
                  </widget>
                 </item>
                 <item row="0" column="0" rowspan="2">
-                 <widget class="QLabel" name="label_you">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>You</string>
+                 <widget class="HPixmapView" name="label_you" native="true">
+                  <property name="maximumSize">
+                   <size>
+                    <width>70</width>
+                    <height>16777215</height>
+                   </size>
                   </property>
                  </widget>
                 </item>
@@ -2165,6 +2032,12 @@
    <class>QWebView</class>
    <extends>QWidget</extends>
    <header>QtWebKit/QWebView</header>
+  </customwidget>
+  <customwidget>
+   <class>HPixmapView</class>
+   <extends>QWidget</extends>
+   <header>hpixmapview.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -44,7 +44,7 @@ KFadeWidgetEffectPrivate::KFadeWidgetEffectPrivate(QWidget *_destWidget)
 // Fast transitions. Read:
 // http://techbase.kde.org/Development/Tutorials/Graphics/Performance
 // for further information on why not use setOpacity.
-QPixmap KFadeWidgetEffectPrivate::transition(const QPixmap &from, const QPixmap &to, qreal amount) const
+QImage KFadeWidgetEffectPrivate::transition(const QImage &from, const QImage &to, qreal amount) const
 {
     const int value = int(0xff * amount);
 
@@ -60,29 +60,8 @@ QPixmap KFadeWidgetEffectPrivate::transition(const QPixmap &from, const QPixmap 
     if (from.paintEngine()->hasFeature(QPaintEngine::PorterDuff) &&
             from.paintEngine()->hasFeature(QPaintEngine::BlendModes))
     {
-        QPixmap under = from;
-        QPixmap over  = to;
-
-        QPainter p;
-        p.begin(&over);
-        p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-        p.fillRect(over.rect(), color);
-        p.end();
-
-        p.begin(&under);
-        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
-        p.fillRect(under.rect(), color);
-        p.setCompositionMode(QPainter::CompositionMode_Plus);
-        p.drawPixmap(0, 0, over);
-        p.end();
-
-        return under;
-    }
-    else
-    {
-        // Fall back to using QRasterPaintEngine to do the transition.
-        QImage under = from.toImage();
-        QImage over  = to.toImage();
+        QImage under = from;
+        QImage over  = to;
 
         QPainter p;
         p.begin(&over);
@@ -97,7 +76,28 @@ QPixmap KFadeWidgetEffectPrivate::transition(const QPixmap &from, const QPixmap 
         p.drawImage(0, 0, over);
         p.end();
 
-        return QPixmap::fromImage(under);
+        return under;
+    }
+    else
+    {
+        // Fall back to using QRasterPaintEngine to do the transition.
+        QImage under = from;
+        QImage over  = to;
+
+        QPainter p;
+        p.begin(&over);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+        p.fillRect(over.rect(), color);
+        p.end();
+
+        p.begin(&under);
+        p.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+        p.fillRect(under.rect(), color);
+        p.setCompositionMode(QPainter::CompositionMode_Plus);
+        p.drawImage(0, 0, over);
+        p.end();
+
+        return under;
     }
 }
 
@@ -114,7 +114,7 @@ KFadeWidgetEffect::KFadeWidgetEffect(QWidget *destWidget)
         return;
     }
     setGeometry(QRect(destWidget->mapTo(parentWidget(), QPoint(0, 0)), destWidget->size()));
-    d->oldPixmap = QPixmap::grabWidget(destWidget);
+    d->oldPixmap = QPixmap::grabWidget(destWidget).toImage();
     d->timeLine.setFrameRange(0, 255);
     d->timeLine.setCurveShape(QTimeLine::EaseOutCurve);
     connect(&d->timeLine, SIGNAL(finished()), SLOT(finished()));
@@ -143,7 +143,7 @@ void KFadeWidgetEffect::start(int duration)
         deleteLater();
         return;
     }
-    d->newPixmap = QPixmap::grabWidget(d->destWidget);
+    d->newPixmap = QPixmap::grabWidget(d->destWidget).toImage();
     d->timeLine.setDuration(duration);
     d->timeLine.start();
 }
@@ -152,7 +152,7 @@ void KFadeWidgetEffect::paintEvent(QPaintEvent *)
 {
     Q_D(KFadeWidgetEffect);
     QPainter p(this);
-    p.drawPixmap(rect(), d->transition(d->oldPixmap, d->newPixmap, d->timeLine.currentValue()));
+    p.drawImage(rect(), d->transition(d->oldPixmap, d->newPixmap, d->timeLine.currentValue()));
     p.end();
 }
 

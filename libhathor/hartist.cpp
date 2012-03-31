@@ -156,21 +156,56 @@ void HArtist::sendSimilar_2(QStringList t) {
     s_similarQueue.clear();
 }
 
-int** HArtist::sendShouts(QObject *obj, QString member) {
-//    s_shoutData.shoutQueue.push_back(qMakePair(obj,member));
-//    s_shoutData.sendData(s_name);
-    return 0;
+int** HArtist::sendShouts(QObject *obj, QString member,int count) {
+    connect(obj,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
+    s_shoutQueue.push_back(HTriple(obj,member,count));
+    return &(*s_shoutData.sendProperty("shouts",this,"sendShouts_2",obj)=*s_shoutData.sendProperty("authors",this,"sendShouts_3",obj)=*s_shoutData.sendProperty("dates",this,"sendShouts_4",obj));
+}
+
+void HArtist::sendShouts_2(QStringList t) {
+    s_gotShouts=1;
+    s_shout_shouts=t;
+    sendShouts_4(QStringList());
+}
+
+void HArtist::sendShouts_3(QStringList t) {
+    s_shout_artists=t;
+    sendShouts_4(QStringList());
+}
+
+void HArtist::sendShouts_4(QStringList t) {
+    if(!s_shout_dates.size()) s_shout_dates=t;
+    t=s_shout_dates;
+    if(s_gotShouts&&(s_shout_shouts.size()==s_shout_artists.size())&&(s_shout_shouts.size()==s_shout_dates.size())) {
+        for(int i=0;i<t.size();i++) {
+            bool ok=0;
+            for(int j=0;j<s_shoutQueue.size();j++) {
+                if((i<s_shoutQueue[j].third)||(s_shoutQueue[j].third==-1)) {
+                    ok=1;
+                    if(i==shouts.size()) {
+                        shouts.push_back(new HShout(s_shout_shouts[i],HUser::get(s_shout_artists[i]),s_shout_dates[i]));
+                    }
+                    QMetaObject::invokeMethod(s_shoutQueue[j].first,s_shoutQueue[j].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HShout*,shouts[i]));
+                }
+            }
+            if(!ok) break;
+        }
+        for(int i=0;i<s_shoutQueue.size();i++) {
+            QMetaObject::invokeMethod(s_shoutQueue[i].first,s_shoutQueue[i].second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(HShout*,0));
+        }
+        s_shoutQueue.clear();
+    }
 }
 
 int** HArtist::sendSimilarScores(QObject *o, QString m) { return s_similarData.sendProperty("similarScores",o,m); }
 
-void HArtist::sendExtraPics(QObject* o, QString s, int count) {
-    return s_extraPictureData.sendPics(o,s,count);
+int* HArtist::sendExtraPics(QObject* o, QString s, int num) {
+    return s_extraPictureData.sendPics(o,s,num);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-HArtist::HArtist(QString name) : s_name(name), s_infoData(name), s_extraTagData(name), s_albumData(name), s_trackData(name), s_similarData(name), s_extraPictureData(name)
+HArtist::HArtist(QString name) : s_gotShouts(0), s_name(name), s_infoData(name), s_extraTagData(name), s_albumData(name), s_trackData(name), s_similarData(name), s_shoutData(name), s_extraPictureData(name)
 {
     for(int i=0;i<4;i++) s_cachedPixmap[i]=0;
 }
@@ -400,18 +435,18 @@ bool HArtist::ArtistSimilarData::process(const QString &data) {
 
 ExtraPictureData::ExtraPictureData(QString artist) : s_errored(0), got_urls(0),getting(0), s_artist(artist), sett("Nettek","Hathor_artistExtraImages") {}
 
-void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
+int* ExtraPictureData::sendPics(QObject *o, QString m, int c) {
     connect(o,SIGNAL(destroyed(QObject*)),this,SLOT(removeFromQueue(QObject*)));
     if(got_urls) {
         Q_ASSERT(o);
         s_queue.push_back(HEPTriplet(o,m,c));
-        procQueue();
-        return;
+        QTimer::singleShot(0,this,SLOT(procQueue()));
+        return &s_i[c];
     } else {
         if(o) {
             s_queue.push_back(HEPTriplet(o,m,c));
         }
-        if(getting) return;
+        if(getting) return &s_i[c];
     }
 
     getting=1;
@@ -420,8 +455,8 @@ void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
         pic_urls=sett.value("pic_urls for "+s_artist).toStringList();
         got_urls=1;
         getting=0;
-        procQueue();
-        return;
+        QTimer::singleShot(0,this,SLOT(procQueue()));
+        return &s_i[c];
     }
 
     QMap<QString, QString> params;
@@ -431,6 +466,7 @@ void ExtraPictureData::sendPics(QObject *o, QString m, int c) {
     qDebug()<<s_artist;
     QNetworkReply* reply = lastfmext_post( params );
     connect(reply,SIGNAL(finished()),this,SLOT(processPicUrls()));
+    return &s_i[c];
 }
 
 void ExtraPictureData::processPicUrls() {
@@ -477,7 +513,8 @@ void ExtraPictureData::processPicUrls() {
 
     got_urls=1;
     getting=0;
-    procQueue();
+    QTimer::singleShot(0,this,SLOT(procQueue()));
+    reply->deleteLater();
 }
 
 void ExtraPictureData::procQueue() {
@@ -487,48 +524,30 @@ void ExtraPictureData::procQueue() {
         QObject* o=s_queue.first().first;
         s_queue.pop_front();
 
-        for(int i=0;i<c&&i<pic_urls.size();i++) {
-            if(i>=pics.size()) {
-                pics.push_back(HCachedPixmap::get(pic_urls[i]));
-            }
-            pics[i]->send(o,m);
+        if(pic_urls.size()>c) {
+            *HCachedPixmap::get(pic_urls[c])->send(o,m)=&s_i[c];
+        } else {
+            QMetaObject::invokeMethod(o,m.toUtf8().data(),Q_ARG(QImage*,0));
         }
     }
 }
 
-void ArtistShoutData::sendData(QString artist) {
-    QMutexLocker lock(&mutex);  // DO NOT USE QMetaObject::invokeMethod
-    this->artist=artist;
-
-    if(getting) connect(getting,SIGNAL(notify()),this,SLOT(sendData_processQueue()));
-    else if(got) sendData_processQueue();
-    else {
-        // no cache?
-        QMap<QString, QString> params;
-        params["method"] = "artist.getShouts";
-        params["artist"] = artist;
-        QNetworkReply* reply = lastfmext_post( params );
-
-        getting=new HRunOnceNotifier;   // !!
-        connect(reply,SIGNAL(finished()),this,SLOT(sendData_process()));
-    }
+HArtist::ShoutData::ShoutData(QString artist) {
+    QMap<QString, QString> params;
+    params["method"] = "artist.getShouts";
+    params["artist"] = artist;
+    setParams(params);
+    QByteArray b=QCryptographicHash::hash(artist.toUtf8()+"SHOUTDATA",QCryptographicHash::Md5).toHex();
+    addProperty<QStringList>("shouts",b);
+    addProperty<QStringList>("authors",b);
+    addProperty<QStringList>("dates",b);
 }
 
-void ArtistShoutData::sendData_process() {
-    QNetworkReply* reply=qobject_cast<QNetworkReply*>(sender());
-    Q_ASSERT(reply);
-
-    if(!reply->isFinished()||reply->error()!=QNetworkReply::NoError) {
-        qDebug()<<"GOT ERROR - INVALID DATA RECORDED!";
-        getting->emitNotify();
-        getting=0;
-        return;
-    }
-
+bool HArtist::ShoutData::process(const QString &data) {
+    QStringList shouts, authors, dates;
     try {
-        QString body,author,date;
         QDomDocument doc;
-        doc.setContent( QString::fromUtf8(reply->readAll().data()) );
+        doc.setContent( data );
 
         QDomElement element = doc.documentElement();
 
@@ -536,11 +555,10 @@ void ArtistShoutData::sendData_process() {
             for (QDomNode m = n.firstChild(); !m.isNull(); m = m.nextSibling()) {
                 for (QDomNode l = m.firstChild(); !l.isNull(); l = l.nextSibling()) {
                     for (QDomNode k = l.firstChild(); !k.isNull(); k = k.nextSibling()) {
-                        if ( l.nodeName() == "body" ) body = k.toText().data();
-                        else if ( l.nodeName() == "author" ) author = k.toText().data();
+                        if ( l.nodeName() == "body" ) shouts.push_back(k.toText().data());
+                        else if ( l.nodeName() == "author" ) authors.push_back(k.toText().data());
                         else if ( l.nodeName() == "date") {
-                            date = k.toText().data();
-                            shouts.push_back(new HShout(body,HUser::get(author),date));
+                            dates.push_back(k.toText().data());
                         }
                     }
                 }
@@ -549,19 +567,10 @@ void ArtistShoutData::sendData_process() {
 
     } catch (std::runtime_error& e) {
         qWarning() << e.what();
+        return 0;
     }
-
-    got=1;    // !!
-    getting->emitNotify();
-    getting=0;
-    sendData_processQueue();
-}
-
-void ArtistShoutData::sendData_processQueue() {
-    QMutexLocker locker(&mutex_2);
-    while(shoutQueue.size()) {
-        QPair< QObject*, QString > p=shoutQueue.takeFirst();
-        QMetaObject::invokeMethod(p.first,p.second.toUtf8().data(),Qt::QueuedConnection,Q_ARG(QList<HShout*>,shouts));
-    }
-    shoutQueue.clear();
+    setProperty("shouts",shouts);
+    setProperty("authors",authors);
+    setProperty("dates",dates);
+    return 1;
 }

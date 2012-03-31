@@ -3,6 +3,7 @@
 #include "halbumbox.h"
 #include "htrackbox.h"
 #include "htagbox.h"
+#include "hlfmwebloginaction.h"
 #include "halbumbox.h"
 #include "hshoutbox.h"
 #include "hartistbox.h"
@@ -26,6 +27,7 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     s_artistLoadCount(0),
     s_shoutLoadCount(0),
     s_cachedPlayCount(-1),s_cachedListenerCount(-1),s_cachedUserPlayCount(-1),
+    s_shoutsToLoad(5),
     s_pw(0), s_ge(0),
     ui(new Ui::HAlbumContext)
 {
@@ -46,8 +48,6 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
     ui->widget_comments->setLayout(new QVBoxLayout);
     ui->widget_comments->layout()->setSpacing(0);
 
-    loadShouts();
-
     connect(ui->label_moreTracks,SIGNAL(linkActivated(QString)),this,SLOT(loadTracks()));
 
     connect(ui->label_moreTags,SIGNAL(linkActivated(QString)),this,SLOT(loadTags()));
@@ -55,6 +55,8 @@ HAlbumContext::HAlbumContext(HAlbum& rep, QWidget *parent) :
 //    connect(ui->label_moreArtists,SIGNAL(linkActivated(QString)),this,SLOT(loadSimilar()));
 
     connect(ui->label_moreShoutbox,SIGNAL(linkActivated(QString)),this,SLOT(loadShouts()));
+    connect(ui->textEdit_shout,SIGNAL(textChanged()),this,SLOT(evalShout()));
+    connect(ui->pushButton_post,SIGNAL(clicked()),this,SLOT(sendShout()));
 
     ui->label_albumPic->adjustSize();
     ui->frame_art->adjustSize();
@@ -82,6 +84,7 @@ void HAlbumContext::showEvent(QShowEvent * e)
     s_priority[0].push_back(s_rep.sendPic(HAlbum::Large,this,"setPic"));
     s_priority[3].push_back(HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic"));
     readjustPriorities();
+    loadShouts();
     QWidget::showEvent(e);
 }
 
@@ -160,11 +163,16 @@ void HAlbumContext::loadTags()
     else s_priority[1].push_back(s_rep.sendTags(this, "addTags"));
 }
 
-void HAlbumContext::loadShouts()
+void HAlbumContext::loadShouts(int s)
 {
-    // FIX ME
     ui->label_moreShoutbox->setText("<p align=\"right\"><i>Loading...</i></p>");
-    s_rep.sendShouts(this,"setShouts");
+    if(s==-1) s_priority[1].push_back(s_rep.sendShouts(this,"setShouts",s_shoutsToLoad));
+    else {
+        s_shoutLoadCount=0;
+        s_shoutsToLoad=5;
+        s_priority[3].push_back(s_rep.sendShouts(this,"setShouts",s));
+    }
+    readjustPriorities();
 }
 
 void HAlbumContext::play() {
@@ -210,7 +218,8 @@ void HAlbumContext::updateBoxes() {
     ui->label_userplaycount->setText("<B>"+QString::number(s_cachedUserPlayCount)+"</B> plays in your library");
 }
 
-void HAlbumContext::setPic(QPixmap& p) {
+void HAlbumContext::setPic(QImage& p) {
+    if(!isVisible()) return;
     ui->label_albumPic->setPixmap(p);
     ui->label_albumPic->setMinimumSize(p.size());
 }
@@ -227,30 +236,43 @@ void HAlbumContext::setSummary(QString s) {
     }
 }
 
-void HAlbumContext::setMePic(QPixmap& pic) {
+void HAlbumContext::setMePic(QImage& pic) {
     if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
     ui->label_you->setPixmap(pic);
 }
 
-void HAlbumContext::setShouts(QList<HShout *> shouts) {
-    int i;
-    int toLoad=s_shoutLoadCount?s_shoutLoadCount*2:10;
-    for(i=s_shoutLoadCount;i<shouts.size()&&i-s_shoutLoadCount<toLoad;i++) {
-        HShoutBox* ab=new HShoutBox(*shouts[i],this);
-        ui->widget_comments->layout()->addWidget(ab);
-
-    }
-    if(i-s_shoutLoadCount!=toLoad) {
-        ui->label_moreShoutbox->hide();
-    } else {
+void HAlbumContext::setShouts(HShout* shouts) {
+    if(!shouts) {
         ui->label_moreShoutbox->setText(
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\"> "
             "p, li { white-space: pre-wrap; }"
             "</style></head><body style=\" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;\">"
             "<p align=\"right\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><a href=\"a1\">"
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
+        return;
     }
-    s_shoutLoadCount=i;
+    if(s_loadedShouts.contains(shouts)) return;
+    s_loadedShouts.push_back(shouts);
+    {
+        HShoutBox* ab=new HShoutBox(*shouts,this);
+        if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
+            QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
+            pa->setStartValue(0);
+            pa->setEndValue(ab->sizeHint().height());
+            pa->setDuration(500);
+            pa->start(QAbstractAnimation::DeleteWhenStopped);
+        }
+        ab->adjustSize();
+        ui->widget_comments->layout()->addWidget(ab);
+    }
+//    if(i-s_shoutCount!=toLoad) {
+//        ui->label_moreArtists->hide();
+    /*} else*/ {
+    }
+    s_shoutLoadCount++;
+    s_shoutsToLoad+=2;
 }
 
 void HAlbumContext::addTags(QList<HTag*> tags) {
@@ -278,4 +300,15 @@ void HAlbumContext::addTags(QList<HTag*> tags) {
             "<span style=\" text-decoration: underline; color:#0057ae;\">more...</span></a></p></body></html>");
     }
     s_tagLoadCount=i;
+}
+
+void HAlbumContext::evalShout() {
+    ui->pushButton_post->setEnabled(ui->textEdit_shout->toPlainText().size()&&ui->textEdit_shout->toPlainText().size()<1000);
+    ui->label_characterUse->setText(QString::number(ui->textEdit_shout->toPlainText().size())+"/1000 characters used");
+}
+
+void HAlbumContext::sendShout() {
+    if(HLfmWebManager::singleton()) HLfmWebManager::singleton()->shout("http://www.last.fm/music/"+s_rep.getArtistName()+"/"+s_rep.getAlbumName(),ui->textEdit_shout->toPlainText());
+    ui->textEdit_shout->setText("");
+    ui->label_characterUse->setText("Sent!");
 }

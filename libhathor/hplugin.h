@@ -39,11 +39,11 @@ public:
 
     /*! Return how good this plugin is at an ability.
      *
-     * If the ability is not implented, return -1.
+     * If the ability is not implemented, return -1.
      */
     virtual int getScore(const QString& command,HObject* mobj=0,QObject* object=0,QString slot="",QObject* guest=0)=0;
 
-    /*! Return wheter this command will use only local resources. If unsure, 0.
+    /*! Return wheter this command will use only local resources.
      */
     virtual bool isLocal(const QString& command,HObject* mobj=0,QObject* object=0,QString slot="",QObject* guest=0)=0;
 
@@ -57,8 +57,9 @@ public:
 
 class LIBHATHORSHARED_EXPORT HPluginManager {
     QList<HPlugin*> s_pll;
+    static HPluginManager* s_singleton;
 public:
-    void regPlugin(HPlugin* a);
+    void regPlugin(HPlugin* a) {s_pll.push_back(a);}
 
     int** send(const QString& command,HObject* mobj,QObject* object,QString slot,QObject* guest=0) {
         int ts=0, ti=-1;
@@ -71,7 +72,7 @@ public:
         if(ti==-1) {
             return 0;
         } else {
-            s_pll[ti]->send(command,mobj,object,slot,guest);
+            return s_pll[ti]->send(command,mobj,object,slot,guest);
         }
     }
 
@@ -86,9 +87,10 @@ public:
         if(ti==-1) {
             return 0;
         } else {
-            s_pll[ti]->send(command,mobj,object,slot,guest);
+            return s_pll[ti]->send(command,mobj,object,slot,guest);
         }
     }
+    static HPluginManager* singleton() { return (s_singleton=(s_singleton?s_singleton:new HPluginManager)); }
 };
 
 Q_DECLARE_INTERFACE(HPlugin, "com.nettek.hathor.plugin/0.01")

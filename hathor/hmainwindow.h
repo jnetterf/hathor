@@ -7,6 +7,7 @@
 #include <QFrame>
 #include <QBoxLayout>
 #include <QLabel>
+#include <QDebug>
 
 namespace Ui {
 class HMainWindow;
@@ -86,6 +87,7 @@ public slots:
     void openUrl(QString);
 
     void setTitle(HTrack& a);
+    void printLyrics(QString a) { qDebug()<<"LYRICS"<<a; }
 
 };
 

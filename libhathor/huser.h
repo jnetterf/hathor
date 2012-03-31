@@ -4,7 +4,7 @@
 #include "huser.h"
 #include "libhathor_global.h"
 #include <QStringList>
-#include <QPixmap>
+#include <QImage>
 #include "htrack.h"
 
 class HArtist;
@@ -29,8 +29,8 @@ public:
 
 public slots:
     void sendRealName(QObject* o, QString m); /*QString*/
-    void sendPicNames(PictureSize pic,QObject* o, QString m); /*QString*/
-    void sendPic(PictureSize pic,QObject* o, QString m); /*QPixmap& */
+    int** sendPicNames(PictureSize pic,QObject* o, QString m,QObject* g); /*QString*/
+    int** sendPic(PictureSize pic,QObject* o, QString m); /*QImage& */
 
     void sendPic_2_0(QString pic) { sendPic_2((PictureSize)0,pic); }
     void sendPic_2_1(QString pic) { sendPic_2((PictureSize)1,pic); }
@@ -44,6 +44,17 @@ public slots:
 //    void getTopTracks(); /*multiple HTrack* */
 
     void sendPic_2(PictureSize p,QString pic); /* for internal use */
+
+    void removeFromQueue(QObject* o) {
+        for(int j=0;j<4;j++) {
+            for(int i=0;i<s_picQueue[j].size();i++) {
+                if(s_picQueue[j][i].first==o) {
+                    s_picQueue[j].removeAt(i);
+                    --i;
+                }
+            }
+        }
+    }
 
 private:
     static QHash<QString, HUser*> _map;

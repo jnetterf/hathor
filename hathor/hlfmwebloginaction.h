@@ -4,6 +4,7 @@
 #include "haction.h"
 #include <QTimer>
 #include <QDebug>
+#include <QEventLoop>
 
 class HLfmWebLoginAction : public HAction
 {
@@ -13,7 +14,7 @@ public:
     HLfmWebLoginAction(HBrowser& browser, QString username, QString password) : HAction(browser), s_username(username), s_password(password) {
         connect(&s_browser,SIGNAL(ready()),this,SLOT(next()));
         s_browser.loadPage("http://www.last.fm/login");
-//        QTimer::singleShot(12000,this,SIGNAL(done()));
+        QTimer::singleShot(12000,this,SIGNAL(done()));
     }
 public slots:
     void next() {   //BUGFIX THIS!
@@ -25,10 +26,11 @@ public slots:
     }
     void last() {
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(last()));
-//        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
-//        QTimer::singleShot(1000,&loop,SLOT(quit()));
-//        loop.exec();
-//        s_browser.doJS("a.confirmButton.click()");
+        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
+        QEventLoop loop;
+        QTimer::singleShot(1000,&loop,SLOT(quit()));
+        loop.exec();
+        s_browser.doJS("a.confirmButton.click()");
         emit done();
     }
 };

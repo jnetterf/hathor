@@ -24,10 +24,6 @@ HConfigContext::HConfigContext(QWidget *parent) :
     connect(ui->pushButton_post,SIGNAL(clicked()),this,SLOT(shout()));
     s_browser.loadPage("http://www.last.fm/group/Hathor+Users");
     validateShout();
-
-    connect(ui->comboBox_log,SIGNAL(activated(int)),this,SLOT(setLogPolicy()));
-    connect(ui->checkBox_scrobble,SIGNAL(clicked(bool)),this,SLOT(setLogPolicy()));
-    connect(ui->checkBox_similar,SIGNAL(toggled(bool)),this,SLOT(setLogPolicy()));
 }
 
 HConfigContext::~HConfigContext()
@@ -71,7 +67,7 @@ void HConfigContext::getShouts() {
     ui->label_moreShoutbox->hide();
 }
 
-void HConfigContext::setMePic(QPixmap& pic) {
+void HConfigContext::setMePic(QImage& pic) {
     if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
     ui->label_you->setPixmap(pic);
 }

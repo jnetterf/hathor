@@ -30,6 +30,7 @@ public:
         for(int i=3;i>=0;--i) {
             for(int j=0;j<s_priority[i].size();j++) {
                 if(s_priority[i][j]) {
+                    Q_ASSERT(*s_priority[i][j]);
                     if(!*s_priority[i][j]) *s_priority[i][j]=new int;
                     if(isVisible()) {
                         **s_priority[i][j]=a[j];
@@ -44,7 +45,7 @@ public:
 public slots:
 //    void continueLoading();
     void requestContext() { emit contextRequested(s_rep); }
-    void setPic(QPixmap &p);
+    void setPic(QImage &p);
     void setTagNames(QStringList tsl);
     void setBioShort(QString sh);
 signals:

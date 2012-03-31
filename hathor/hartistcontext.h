@@ -28,6 +28,8 @@ class HArtistContext : public QWidget
     QList<HArtist*> s_loadedSimilar;
     QList<HShout*> s_loadedShouts;
 
+    bool s_bigPic;
+
     explicit HArtistContext(HArtist& rep, QWidget *parent = 0);
 
     void showEvent(QShowEvent *);
@@ -71,9 +73,9 @@ public slots:
     void evalShout();
     void sendShout();
     void onShoutSent();
-    void setPic(QPixmap &p);
+    void setPic(QImage &p);
     void setBio(QString bio);
-    void setMePic(QPixmap &p);
+    void setMePic(QImage &p);
 
     void setPlayCount(int a);
     void setListenerCount(int a);

@@ -23,6 +23,7 @@ public:
     ~HPlayerContext();
 
     void showEvent(QShowEvent *e);
+    void hideEvent(QHideEvent *e);
 
 public slots:
     void showTrack(HTrack& t);

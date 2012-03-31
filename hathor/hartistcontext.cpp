@@ -24,11 +24,11 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     s_trackLoadCount(0),
     s_tagLoadCount(0),
     s_similarLoadCount(0),
+    s_shoutLoadCount(0),
     s_playCountCache(0),
     s_listenerCountCache(0),
     s_userPlayCountCache(0),
     deltaWidth(0),
-    s_shoutLoadCount(0),
     s_tagsToLoad(0),
     s_ge(0),
     s_pw(0),
@@ -36,6 +36,7 @@ HArtistContext::HArtistContext(HArtist& rep, QWidget *parent) :
     s_tracksToLoad(10),
     s_similarToLoad(4),
     s_shoutsToLoad(5),
+    s_bigPic(0),
     ui(new Ui::HArtistContext)
 {
     s_showTime=QTime::currentTime();
@@ -103,15 +104,16 @@ void HArtistContext::continueLoading() {
 
 
 void HArtistContext::showEvent(QShowEvent * e) {
+    ui->label_artistPic->setPixmap(0);
     s_priority[3].push_back(HUser::get(lastfm::ws::Username).sendPic(HUser::Medium,this,"setMePic"));
-    s_priority[1].push_back(s_rep.sendPic(HArtist::Large,this,"setPic"));
+    s_priority[1].push_back(s_rep.sendPic(s_bigPic?HArtist::Mega:HArtist::Large,this,"setPic"));
     readjustPriorities();
     QWidget::showEvent(e);
 }
 
 void HArtistContext::hideEvent(QHideEvent *e) {
-    readjustPriorities();
     QWidget::hideEvent(e);
+    readjustPriorities();
 }
 
 void HArtistContext::resizeEvent(QResizeEvent *e) {
@@ -132,6 +134,7 @@ HArtistContext::~HArtistContext()
 void HArtistContext::showMoreBio()
 {
     ui->label_moreDescription->setText("Loading...");
+    s_bigPic=1;
     s_priority[0].push_back(s_rep.sendPic(HArtist::Mega,this,"setPic"));
     s_priority[0].push_back(s_rep.sendBio(this,"setBio"));
     ui->label_moreDescription->hide();
@@ -240,33 +243,37 @@ void HArtistContext::sendShout() {
 }
 
 void HArtistContext::onShoutSent() {
+    Q_ASSERT(sender());
+    if(sender()) sender()->deleteLater();
     ui->textEdit->setText("");
     ui->label_wordCount->setText("Sent!");
 }
 
-void HArtistContext::setPic(QPixmap& p) {
+void HArtistContext::setPic(QImage& p) {
+    if(!isVisible()) return;
     if(ui->label_artistPic->pixmap()) deltaWidth=-ui->label_artistPic->pixmap()->width();
     else deltaWidth=0;
     int deltaHeight;
     if(ui->label_artistPic->pixmap()) deltaHeight=-ui->label_artistPic->pixmap()->height();
     else deltaHeight=0;
+    bool a=ui->label_artistPic->pixmap();
     ui->label_artistPic->setPixmap(p);
     deltaWidth+=p.width();
     deltaHeight+=p.height();
 
-    if(ui->label_artistPic->pixmap()) {
+    if(a) {
         {
             QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"maximumSize");
-            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
-                                     qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
+            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->width()-deltaWidth),
+                                     qMax(0,ui->label_artistPic->height()-deltaHeight)));
             pa1->setEndValue(QSize(p.width(),p.height()));
             pa1->setDuration(500);
             pa1->start(QPropertyAnimation::DeleteWhenStopped);
         }
         {
             QPropertyAnimation* pa1=new QPropertyAnimation(ui->label_artistPic,"minimumSize");
-            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->pixmap()->width()-deltaWidth),
-                                     qMax(0,ui->label_artistPic->pixmap()->height()-deltaHeight)));
+            pa1->setStartValue(QSize(qMax(0,ui->label_artistPic->width()-deltaWidth),
+                                     qMax(0,ui->label_artistPic->height()-deltaHeight)));
             pa1->setEndValue(QSize(p.width(),p.height()));
             pa1->setDuration(500);
             pa1->start(QPropertyAnimation::DeleteWhenStopped);
@@ -297,7 +304,8 @@ void HArtistContext::setBio(QString bio) {
     }*/
 }
 
-void HArtistContext::setMePic(QPixmap& pic) {
+void HArtistContext::setMePic(QImage& pic) {
+    if(!isVisible()) return;
     if(pic.width()!=70) pic=pic.scaledToWidth(70,Qt::SmoothTransformation);
     ui->label_you->setPixmap(pic);
 }
@@ -327,22 +335,17 @@ void HArtistContext::setAlbums(HAlbum* album) {
     s_loadedAlbums.push_back(album);
     {
         HAlbumBox* ab=HAlbumBox::getBox(*album);
-        ui->widget_albums->layout()->addWidget(ab);
-        ui->widget_albums->layout()->setAlignment(ab,Qt::AlignTop);
         if(s_showTime.msecsTo(QTime::currentTime())>110) {
+            ab->setFixedHeight(0);
+            ab->adjustSize();
             QPropertyAnimation* pa=new QPropertyAnimation(ab,"maximumHeight");
             pa->setStartValue(0);
             pa->setEndValue(174);
             pa->setDuration(500);
             pa->start(QAbstractAnimation::DeleteWhenStopped);
-        } else {
-            ab->show();
-            ab->setFixedHeight(174);
-            ab->adjustSize();
-            ui->scrollAreaWidgetContents->adjustSize();
-            ui->scrollAreaWidgetContents_2->adjustSize();
-            ui->widget_albums->adjustSize();
         }
+        ab->adjustSize();
+        ui->widget_albums->layout()->addWidget(ab);
     }
 //    if(i-s_albumLoadCount!=toLoad) {
 //        ui->label_moreAlbums->hide();

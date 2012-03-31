@@ -6,29 +6,13 @@
 #include "hfuture.h"
 #include "libhathor_global.h"
 #include <QStringList>
-#include <QPixmap>
+#include <QImage>
 #include <QVariant>
 
 class HArtist;
 class HAlbum;
 class HTag;
 class HShout;
-
-struct LIBHATHORSHARED_EXPORT TrackShoutData : public QObject {
-    Q_OBJECT
-    friend class HTrack;
-private:
-    QMutex mutex, mutex_2;
-    QString artist, track;
-    QList<HShout*> shouts;  QList< QPair<QObject*,QString> > shoutQueue;
-    bool got;
-    HRunOnceNotifier* getting;
-    TrackShoutData() : got(0), getting(0) {}
-public slots:
-    void sendData(QString artist, QString track);
-    void sendData_process();
-    void sendData_processQueue();
-};
 
 class LIBHATHORSHARED_EXPORT HTrack : public HObject
 {
@@ -64,8 +48,6 @@ public slots:
     int** sendTags(QObject*,QString); /* QList<HTag*> */
     int** sendMoreTags(QObject*,QString); /* QList<HTag*> */
 
-    int** sendShouts(QObject*,QString); /* QList<HShout*> */
-
     int** sendListenerCount(QObject*,QString); /* int */
     int** sendPlayCount(QObject*,QString); /* int */
     int** sendUserPlayCount(QObject*,QString); /* int */
@@ -81,7 +63,9 @@ public slots:
     int** sendSimilarTrackArtistNames(QObject*,QString,QObject* guest=0); /* QStringList */
     int** sendSimilar(QObject*,QString,int=-1); /* QList<HTrack*> */
     int** sendSimilarScores(QObject*,QString); /* QList<double> */
+    int** sendShouts(QObject* o,QString m,int count=10); /* multiple HShout* */
 
+    int** sendLyrics(QObject*,QString m); /* QString */
 
     /* the following are doubles, except where noted: */
     int** sendBpm(QObject*,QString);
@@ -105,6 +89,39 @@ public slots:
     int** sendRhythmicIntricacy(QObject*,QString);
     int** sendSpeed(QObject*,QString);
 
+    void removeFromQueue(QObject* o) {
+        for(int i=0;i<s_tagQueue.size();i++) {
+            if(s_tagQueue[i].first==o) {
+                s_tagQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_extraTagQueue.size();i++) {
+            if(s_extraTagQueue[i].first==o) {
+                s_extraTagQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_albumQueue.size();i++) {
+            if(s_albumQueue[i].first==o) {
+                s_albumQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_similarQueue.size();i++) {
+            if(s_similarQueue[i].first==o) {
+                s_similarQueue.removeAt(i);
+                --i;
+            }
+        }
+        for(int i=0;i<s_shoutQueue.size();i++) {
+            if(s_shoutQueue[i].first==o) {
+                s_shoutQueue.removeAt(i);
+                --i;
+            }
+        }
+    }
+
 private slots:
     void sendTags_2(QStringList);
     void sendMoreTags_2(QStringList);
@@ -112,6 +129,10 @@ private slots:
     void sendAlbums_3(QStringList);
     void sendSimilar_2(QStringList);
     void sendSimilar_3(QStringList);
+
+    void sendShouts_2(QStringList); /* for internal use */
+    void sendShouts_3(QStringList); /* for internal use */
+    void sendShouts_4(QStringList); /* for internal use */
 private:
     friend class HCachedInfo;
 
@@ -140,6 +161,17 @@ private:
     QStringList s_trackArtistNameCache;
     bool s_trackNameCache_GOT;
 
+    struct HTriple {
+        QObject* first;
+        QString second;
+        int third;
+        HTriple(QObject* a,const QString& b,const int& c) : first(a),second(b),third(c) {}
+    };
+    QList<HShout*> shouts;
+    QList< HTriple > s_shoutQueue;
+    QStringList s_shout_shouts,s_shout_artists,s_shout_dates;
+    bool s_gotShouts;
+
     static QHash<QString, HTrack*> _map;
     HTrack(QString artist, QString track);  // use HTrack::get(name)
 
@@ -163,7 +195,11 @@ private:
         bool process(const QString &data);
     } s_audioFeatureData;
 
-    TrackShoutData s_shoutData;
+    struct LIBHATHORSHARED_EXPORT ShoutData : public HCachedInfo {
+        ShoutData(QString artist,QString track);
+        bool process(const QString& data);
+    } s_shoutData;
+
 public:
     /*!
       For debugging.
