@@ -265,7 +265,11 @@ void HPlayer::loadPlugins_continue() {
         return;
     }
     pluginsDir = QDir(cl[s_i]);
-    pluginsDir.cd("plugins");
+    if(!pluginsDir.cd("plugins")) {
+        s_i++;
+        loadPlugins_continue();
+        return;
+    }
 
     s_j=0;
     subfiles=pluginsDir.entryList(QDir::Files);
