@@ -7,7 +7,7 @@
 #include "htrackcontext.h"
 #include <lastfm/ws.h>
 #include <lastfm/misc.h>
-#include <lastfm/XmlQuery>
+#include <lastfm/XmlQuery.h>
 #include <QGraphicsColorizeEffect>
 #include <QDesktopServices>
 #include <QImage>
@@ -103,6 +103,7 @@ void HLoginWidget::continueLoading() {
     nothanks->setTextInteractionFlags(Qt::TextBrowserInteraction);
     nothanks->setFont(QFont("Candara",30));
     nothanks->adjustSize();
+//    doLogin();
 }
 
 void HLoginWidget::showTabHint() {
@@ -185,7 +186,9 @@ void HLoginWidget::doLogin2() {
     QNetworkReply* reply = dynamic_cast<QNetworkReply*>(sender());
     try {
         QSettings auth("Nettek","last.fm for Hathor");
-        lastfm::XmlQuery const lfm = lastfm::ws::parse( reply );
+        lastfm::XmlQuery lfm;
+        lfm.parse( reply );
+
         reply->deleteLater();
         lastfm::ws::Username = lfm["session"]["name"].text();
         lastfm::ws::SessionKey = lfm["session"]["key"].text();

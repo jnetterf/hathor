@@ -114,7 +114,8 @@ void HBrowser::setInput(QString input, QString value)
     }
     for(int i=0;i<elements.size();i++)
     {
-        if(/*elements[i].localName()=="input"&&*/elements[i].attribute("id")==input)
+        qDebug() << elements[i].attribute("name");
+        if(/*elements[i].localName()=="input"&&*/elements[i].attribute("id")==input||elements[i].attribute("name")==input)
         {
             elements[i].evaluateJavaScript("this.focus()");
             elements[i].evaluateJavaScript("this.value=\""+value+"\"");

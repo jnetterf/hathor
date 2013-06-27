@@ -5,8 +5,8 @@
 #include "hshoutbox.h"
 #include "hlfmwebloginaction.h"
 #include <lastfm/ws.h>
-#include <lastfm/User>
-#include <lastfm/Artist>
+#include <lastfm/User.h>
+#include <lastfm/Artist.h>
 
 #include <QTimer>
 

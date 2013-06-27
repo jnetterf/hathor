@@ -1,7 +1,8 @@
 #include "hbackground.h"
 #include <lastfm/ws.h>
-#include <lastfm/User>
-#include <lastfm/Artist>
+#include <lastfm/User.h>
+#include <lastfm/Artist.h>
+#include <lastfm/AbstractType.h>
 #include <QGraphicsScene>
 #include <QHttp>
 #include <QFile>
@@ -20,10 +21,6 @@
 
 int _l=0;
 bool ArtistAvatar::_ready = 0;
-
-bool operator<(const lastfm::Artist& a,const lastfm::Artist& b) {
-    return (a.name().localeAwareCompare(b)<0);
-}
 
 HBackground::HBackground(QGraphicsScene *sc) : s_mco(0), s_mode(Top), s_style(Album), s_gotTop(0), s_gotRec(0), s_stopRequest(0), s_showingStuff(0) {
     this->_sc=sc;
@@ -60,7 +57,7 @@ void HBackground::showStuff() {
         } else {
             QMap<QString, QString> p1;
             p1["method"] = "library.getArtists";
-            p1["user"] = lastfm::AuthenticatedUser().name();
+            p1["user"] = lastfm::ws::Username;
 //            p1["period"]="3month";
             p1["limit"]="5000";
             QNetworkReply* reply = lastfm::ws::get( p1 );
@@ -185,7 +182,7 @@ void HBackground::continueShowStuff() {
             s_showingStuff=0;
             return;
         } else {
-            s_priorities.push_back(HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::Large))->send(this,"showStuff_addPic"));
+            s_priorities.push_back(HCachedPixmap::get(list[s_drawingI].imageUrl(lastfm::AbstractType::LargeImage))->send(this,"showStuff_addPic"));
             **s_priorities.back()=1;
         }
     }

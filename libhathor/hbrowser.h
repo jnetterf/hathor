@@ -12,8 +12,8 @@ hbrowser.h
 #ifndef EMBEDDEDBROWSER_H
 #define EMBEDDEDBROWSER_H
 
-#define RDIO_CONSUMER_KEY "6r8zwgkfzy2wvyjfdhxgg5yk"
-#define RDIO_CONSUMER_SECRET "cGJtmT9Ejw"
+#define RDIO_CONSUMER_KEY "zc4zdt7gp373tbyjbzgywbwe"
+#define RDIO_CONSUMER_SECRET "2wvJNbcCF4"
 
 #include <QtGui/QWidget>
 #include <QtWebKit/QWebView>

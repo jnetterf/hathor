@@ -20,7 +20,7 @@
 #include <QMutex>
 #include "lastfmext.h"
 #include "hgraphicsview.h"
-#include <lastfm/Artist>
+#include <lastfm/Artist.h>
 #include <QThread>
 #include "htoolbar.h"
 

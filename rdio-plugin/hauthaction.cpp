@@ -22,6 +22,8 @@ HAuthAction::HAuthAction(HBrowser &browser, QString username, QString password) 
 
     s_token=p.value("oauth_token");
     s_tokenSecret=p.value("oauth_token_secret");
+    qDebug() << s_token << s_tokenSecret;
+    qDebug() << p;
     browser.loadPage(QByteArray::fromPercentEncoding(p.value("login_url"))+"?oauth_token="+s_token);
     connect(&browser,SIGNAL(ready()),this,SLOT(continue1()));
 //    browser.show();
@@ -30,27 +32,22 @@ HAuthAction::HAuthAction(HBrowser &browser, QString username, QString password) 
 void HAuthAction::continue1()
 {
     disconnect(&s_browser,SIGNAL(ready()),this,SLOT(continue1()));
-    s_browser.setInput("id_email",s_username);
-    s_browser.setInput("id_password",s_password);
-    s_browser.doJS("document.getElementsByClassName(\"default_button\")[0].click()");
+    s_browser.show();
     connect(&s_browser,SIGNAL(ready()),this,SLOT(continue2()));
 }
 
 void HAuthAction::continue2()
 {
+    qDebug() << "!!";
     disconnect(&s_browser,SIGNAL(ready()),this,SLOT(continue2()));
-    if(s_browser.htmlContains("<ul class=\"errorlist\">")) {
-        emit error("Wrong username/password");
-        return;
-    }
-    s_browser.doJS("document.getElementsByClassName(\"green_button\")[0].click()");
     connect(&s_browser,SIGNAL(ready()),this,SLOT(continue3()));
 }
 
 void HAuthAction::continue3()
 {
-    if(!s_browser.htmlContains("<strong>")) {
-        return;
+    qDebug() << "..." << s_browser.html();
+    return;
+    if(!s_browser.htmlContains("pin")) {
     }
     QString html = s_browser.html();
     html.remove(0,html.indexOf("<strong>")+8);

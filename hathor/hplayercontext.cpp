@@ -32,7 +32,7 @@ void HPlayerContext::showEvent(QShowEvent *e) {
     QWidget::showEvent(e);
 }
 
-void HPlayerContext::hideEvent(QHideEvent *e) {
+void HPlayerContext::hideEvent(QHideEvent*) {
     if(s_magic) s_magic->setSlideshow(0);
     delete s_slideshow;
     s_slideshow=0;

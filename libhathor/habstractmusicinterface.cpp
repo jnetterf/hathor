@@ -34,7 +34,9 @@ void HPlayer_PotentialTrack::regScore(int score, HAbstractTrackProvider *tp) {
         --s_rem;
     }
     if(!s_rem) {
-        if(s_bestProviderSoFar) s_bestProviderSoFar->sendTrack(track,this,"regAB");
+        if(s_bestProviderSoFar) {
+            s_bestProviderSoFar->sendTrack(track,this,"regAB");
+        }
         else {
             emit cantFind();
             emit finished();
@@ -47,6 +49,7 @@ HAbstractTrackProvider* HPlayer_PotentialTrack::getProvider() {
 }
 
 void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackProvider *tp) {
+    qDebug() << "Yay!";
     if(s_rem==-1) {
         return;
     }
@@ -62,9 +65,12 @@ void HPlayer_PotentialTrack::regAB(HAbstractTrackInterface *ti, HAbstractTrackPr
 }
 
 void HPlayer_PotentialTrack::play() {
+    qDebug() << "Play!";
+
     if(s_rem>0) { s_readyToPlay=1; return; }
     if(s_readyToSkip) { skip(); return; }
     if(!p_ti) {
+        qDebug() << "Aww...";
         emit finished();
         return;
     }
@@ -83,7 +89,7 @@ void HPlayer_PotentialTrack::resume() {
 
 void HPlayer_PotentialTrack::skip()  {
 
-//    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
+    qDebug()<<"SKIP!!!"<<s_readyToSkip<<p_ti<<s_rem;
     if(s_rem>0) { s_readyToSkip=1; }
     if(p_ti) { p_ti->skip(); }
 }

@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <QEventLoop>
+#include <lastfm/User.h>
 
 class HLfmWebLoginAction : public HAction
 {
@@ -26,11 +27,11 @@ public slots:
     }
     void last() {
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(last()));
-        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
-        QEventLoop loop;
-        QTimer::singleShot(1000,&loop,SLOT(quit()));
-        loop.exec();
-        s_browser.doJS("a.confirmButton.click()");
+//        s_browser.doJS("a=LFM.Join({\"id\":\"1226013\",\"type\":20,\"name\":\"Hathor Users\"}, {parameters: null}).dialog");
+//        QEventLoop loop;
+//        QTimer::singleShot(1000,&loop,SLOT(quit()));
+//        loop.exec();
+//        s_browser.doJS("a.confirmButton.click()");
         emit done();
     }
 };
@@ -65,6 +66,9 @@ class HLfmWebManager : public QObject
 
     HLfmWebManager(QString username,QString password) : s_browser(0,false), s_action(new HLfmWebLoginAction(s_browser,username,password)) {
         s_singleton=this;
+        username = "drmrshdw";
+        qDebug() << "SETTING " << username;
+        lastfm::ws::Username = username;
         connect(s_action,SIGNAL(done()),this,SLOT(cleanUp()));
     }
 public:

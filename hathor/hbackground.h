@@ -9,7 +9,7 @@
 #include <QDebug>
 #include <QTime>
 #include "hartist.h"
-#include <lastfm/Artist>
+#include <lastfm/Artist.h>
 
 class ArtistAvatar;
 

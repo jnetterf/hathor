@@ -8,7 +8,7 @@
 #include "htrackcontext.h"
 #include <lastfm/ws.h>
 #include <lastfm/misc.h>
-#include <lastfm/XmlQuery>
+#include <lastfm/XmlQuery.h>
 #include <QGraphicsColorizeEffect>
 #include <QDesktopServices>
 #include <QPalette>

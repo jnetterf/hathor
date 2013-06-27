@@ -472,7 +472,7 @@ void HTrackContext::setPercussiveness(double d) {
     setBpm(s_bpm);
 }
 
-void HTrackContext::setKey(int z) {
+void HTrackContext::setKey(int) {
 
 }
 
@@ -501,7 +501,7 @@ void HTrackContext::setChordalClarity(double d) {
 
 }
 
-void HTrackContext::setTempoInstability(double d) {
+void HTrackContext::setTempoInstability(double) {
 }
 
 void HTrackContext::setRhythmicIntricacy(double d) {
@@ -509,7 +509,7 @@ void HTrackContext::setRhythmicIntricacy(double d) {
     if(d<0.3) s_character+=QString(s_character.size()?", ":" ")+"not rhymic";
 }
 
-void HTrackContext::setSpeed(double d) {
+void HTrackContext::setSpeed(double) {
 
 }
 

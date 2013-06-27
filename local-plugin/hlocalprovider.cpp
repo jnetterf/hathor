@@ -15,8 +15,8 @@ hlocalprovider.h
 #include <phonon/MediaObject>
 #include <QtPlugin>
 #include <lastfm/ws.h>
-#include <lastfm/User>
-#include <lastfm/Artist>
+#include <lastfm/User.h>
+#include <lastfm/Artist.h>
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QDirIterator>

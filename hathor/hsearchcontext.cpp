@@ -98,7 +98,7 @@ void HSearchContext::getMoreAlbums(QString s) {
     connect(this,SIGNAL(searchTermChanged()),reply,SLOT(deleteLater()));
 }
 
-void HSearchContext::showEvent(QShowEvent *e) {
+void HSearchContext::showEvent(QShowEvent*) {
     setSearchTerm(s_term);
 }
 
@@ -356,7 +356,7 @@ void HSearchContext::getMoreTracks_2() {
     reply->deleteLater();
 }
 
-void HSearchContext::getMoreUsers(QString s) {
+void HSearchContext::getMoreUsers(QString) {
 
 }
 
@@ -364,7 +364,7 @@ void HSearchContext::getMoreUsers_2() {
 
 }
 
-void HSearchContext::getMoreVenues(QString s) {
+void HSearchContext::getMoreVenues(QString) {
 
 }
 

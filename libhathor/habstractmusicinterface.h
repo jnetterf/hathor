@@ -206,7 +206,7 @@ class LIBHATHORSHARED_EXPORT HPhononTrackInterface : public HAbstractTrackInterf
     bool s_played;
     bool s_stopped;
     Phonon::MediaObject* s_mo;
-    void play() { if(s_mo&&!s_stopped) s_mo->play(); }
+    void play() { qDebug() << "Yuppie!"; if(s_mo&&!s_stopped) s_mo->play(); }
     void pause() { if(s_mo&&!s_stopped) s_mo->pause(); }
     void skip() { if(s_mo&&!s_stopped) s_mo->stop(); disconnect(s_mo,0,this,0); emit finished(); s_stopped=1; }
     HAbstractTrackInterface::State getState() const;
@@ -216,15 +216,26 @@ public:
     }
 public slots:
     void onStateChanged() {
+        qDebug() << s_mo->errorString();
+        qDebug() << s_mo->state();
         for(int i=0;i<s_mo->outputPaths().size();i++) {
             Phonon::AudioOutput* a=dynamic_cast<Phonon::AudioOutput*>(s_mo->outputPaths()[i].sink());
             if(a) {
                 a->setVolume(1.0);
             }
         }
-        if(s_mo->state()==Phonon::ErrorState) emit finished();
-        if(s_mo->state()==Phonon::PlayingState) s_played=1;
-        if(s_mo->state()==Phonon::StoppedState&&s_played) emit finished();
+        if(s_mo->state()==Phonon::ErrorState) {
+            qDebug() << "DONE!";
+            emit finished();
+        }
+        if(s_mo->state()==Phonon::PlayingState) {
+            qDebug() << "Playing!";
+            s_played=1;
+        }
+        if(s_mo->state()==Phonon::StoppedState&&s_played) {
+            qDebug() << "Finished!";
+            emit finished();
+        }
         emit stateChanged(getState());
     }
 };

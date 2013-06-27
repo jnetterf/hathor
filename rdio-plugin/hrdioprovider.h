@@ -155,16 +155,16 @@ public:
     bool failed() { return s_failed; }
 public slots:
     void init() {
-        s_browser.loadPage("http://www.rdio.com/secure/login/?cn=secure_login_result&popup=1");
+        s_browser.loadPage("https://www.rdio.com/account/signin/");
         connect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
         QTimer::singleShot(9000,this,SLOT(fail()));
 //        s_browser.show();
     }
     void next_1() {
         if(s_failed) return;
-        s_browser.setInput("id_email",s_un);
-        s_browser.setInput("id_password",s_psswd);
-        s_browser.doJS("document.getElementById(\"signinButton\").click()");
+        s_browser.setInput("username",s_un);
+        s_browser.setInput("password",s_psswd);
+        s_browser.doJS("document.getElementByName(\"submit\").click()");
         disconnect(&s_browser,SIGNAL(ready()),this,SLOT(next_1()));
         connect(&s_browser,SIGNAL(ready()),this,SIGNAL(done()));
         QTimer::singleShot(7400,this,SLOT(fail()));
